@@ -1,0 +1,112 @@
+/* for iPhone 2426 x 1125 */
+@media (max-width: 1100px) {
+	.header {
+    z-index: 8;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+/*    background-color: #788287;*/
+    display: block;
+    height: 185px;
+    text-align: center;
+  }
+
+  .info {
+    text-align: center;
+    color: #fff;
+    margin: 0;
+    display: visible;
+  }
+
+  h1.info {
+    padding-top: 20px;
+    font-size: 5vw;
+  }
+    
+    p.info {
+        font-size: 4vw;
+/*        color: crimson;*/
+    }
+    
+    #automator {
+        bottom: 200px;
+      }
+      
+      #startstop {
+/*        bottom: 200px;*/
+      }
+
+  #nav {
+    padding-top: 60px;
+  }
+
+  .theTime {
+    top: 18%;
+    font-size: 7vw;
+    left: 38%;
+  }
+
+  input#myBtn, input#myBtn_2 {
+/*
+    width: 55px;
+    height: 55px;
+*/
+  }
+
+  label {
+    font-size: 4vw;
+  }
+
+	#bgImg1, #bgImg2 {
+	  background-size: 80%;
+	}
+    
+    .container {
+        margin-top: 32%;
+          }
+
+    }
+
+/* for iPad Mini 2048 x 1536 */
+
+@media only screen
+and (min-device-width : 768px)
+and (max-device-width : 1024px)
+and (-webkit-min-device-pixel-ratio: 1)  {
+
+/* STYLES GO HERE */
+		.container {
+/*        margin-top: 22%;*/
+/*            border-top: 3px solid crimson;*/
+          }
+
+
+  }
+
+
+/* for desktop 2560‑by‑1600 */
+
+@media (min-width: 1100px) {
+
+  .container {
+
+  }
+
+}
+
+/* for click devices */
+
+ @media (hover: hover) {
+    h3:before {
+
+  }
+}
+
+/* for toouch devices */
+
+@media (hover: none) {
+    h3:before {
+
+  }
+}

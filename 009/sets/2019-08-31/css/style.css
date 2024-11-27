@@ -1,0 +1,406 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@200&display=swap');
+
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Open+Sans:wght@500&family=Roboto:wght@300&display=swap');
+
+
+
+body {
+  font-family: 'Open Sans', sans-serif;
+  background-color: #3e4c53;
+}
+#background-images {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.theTime {
+  color: tomato;
+  position: fixed;
+  top: 10%;
+  left: 45%;
+  font-size: 4vw;
+  z-index: 9;
+/*  transition:left 1s linear;*/
+  transition:top 1s linear;
+}
+
+.theTimeHigher {
+    top: -3%;
+/*    left: 80%;*/
+/*    transition:left 1s linear;*/
+    transition:top 1s linear;
+}
+
+/*
+.sunsetTime {
+  display: block;
+  color: whiteSmoke;
+   background-color: lightblue; 
+  position: relative;
+  top: 8%;
+  right: 6%;
+  font-size: 2vw;
+  z-index: 9;
+  vertical-align:middle;
+  margin: 0;
+}
+*/
+
+/*
+.sunriseTime {
+  display: block;
+  color: whiteSmoke;
+   background-color: lightblue; 
+  position: relative;
+  top: 8%;
+  left: 6%;
+  font-size: 2vw;
+  z-index: 9;
+  vertical-align:middle;
+  margin: 0;
+}
+*/
+
+.material-icons { font-size: 60px !important; }
+
+i {
+  vertical-align:middle;
+  font-size: 36px;
+  padding-bottom: 9px
+
+}
+
+.myDir {
+	<!-- color: whiteSmoke; -->
+	font-size: 2vw;
+	}
+
+/*
+#mySunrise {
+	font-size: 4vw;
+	}
+*/
+
+#bgImg1, #bgImg2 {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  background-attachment: fixed;
+  background-position-x: center;
+  background-position-y: center;
+  /* background-size: cover; */
+  background-size: 50%;
+  background-repeat: no-repeat;
+}
+
+/*
+.larger {
+  background-size: 100% !important;
+  transition:all 1s ease-in-out;
+}
+*/
+
+#bgImg1 {
+  background-image: url("../../../../_ImageSets/2019-08-31/_DSC7524.jpg");
+}
+#bgImg2 {
+  background-image: url("../../../../_ImageSets/2019-08-31/_DSC7525.jpg");
+}
+
+#background-images div.front {
+  z-index: 3;
+}
+#background-images div.back {
+  z-index: 2;
+}
+
+#main {
+  z-index: 10;
+  position: absolute;
+  top: 0;
+  left: 10%;
+  width: 80%;
+  /* border-right: 12px solid steelblue; */
+  background-color: #2E3033;
+  display: block;
+  /* mix-blend-mode: lighten; */
+  overflow-x: hidden;
+  transition: 0.5s;
+  /* padding-top: 60px; */
+  /* padding-bottom: 60px; */
+/*  height: 120px;*/
+  height: 5px;
+  overflow: auto;
+  white-space: nowrap;
+  /* opacity: 0.5; */
+  border-left: 8px solid whitesmoke;
+  border-right: 8px solid whitesmoke;
+}
+
+#main a {
+  padding: 4px 10px;
+  /* padding-top: 30px; */
+  text-decoration: none;
+  color: whiteSmoke;
+  opacity: .5;
+  font-size: 3em;
+  font-family: 'Montserrat', sans-serif;
+  /* margin-top: 250px; */
+  position: relative;
+  top: 30px;
+}
+
+.page {
+  margin-top: 100px;
+}
+#main a:hover {
+  color: crimson;
+  /* font-weight: 900; */
+  font-family: 'Montserrat', sans-serif;
+   /* padding: 10px; */
+  transition: 0.3s;
+}
+
+#main a:active {
+  color: #000;
+}
+
+#main a[tabindex]:focus {
+    color:crimson;
+    font-weight: 900;
+    outline: none;
+    content: "\00BB";
+    margin-right: 6px;
+}
+
+::-webkit-scrollbar {
+    		display: none;
+		}
+
+.arrows .arrow {
+  margin: -33px 0 0;
+  padding: 20px;
+  position: fixed;
+  top: 50%;
+  cursor: pointer;
+  z-index: 3;
+}
+
+.inactive {
+  opacity: 0.2;
+  cursor: not-allowed;
+  }
+.arrows .prev {
+  left: 30px;
+}
+
+.arrows .next {
+  right: 30px;
+}
+
+.arrows .svg {
+  position: relative;
+  left: 0;
+  width: 14px;
+  height: 26px;
+  fill: #fff;
+  transition: left 0.2s ease;
+}
+
+#myIcon {
+  width: 60px;
+  position: fixed;
+  top: 90px;
+  left: 48px;
+  transition: 500ms ease-in-out;
+  z-index: 9;
+  }
+
+.inactive {
+  opacity: 0.2;
+}
+
+.header {
+  z-index: 8;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+/*  background-color: #788287;*/
+  display: block;
+  height: 85px;
+  text-align: center;
+}
+
+.info {
+  text-align: center;
+  color: #fff;
+  margin: 0;
+  display: visible;
+}
+
+h1.info {
+  padding-top: 11px;
+}
+
+.ratio-background {
+/*      background-color: #3e4c53;*/
+      background-color: #8b9498;
+      width: 90%;
+    }
+
+    .ratio-main {
+      height: 12px;
+      width: 1px;
+      background-color: whitesmoke;
+    }
+
+    .wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      margin-top: 7%;
+      color: whitesmoke;
+    } 
+    
+
+
+
+/*using the class instead (for all buttons)*/
+.toggle-button-two {
+    background: transparent;
+  border: none;
+    cursor: pointer;
+}
+
+#myShowTimes {
+
+  background: transparent;
+  border: none;
+}
+
+#myPlay {
+
+  background: transparent;
+  border: none;
+}
+
+/*new styles for justified buttons*/
+
+/*'shelf' div*/
+.block {
+/*  margin: 20px auto;*/
+  width: 50%;
+  height: 30px;
+/*  background: #ffbe76;*/
+  padding: 15px;
+  color: #ffffff;
+  z-index: 99;
+  position: fixed;
+  bottom: 80px;
+    text-align: center;
+/*  left: 10%;*/
+/*    right: 10%;*/
+  /* margin-left: -300px;  Negative half of width. */
+    
+  display: flex; /* displays flex-items (children) inline */
+  justify-content: space-between; /* MDN: The items are evenly distributed within the alignment container along the main axis. The spacing between each pair of adjacent items is the same. */
+  align-items: center; /* centers them vertically */
+}
+
+
+
+.flexbox {
+/*       background-color: pink;*/
+       display: flex;
+       justify-content:  space-between;
+       flex-wrap: wrap;
+       margin: 0 auto;
+       width: 40%;
+       margin-top: 475px;
+       z-index: 99;
+    }
+    .flex-item {
+       width: 75px;
+       height: 25px;
+/*       background-color: grey;*/
+       margin: 30px auto;
+        text-align: center;
+        z-index: 99;
+        cursor: pointer;
+    }
+
+/*RESPONSIVITY*/
+
+/* for iPhone 2426 x 1125 */
+@media (max-width: 1100px) {
+	.flexbox {
+/*       background-color: lightblue;*/
+       margin-top: 1250px;
+       width: 60%;
+    }
+    
+    .flex-item img {
+      width: 75px;
+      height: 75px;
+      margin: 45px auto;
+    }
+    
+    #swap {
+        font-size: 3vw;
+    }
+    }
+
+/* for iPad Mini 2048 x 1536 */
+
+@media only screen
+and (min-device-width : 768px)
+and (max-device-width : 1024px)
+and (-webkit-min-device-pixel-ratio: 1)  {
+
+/* STYLES GO HERE */
+  .flexbox {
+/*       background-color: lightblue;*/
+       margin-top: 650px;
+       width: 60%;
+    }
+    .flex-item img {
+      width: 75px;
+      height: 75px;
+      margin: 90px auto;
+    }
+  }
+
+
+/* for desktop 2560‑by‑1600 */
+
+@media (min-width: 1100px) {
+
+  .container {
+
+  }
+
+}
+
+/* for click devices */
+
+ @media (hover: hover) {
+    h3:before {
+
+  }
+}
+
+/* for toouch devices */
+
+@media (hover: none) {
+    h3:before {
+
+  }
+}
+

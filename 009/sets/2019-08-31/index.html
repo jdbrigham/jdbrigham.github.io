@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8">
+  <title>CodePen - True Background Image Crossfade</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/responsivestyles.css">
+  <link href="https://fonts.googleapis.com/css?family=Material+Icons|Material+Icons+Outlined|Material+Icons+Two+Tone|Material+Icons+Round|Material+Icons+Sharp" rel="stylesheet">
+  <link href = "https://fonts.googleapis.com/icon?family=Material+Icons" rel = "stylesheet">
+  <style>
+
+      #inner-div {
+        display: inline-block;
+        margin: 0 auto;
+        padding: 3px;
+        /* background-color: #8ebf42 */
+      }
+
+      .nav {
+        color: #fff;
+        display: inline-block;
+        float: left;
+        margin-left: 2%;
+        padding-top: 30px;
+      }
+
+      .nav:hover {
+        color: crimson;
+      }
+      
+      #swap {
+          float: right;
+          margin-right: 15px;
+      }
+  </style>
+
+</head>
+<body>
+<div class='header'>
+
+<a href='../../' class='nav'><i class="material-icons-outlined">home</i></a>
+ <div id="inner-div">
+   <h1 class='info'>August 31 2019</h1>
+<!--   <p class='info'>sunrise: 5:54am, sunset 8:01pm</p>-->
+ </div>
+<a href='alt/' id='swap' class='nav'>alt view</a>
+</div>
+
+    <div class="wrapper">
+        <p>6:30am</p>
+        <div class="ratio-background">
+            <div class="ratio-main" ></div>
+        </div>
+        <p>7:15pm</p>
+<!--        <i class = 'material-icons myDir'>south_east</i>-->
+<!--        <i class = 'material-icons myDir'>north_east</i>-->
+</div>
+<img id='myIcon' src='img/noun-sun-1106873.svg' style="position: fixed; left: 48px; top: 90px;"/>
+<div id="background-images">
+  <!-- <h1 id='currTime' class='theTime'>&#x3c; 6:00 AM &#x3e;</h1> -->
+  <h1 id='currTime' class='theTime'>6:30am</h1>
+
+  <div class="bgImages front" id="bgImg1">
+  </div>
+  <div class="bgImages back" id="bgImg2"><br>
+  </div>
+</div>
+
+
+<div id="main" onmouseover="toggleSidebar()" onmouseout="toggleSidebar()">
+<!-- <div id="main"> -->
+
+</div>
+      <div class="arrows">
+        <div class="arrow prev">
+          <span id='leftArrow' class="svg svg-arrow-left inactive" >
+            <svg version="1.1" id="svg4-Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="14px" height="26px" viewBox="0 0 14 26" enable-background="new 0 0 14 26" xml:space="preserve"> <path d="M13,26c-0.256,0-0.512-0.098-0.707-0.293l-12-12c-0.391-0.391-0.391-1.023,0-1.414l12-12c0.391-0.391,1.023-0.391,1.414,0s0.391,1.023,0,1.414L2.414,13l11.293,11.293c0.391,0.391,0.391,1.023,0,1.414C13.512,25.902,13.256,26,13,26z"/> </svg>
+            <span class="alt sr-only"></span>
+          </span>
+        </div>
+        <div id='rightArrow' class="arrow next">
+          <span class="svg svg-arrow-right" >
+            <svg version="1.1" id="svg5-Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="14px" height="26px" viewBox="0 0 14 26" enable-background="new 0 0 14 26" xml:space="preserve"> <path d="M1,0c0.256,0,0.512,0.098,0.707,0.293l12,12c0.391,0.391,0.391,1.023,0,1.414l-12,12c-0.391,0.391-1.023,0.391-1.414,0s-0.391-1.023,0-1.414L11.586,13L0.293,1.707c-0.391-0.391-0.391-1.023,0-1.414C0.488,0.098,0.744,0,1,0z"/> </svg>
+            <span class="alt sr-only"></span>
+          </span>
+        </div>
+        <!-- <div id='handle'></div> -->
+      </div>
+<!--div with three justified buttons-->
+         <div class="flexbox">
+           <div class="flex-item"><button class='toggle-button-two' onclick=""><img  id='myExpander' src='img/larger.png' /></button></div>
+           
+             <div class="flex-item"><button class='toggle-button-two' onclick="change()"><img  id='myPlay' src='img/noun-play-739111.png' /></button></div>
+           
+             <div class="flex-item"><button class='toggle-button-two' onclick=""><img id='myShowTimes' src='img/screen_up.png' /></button></div>
+         </div>
+ 
+<!-- </div>-->
+<!-- partial -->
+  <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js'></script>
+  <script  src="js/script.js"></script>
+<!--  script 1: hide/show the top menu of times on hover-->
+    <script>
+        var mini = true;
+
+        function toggleSidebar() {
+            if (mini) {
+                console.log("opening sidebar");
+                document.getElementById("main").style.height = "120px";
+                this.mini = false;
+            } else {
+                console.log("closing sidebar");
+                document.getElementById("main").style.height = "5px";
+                this.mini = true;
+            }
+        }
+    </script>
+    
+<!--    script 2: expand/contract the image from clicking on #myExpander-->
+    <script>
+
+        $('#myExpander').click( function() {
+            if ( $(this).attr("src") == "img/larger.png") {
+                
+                $('#bgImg1').animate({ backgroundSize: '98%' }, 1000);
+                $('#bgImg2').animate({ backgroundSize: '98%' }, 1000);
+                $('.header').animate({ height: '10px' }, 1000);
+                // $('.info').css('display', 'none');
+                $('.theTime').toggleClass("theTimeHigher");
+                // $('.info').css('display', 'none');
+                $(".info").fadeTo(1000, 0); 
+                $(this).attr("src", "img/smaller.png"); 
+        } else { 
+
+            $('#bgImg1').animate({ backgroundSize: '50%' }, 1000);
+            $('#bgImg2').animate({ backgroundSize: '50%' }, 1000);
+            $('.header').animate({ height: '85px' }, 1000);
+            $('.theTime').toggleClass("theTimeHigher");
+            // $('.info').css('display', 'visible');
+            $(".info").fadeTo(1000, 1);
+            $(this).attr("src", "img/larger.png"); 
+        }
+            });
+
+    </script>
+    
+<!--    script 3:  keep the times menu open-->
+    <script>
+    $('#myShowTimes').on('click', function(){
+
+        if ( $('#myShowTimes').attr("src") == "img/screen_up.png") {
+        $('#main').css("height","120px");
+        $(this).attr("src", "img/screen_down.png");   
+        } else { 
+            $('#main').css("height","5px");
+            $(this).attr("src", "img/screen_up.png"); 
+        }
+            });
+
+    </script>
+    
+<!--    script 4: keep clicking next-->
+    <script>
+
+        
+        function animate() {
+            $(".svg-arrow-right").trigger('click');
+                
+                var value = $("#currTime").html();
+                // setting it one click before the last time b/c there seems to be a lag
+            
+            
+                // revision note:  this logic works to stop the animation at 7:30 and revert the button to its play state. 
+                // but the progress bar filling logic does not work b/c it only fills about halfway
+                // also, need to think of a way to start the whole animation over again
+            
+            
+                if (value == "7:45pm") {
+//                    alert(value);
+                    $("#myPlay").attr("src","img/noun-play-739111.png");
+                    window.clearInterval(light);
+                    light = null;
+                    $(".ratio-main").animate({ width: '1px' }, 3000);
+                    $("#currTime").html('6:00am');
+                    }
+            
+             
+            // code for updating the progress bar on each click (moving to script.js)
+//                var myDiv = document.querySelector(".ratio-main");
+//                var myDivBG = document.querySelector(".ratio-background");
+//                var currWidth = myDiv.clientWidth;
+//                var currWidthBG = myDivBG.clientWidth;
+//                var myIncrement = (currWidthBG/54);
+//                myDiv.style.width = currWidth + myIncrement + "px";
+                
+        }
+
+        var light;
+        function change() {
+            if (!light) {
+                $("#myPlay").attr("src","img/noun-pause-552217.png");
+                light = window.setInterval(animate,2000);
+            } else {
+                window.clearInterval(light);
+                $("#myPlay").attr("src","img/noun-play-739111.png");
+                light = null;
+            }
+        }
+    </script>
+    
+<!--    script 5:  for the progress bar-->
+<!--    Note:  I don't think this is ever called-->
+    <script>
+//    function increaseDiv() {
+//        var myDiv = document.querySelector(".ratio-main")
+//        var currWidth = myDiv.clientWidth;
+//        myDiv.style.width = currWidth + 9 + "px";
+//        }
+    </script>
+<!--    script 6: new attempt at image expander -->
+    <script>
+
+        
+    $('#myPlay').on('click', function(){
+        var isPause = this.src.indexOf('img/noun-play-739111.png') != -1;
+        this.src    = isPause  ? this.src.replace('img/noun-play-739111.png', 'img/noun-pause-552217.png') : this.src.replace('img/noun-pause-552217.png','img/noun-play-739111.png');
+    });
+        
+
+        
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8">
+  <title>CodePen - True Background Image Crossfade</title>
+  <link rel="stylesheet" href="css/style.css">
+<!--  <link rel="stylesheet" href="css/responsivestyles.css">-->
+  <link href="https://fonts.googleapis.com/css?family=Material+Icons|Material+Icons+Outlined|Material+Icons+Two+Tone|Material+Icons+Round|Material+Icons+Sharp" rel="stylesheet">
+  <link href = "https://fonts.googleapis.com/icon?family=Material+Icons" rel = "stylesheet">
+    
+<style>
+    .moreInfo {
+        position: fixed;
+/*        transform: scale(0);*/
+        right: 50px;
+        bottom: 50px;
+        width: 150px;
+        height: 50px;
+/*        border: 2px dashed #fff;*/
+        transition: all 1s ease-out;
+/*        transition: width 2s, height 4s;*/
+    }
+    
+    .showInfo {
+        transform-origin: right bottom;
+        transform: scale(1,1);
+        width: 850px;
+        height: 250px;
+/*        opacity: .6;*/
+        background-color: #ececec;
+        border: 1px solid #3e4c53;
+
+    }
+    
+    .theInfo {
+        visibility: hidden;
+        color: #444;
+    }
+    
+    .visible {
+        visibility: visible;
+    }
+    
+    #svg1007 {
+        fill: #fff;
+        cursor: pointer;
+        float: right;
+    }
+    
+    #svg1007:hover {
+        fill: crimson;
+    }
+</style>
+
+</head>
+<body>
+ <section class="header">
+    <div class="header-columns">
+      <div class="main"><h1 class='info'>August 15 2019 @ <span id='currTime'><i class="icon material-icons">photo_camera</i> 6:00am</span></h1></div>
+      <div class="nav-left"><a href='../../' class='nav'>home</a></div>
+      <div class="nav-right"><a href='alt/' class='nav'>alt view</a></div>
+    </div>
+  </section>
+    
+<!--temporary controls-->
+<!--<button id='incrementor'>MORE</button>-->
+<input id="itr" type="range" value="0" />
+<button id='changer'>change</button>
+
+<div class="wrapper">
+    <svg
+       viewBox="0 0 1400 200"
+       version="1.1"
+       id="svg826" >
+       <path
+         fill="none"
+         stroke="#ffffff"
+         stroke-width="2"
+         stroke-linecap="round"
+         stroke-dasharray="1,2"
+         d="M 61.551354,202.98173 C 139.49502,159.24911 345.79745,101.09979 696.436,101.09979 c 350.6386,0 531.3555,50.97114 634.8846,101.88194"
+         pathLength="410"
+         id="ell" />
+
+          <circle
+             id="circ"
+             class='theCircle'
+             r="35"
+             fill="#DC143C"
+             cx="70"
+             cy="198"
+           />
+        <rect
+             style="fill:#ef8f10;fill-opacity:1;stroke:none"
+             id="rect933"
+             width="1399.8267"
+             height="4.7898417"
+             x="0.36155918"
+             y="195.3396" />
+    </svg>
+    <div class='icon-line'>
+      <i class="icon material-icons">north_east</i> 5:58am
+    </div>
+        <div class="ratio-background">
+            <div class="ratio-main" ></div>
+        </div>
+    <div class='icon-line'>
+      <i class="icon material-icons">south_east</i> 7:57pm
+    </div>
+<!--        <p>7:50pm<i id='setTime' class = 'material-icons myDir'>south_east</i></p>-->
+</div>
+
+<!--<img id='myIcon' src='img/noun-sun-1106873.svg' style="position: fixed; left: 48px; top: 90px;"/>-->
+     
+<div id="background-images">
+  <!-- <h1 id='currTime' class='theTime'>&#x3c; 6:00 AM &#x3e;</h1> -->
+<!--  <h1 id='currTime' class='theTime'><i class="icon material-icons">photo_camera</i> 6:00am</h1>-->
+
+  <div class="bgImages front bgLarge" id="bgImg1">
+  </div>
+  <div class="bgImages back bgLarge" id="bgImg2"><br>
+  </div>
+</div>
+
+<!--beginning of the menu shell (top)-->
+<div id="main" class="cycler closed" onmouseover="toggleSidebar()" onmouseout="toggleSidebar()" >
+    <div class="control-links">
+<!--        <img id="dblArrows" src="css/arrows.png">-->
+<!--        <div class="nav-arrow reversed" style="--h:120px;--b:3px;--w:30px"></div>-->
+        <div id='theMenu' class="menu-wrapper">
+            <ul class="menu-menu">
+<!--end of the menu shell (top)-->
+                
+                
+<!--beginning of the menu shell (bottom)-->
+<!--the directional paddles -->
+     <div class="paddles">
+<!--         left paddle-->
+        <button class="left-paddle paddle hidden">
+                    <svg class="icon " width="21" height="32" viewBox="0 0 21 32">
+                    <path d="M0 16l4.736-4.768 11.264-11.232 4.736 4.736-11.232 11.264 11.232 11.264-4.736 4.736-11.264-11.264z"></path>
+                    </svg>
+            </button>
+<!--        right paddle-->
+         <button class="right-paddle paddle">
+            <svg class="icon " width="21" height="32" viewBox="0 0 21 32">
+                <path d="M0 27.264l11.264-11.264-11.264-11.264 4.736-4.736 11.264 11.232 4.736 4.768-16 16z"></path>
+            </svg>
+         </button>
+      </div> <!-- end of paddles div-->    
+                </div> <!-- end of menu-wrapper div-->
+        </div> <!-- end of control-links div-->
+    </div> <!-- end of #main div-->
+<!--end of the menu shell (bottom)-->   
+
+      <div class="arrows">
+        <div class="arrow prev">
+          <span id='leftArrow' class="svg svg-arrow-left inactive" >
+            <svg version="1.1" id="svg4-Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="28px" height="52px" viewBox="0 0 14 26" enable-background="new 0 0 14 26" xml:space="preserve"> <path d="M13,26c-0.256,0-0.512-0.098-0.707-0.293l-12-12c-0.391-0.391-0.391-1.023,0-1.414l12-12c0.391-0.391,1.023-0.391,1.414,0s0.391,1.023,0,1.414L2.414,13l11.293,11.293c0.391,0.391,0.391,1.023,0,1.414C13.512,25.902,13.256,26,13,26z"/> </svg>
+            <span class="alt sr-only"></span>
+          </span>
+        </div>
+        <div id='rightArrow' class="arrow next">
+          <span class="svg svg-arrow-right" >
+            <svg version="1.1" id="svg5-Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="28px" height="52px" viewBox="0 0 14 26" enable-background="new 0 0 14 26" xml:space="preserve"> <path d="M1,0c0.256,0,0.512,0.098,0.707,0.293l12,12c0.391,0.391,0.391,1.023,0,1.414l-12,12c-0.391,0.391-1.023,0.391-1.414,0s-0.391-1.023,0-1.414L11.586,13L0.293,1.707c-0.391-0.391-0.391-1.023,0-1.414C0.488,0.098,0.744,0,1,0z"/> </svg>
+            <span class="alt sr-only"></span>
+          </span>
+        </div>
+        <!-- <div id='handle'></div> -->
+      </div>
+
+    <!-- flex div with three justified buttons-->
+    <div class='container'>
+        <div class="grid">
+          <div class="box box1"><div> 
+              <svg
+                       width="200pt"
+                       height="200pt"
+                       version="1.1"
+                       viewBox="0 0 200 200"
+                       id="svg975">
+              <!--    the lower right arrow-->
+              <path
+                 fill="#ffffff"
+                 d="m 127.17495,119.54007 c -1.61049,0.32072 -2.91939,1.61343 -3.37786,3.33935 -0.45846,1.72592 0.0121,3.58735 1.21843,4.80737 l 44.58767,48.88031 H 128.1216 c -1.15812,-0.0198 -2.27401,0.4728 -3.09736,1.36221 -0.82335,0.89272 -1.28783,2.10613 -1.28783,3.37575 0,1.26962 0.46445,2.48634 1.28783,3.37575 0.82335,0.89271 1.93924,1.38202 3.09736,1.36551 h 51.88306 c 2.38867,0 4.32489,-2.12263 4.32489,-4.74126 V 124.427 c 0.0483,-1.39192 -0.46144,-2.73763 -1.39939,-3.67994 -0.93793,-0.94231 -2.20468,-1.38202 -3.46534,-1.20682 -2.22575,0.30419 -3.86943,2.42684 -3.78196,4.88668 v 45.32622 L 131.22799,121.0218 c -0.9319,-1.10101 -2.28606,-1.64982 -3.64631,-1.48122 -0.13572,-0.01 -0.27143,-0.01 -0.40715,0 z"
+                 id="path960"
+                 style="stroke-width:0.808393" />
+              <!--    the lower left arrow-->
+              <path
+                 fill="#ffffff"
+                 d="m 21.129418,119.95269 c -2.228766,0.30418 -3.872449,2.42683 -3.784973,4.88668 v 56.87805 c 0,2.61863 1.936225,4.74127 4.324889,4.74127 h 51.883067 c 1.158121,0.0165 2.27401,-0.4728 3.097357,-1.36552 0.823347,-0.88941 1.287831,-2.10613 1.287831,-3.37575 0,-1.26961 -0.464453,-2.48303 -1.287831,-3.37574 -0.823347,-0.88941 -1.939236,-1.38202 -3.097357,-1.36222 H 32.070808 l 44.587674,-48.8803 c 1.302887,-1.37542 1.685916,-3.49476 0.965101,-5.30989 -0.723826,-1.81843 -2.400708,-2.94924 -4.207223,-2.83683 -1.127933,0.0463 -2.195644,0.5786 -2.970736,1.48122 L 25.990748,170.165 v -45.32622 c 0.05127,-1.39193 -0.461442,-2.73764 -1.396385,-3.67995 -0.937924,-0.94231 -2.204678,-1.38202 -3.465331,-1.20682 z"
+                 id="path958"
+                 style="stroke-width:0.808393" />
+              <!--  the upper right arrow-->
+              <path
+                 fill="#ffffff"
+                 d="m 127.32125,14.187593 c -2.38866,0.244664 -4.1409,2.565645 -3.91769,5.184276 0.22321,2.61863 2.34033,4.542863 4.72899,4.294865 h 41.34571 l -44.45179,48.734724 c -0.80829,0.902614 -1.25463,2.119332 -1.24259,3.385649 0.0121,1.263017 0.48255,2.469831 1.30891,3.352555 0.82335,0.886109 1.93322,1.37542 3.08833,1.358915 1.1521,-0.0132 2.25293,-0.529008 3.05813,-1.431622 L 175.69413,30.33223 v 45.475191 c -0.0181,1.269619 0.43127,2.492938 1.24258,3.395552 0.81432,0.902614 1.92117,1.411816 3.0793,1.411816 1.15812,0 2.26798,-0.509168 3.07929,-1.411816 0.81431,-0.902614 1.26065,-2.125933 1.24559,-3.395552 V 18.929364 c 0,-2.61863 -1.93622,-4.741263 -4.32488,-4.741263 h -51.88307 c -0.26842,-0.02641 -0.53986,-0.02641 -0.8113,0 z"
+                 id="path95222"
+                 style="stroke-width:0.808393" />
+              <!--    the upper left arrow-->
+              <path
+                 fill="#ffffff"
+                 d="m 20.600426,13.930673 c -2.065934,0.433126 -3.549796,2.433436 -3.513585,4.741263 v 56.878057 c -0.01506,1.269619 0.431276,2.492938 1.245598,3.395552 0.811302,0.902615 1.921169,1.411816 3.07929,1.411816 1.158122,0 2.264977,-0.509168 3.079291,-1.411816 0.811302,-0.902614 1.260653,-2.125933 1.242587,-3.395552 V 30.074802 l 44.454876,48.734725 c 0.80528,0.902614 1.906113,1.418418 3.058135,1.431622 1.15511,0.01651 2.264977,-0.472798 3.088324,-1.358915 0.826358,-0.882808 1.296864,-2.089623 1.308908,-3.352554 0.01205,-1.266318 -0.434295,-2.483035 -1.242587,-3.385649 L 31.949476,23.409306 h 41.345706 c 1.158121,0.01981 2.27401,-0.472798 3.097357,-1.362216 0.823347,-0.892711 1.287831,-2.106128 1.287831,-3.375746 0,-1.269618 -0.464453,-2.486336 -1.287831,-3.375746 -0.823347,-0.892711 -1.939236,-1.382022 -3.097357,-1.365517 H 21.412115 c -0.271433,-0.02641 -0.542865,-0.02641 -0.811302,0 z"
+                 id="path88922"
+                 style="stroke-width:0.808393" />
+            </svg>
+            </div>
+        </div>
+          <div id='playButton' class="box box2" onclick="change()"><div>
+              <svg
+               width="700pt"
+               height="700pt"
+               version="1.1"
+               viewBox="0 0 700 700"
+               id="svg959" >
+                <defs>
+                    <filter id="blur">
+                        <feGaussianBlur stdDeviation="5" />
+                    </filter>
+                </defs>
+
+
+              <ellipse
+                 style="fill:none;fill-opacity:1;stroke-width:22.67716535;stroke:#e57d16;stroke-opacity:1;stroke-miterlimit:4;stroke-dasharray:none"
+                 id="path994"
+                 class="initial"
+                 cx="350"
+                 cy="350"
+                 rx="256.93634"
+                 ry="253.58501" />
+              <path
+                 id="path889"
+                 d="m 350,172.08 c 98.262,0 177.93,79.66 177.93,177.92 0,98.26 -79.668,177.92 -177.93,177.92 -98.262,0 -177.93,-79.652 -177.93,-177.92 0,-98.268 79.668,-177.92 177.93,-177.92 z m 99.575,194.532 c 6.0938,-3.5234 9.582,-9.5703 9.582,-16.613 0,-7.0427 -3.4883,-13.094 -9.582,-16.613 l -136.2,-78.637 c -6.1055,-3.5234 -13.094,-3.5234 -19.188,0 -6.1055,3.5234 -9.5938,9.5703 -9.5938,16.613 v 157.27 c 0,7.043 3.4883,13.094 9.5938,16.613 6.0938,3.5234 13.082,3.5234 19.188,0 z" />
+                  <!--  adding in the pause button -->
+              <path
+                 d="m 350,525.78595 c 97.13808,0 175.88374,-78.70188 175.88374,-175.78596 0,-97.08406 -78.74566,-175.78594 -175.88374,-175.78594 -97.13808,0 -175.88374,78.70188 -175.88374,175.78594 0,97.08408 78.74566,175.78596 175.88374,175.78596 z M 284.0436,284.0112 c 0,-12.09784 9.7584,-21.90732 21.98547,-21.90732 12.141,0 21.98546,9.95388 21.98546,21.90732 v 131.97131 c 0,12.09783 -9.75841,21.90733 -21.98546,21.90733 -12.14101,0 -21.98547,-9.95388 -21.98547,-21.90733 z m 87.94187,0 c 0,-12.09784 9.75841,-21.90732 21.98546,-21.90732 12.14102,0 21.98548,9.95388 21.98548,21.90732 v 131.97131 c 0,12.09783 -9.75841,21.90733 -21.98548,21.90733 -12.14099,0 -21.98546,-9.95388 -21.98546,-21.90733 z"
+                 fill-rule="evenodd"
+                 id="path824"
+                 class="hidden"
+                 style="stroke-width:0.627982" />
+            </svg>
+
+            </div></div>
+          <div class="box box3"><div>
+              <input type="checkbox" id="menu" />
+                <label for="menu" class="menu">
+                  <div></div>
+                </label>
+          </div></div>
+        </div>
+</div>
+    
+<div class='moreInfo'>
+    <svg
+       width="30px"
+       height="30px"
+       version="1.1"
+       viewBox="0 0 700 700"
+       id="svg1007">
+      <path
+         d="m 350,69.998 c -74.262,0 -145.48,29.5 -197.99,82.012 C 99.498,204.518 69.998,275.74 69.998,350 c 0,74.26 29.5,145.48 82.012,197.99 52.508,52.512 123.73,82.012 197.99,82.012 74.26,0 145.48,-29.5 197.99,-82.012 52.512,-52.508 82.012,-123.73 82.012,-197.99 0,-74.26 -29.5,-145.48 -82.012,-197.99 C 495.482,99.498 424.26,69.998 350,69.998 Z m -30.855,116.98 c 2.3672,-5.3906 5.7734,-10.262 10.023,-14.336 4.2266,-4.1016 9.1602,-7.4023 14.559,-9.7461 5.5078,-2.4141 11.461,-3.6523 17.473,-3.6367 6.1797,-0.0391 12.301,1.1992 17.977,3.6367 5.4297,2.2891 10.375,5.5977 14.559,9.7461 4.1094,4.1328 7.4141,8.9961 9.7461,14.336 2.4688,5.5898 3.7109,11.641 3.6406,17.75 0.0586,6.1836 -1.1797,12.309 -3.6406,17.977 -2.3281,5.4766 -5.6289,10.488 -9.7461,14.785 -4.1445,4.2539 -9.0938,7.6445 -14.559,9.9688 -5.6719,2.4609 -11.793,3.6992 -17.977,3.6406 -6.0898,0.0703 -12.125,-1.1719 -17.695,-3.6406 -11.027,-4.8477 -19.812,-13.691 -24.582,-24.754 -2.4414,-5.6758 -3.6797,-11.797 -3.6406,-17.977 0.0234,-6.1211 1.3398,-12.172 3.8633,-17.75 z m 122.81,322.89 h -160.55 v -37.293 c 25.762,0 38.641,-6.793 38.641,-20.383 v -116.54 c 0,-13.926 -12.879,-20.887 -38.641,-20.887 v -36.398 l 121.86,-0.004 v 173.6 c -0.61719,13.664 12.32,20.441 38.695,20.441 z"
+         id="path913" />
+    </svg>
+    <p class='theInfo'>constructions</p>
+</div>
+    
+     
+<!-- partial -->
+  <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js'></script>
+  <script  src="js/script.js"></script>
+<script  src="js/scroll.js"></script>
+    
+<!--  <script  src="js/code.js"></script>-->
+<!--  script 1: hide/show the top menu of times on hover-->
+    <script>
+        var mini = true;
+
+        function toggleSidebar() {
+            if (mini) {
+                console.log("opening sidebar");
+                document.getElementById("main").style.height = "120px";
+                 $('#dblArrows').fadeIn(1000); 
+                this.mini = false;
+            } else {
+                console.log("closing sidebar");
+                document.getElementById("main").style.height = "5px";
+                this.mini = true;
+            }
+        }
+    </script>
+    
+<!--    script 2: keep clicking next-->
+    <script>
+        function animate() {
+            $(".svg-arrow-right").trigger('click');
+                
+                var value = $("#currTime").html();
+                // setting it one click before the last time b/c there seems to be a lag
+            
+                if (value == "7:15pm") {
+                    window.clearInterval(light);
+                    light = null;
+                    $(".ratio-main").animate({ width: '1px' }, 3000);
+                    $("#currTime").html('6:00am');
+                    }
+        }
+
+        var light;
+        function change() {
+            if (!light) {
+                light = window.setInterval(animate,2000);
+            } else {
+                window.clearInterval(light);
+                light = null;
+            }
+        }
+    </script>
+    
+<!--script 3: the enlarge/shrink icon-->
+    
+    <script>
+     $("#svg975").click(function() {
+            // lower right
+            $("#path960").toggleClass("rotateLR");
+            // lower left
+            $("#path958").toggleClass("rotateLL");
+            // upper right
+            $("#path95222").toggleClass("rotateUR");
+            // upper left
+            $("#path88922").toggleClass("rotateUL");
+
+             if ($("#path960").hasClass("rotateLR")) {
+                  $('#bgImg1').animate({ backgroundSize: '100%' }, 1000);
+                  $('#bgImg2').animate({ backgroundSize: '100%' }, 1000);
+                 $('.theTime').toggleClass("theTimeHigher");
+                // $('.info').css('display', 'none');
+                $(".info").fadeTo(1000, 0);
+                } else {
+                  $('#bgImg1').animate({ backgroundSize: '50%' }, 1000);
+                $('#bgImg2').animate({ backgroundSize: '50%' }, 1000);
+                    $('.theTime').toggleClass("theTimeHigher");
+                // $('.info').css('display', 'none');
+                $(".info").fadeTo(1000, 1);
+                }
+
+    });
+    </script>
+    
+<!--    script 4: the new play button (svg)-->
+    <script>
+     $("#playButton").click(function() {
+            // play and pause
+            $("#path994").toggleClass("playing");
+            $("#path994").css("strokeWidth", 60);
+            $("#path824").toggleClass("hidden");
+            $("#path889").toggleClass("hidden");
+         
+    });
+    </script>
+    
+<!--script 5: the show/hide menu button-->
+    <script>
+    $(document).ready(function(){
+    $('.menu').click(function(){
+        if ($('#main').hasClass('closed')) {
+//            alert('clicked if');
+            $('#main').css("height","120px");
+        } else {
+            $('#main').css("height","5px");
+        };
+        $('#main').toggleClass('closed');
+    });
+});
+    </script>  
+    
+    
+<!--temporary script for moving the new sun on path-->
+<script>
+//the total length of the ellipse path
+let ellTotalLength = ell.getTotalLength();
+// the percentage as the input type range value 
+let perc = itr.value / 100;
+
+function setPosition(perc){
+//the distance on the path where to place the little circle
+//let dist = ellTotalLength * perc; 
+// multiply the incoming perc by a factor of 44.4473078221451 to get the position of the total
+perc = (perc * 44.4473078221451);
+let dist = 0 + perc; 
+//get the position of a point at the distance dist on the path 
+let point = ell.getPointAtLength(dist);
+let circ = document.getElementById("circ");
+//let circ = document.getElementsByClassName("theCircle");
+    
+    
+// set the values of the cx and cy attributes of the little circle
+circ.setAttributeNS(null, "cx", point.x);
+circ.setAttributeNS(null, "cy", point.y); 
+    
+$("#changer").text(perc);
+}
+
+
+setPosition(perc)
+
+//itr.addEventListener("input",()=>{
+//  perc = itr.value / 100;
+//  setPosition(perc)
+//})
+      
+$("#incrementor").click(function(){
+    perc = (perc + .01);
+    setPosition(perc)
+});
+      
+$("#changer").click(function(){
+    $("#circ").toggleClass("thicker");
+});
+    
+$("#svg1007").click(function(){
+    $(".moreInfo").toggleClass("showInfo");
+    $(".theInfo").toggleClass("visible");
+});
+  </script>
+
+
+</body>
+</html>
