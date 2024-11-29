@@ -50,10 +50,10 @@ body {
 }
 
 #bgImg1 {
-  background-image: url("../../../../_ImageSets/2019-08-15/01.jpg");
+  background-image: url("../../../_ImageSets/2019-08-15/01.jpg");
 }
 #bgImg2 {
-  background-image: url("../../../../_ImageSets/2019-08-15/02.jpg");
+  background-image: url("../../../_ImageSets/2019-08-15/02.jpg");
 }
 
 #background-images div.front {
