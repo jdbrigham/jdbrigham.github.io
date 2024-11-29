@@ -3,7 +3,7 @@
 
 const crossFadeTime = 1200;
 // const pathToImages = "https://github.com/james-priest/local-weather-app/raw/master/images/";
-const pathToImages = "../../../_ImageSets/2020-08-11/";
+const pathToImages = "../../_ImageSets/2020-08-11/";
 
 var bgImages = [
   "_DSC8216.jpg",
