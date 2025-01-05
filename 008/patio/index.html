@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8">
+  <title>CodePen - Centering Image (Simple)</title>
+  <link rel="stylesheet" href="css/style.css">
+
+</head>
+<body>
+<!-- partial:index.partial.html -->
+<h2 class='myTitle'>Patio pattern <strike>options</strike> possibilities</h2>
+
+<img id='plan' src="img/PatioPlans_2022_overlay.png" alt="" />
+<img id='pattern' src="img/bricks.png" alt="" />
+<img id='furniture' class='hidden' src="img/furniture.png" alt="" />
+<img id='raised-bed' class='hidden' src="img/RaisedBed.png" alt="" />
+<button id='myBtn' onclick='javascript:toggleImg(this)'>show furniture</button>
+<button id='myBtnTwo' onclick='javascript:toggleImgTwo(this)'>show raised bed</button>
+
+<hr>
+<div class="select">
+  <select id="standard-select">
+    <option value="bricks">Current Bricks</option>
+    <option value="BigTiles">Large Tiles</option>
+    <option value="5stone">5stone</option>
+    <option value="diamonds">diamonds</option>
+    <option value="hexagons">hexagons</option>
+    <option value="herringbone">herringbone</option>
+    <option value="pattern1">Running Bond Square</option>
+    <option value="pattern2">Running Bond</option>
+    <option value="pattern4">Running Bond (rotated)</option>
+    <option value="pattern4a">Running Bond (rotated + date)</option>
+    <option value="pattern3">squares+rectangles</option>
+    <option value="radial">radial</option>
+    <option value="radial+map">radial-2</option>
+  </select>
+  <span class="focus"></span>
+</div>
+<!-- <footer>
+  <div class='info'>
+    <a href='w/03a/index_bg-img.html'>test of svg checkerboard pattern (03a)</a>
+    <br />
+    <a href='w/03b/index_bg-img.html'>test of svg hexagon pattern (03b)</a>
+    <br />
+    <a href='w/03c/index_bg-img.html'>test of svg bricks pattern (03c)</a>
+    <br />
+    <a href='w/03d/index_bg-img.html'>test of downloaded pattern (03d)</a><br />
+    <a href='w/03e/index_bg-img.html'>test of downloaded svg from theNounProject (03e)</a>
+    <br />
+  </div>
+</footer> -->
+<script>
+var selectBox = document.getElementById('standard-select');
+    var theImg = document.getElementById('pattern');
+
+    selectBox.addEventListener('change', function() {
+        theImg.src = 'img/' + this.options[this.selectedIndex].value + '.png';
+    }, false);
+
+    function toggleImg(e) {
+      var img = document.getElementById('furniture');
+      var btn = document.getElementById('myBtn');
+      img.classList.toggle('hidden');
+      let txt = e.innerText;
+      e.innerText = txt == 'show furniture' ? 'hide furniture' : 'show furniture';
+
+    }
+
+    function toggleImgTwo(e) {
+      var imgTwo = document.getElementById('raised-bed');
+      var btn = document.getElementById('myBtnTwo');
+      imgTwo.classList.toggle('hidden');
+      let txt = e.innerText;
+      e.innerText = txt == 'show raised bed' ? 'hide raised bed' : 'show raised bed';
+
+    }
+</script>
+
+
+
+
+</body>
+</html>
