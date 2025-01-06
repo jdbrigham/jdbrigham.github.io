@@ -1,0 +1,151 @@
+@import url('https://fonts.googleapis.com/css?family=Montserrat:700');
+/* font-family: 'Montserrat', sans-serif; */
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans&display=swap');
+/* font-family: 'Open Sans', sans-serif; */
+@import url('https://fonts.googleapis.com/css2?family=Covered+By+Your+Grace&display=swap');
+/* font-family: 'Covered By Your Grace', cursive; */
+@import url('https://fonts.googleapis.com/css2?family=Nothing+You+Could+Do&display=swap');
+/* font-family: 'Nothing You Could Do', cursive; */
+@import url('https://fonts.googleapis.com/css2?family=Special+Elite&display=swap');
+/* font-family: 'Special Elite', cursive; */
+@import url('https://fonts.googleapis.com/css2?family=Rock+Salt&display=swap');
+/* font-family: 'Rock Salt', cursive; */
+@import url('https://fonts.googleapis.com/css2?family=Bodoni+Moda&display=swap');
+/* font-family: 'Bodoni Moda', serif; */
+
+
+* {
+  margin: 0;
+  box-sizing: border-box;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  background-color: #3D4849;
+  background-blend-mode: normal;
+  background-image: url("img/0815/10_08152019.jpg") ;
+  background-attachment: fixed;
+  background-repeat:   no-repeat;
+  background-position: center center;
+  background-size: cover;
+  font-family: "Raleway", sans-serif;
+  transition: background 1s ease-in-out;
+}
+
+h1, h2, h3, h4, h5, h6, a, p, span {
+  padding-bottom: 0.714em !important;
+  padding-top: 0.714em !important;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 400;
+  color: #ffffff;
+  font-weight: bold;
+  text-align: center;
+  font-size: 1em;
+}
+
+.noselect {
+  user-select: none;
+}
+
+.info {
+  display: flex;
+  justify-content: space-between;
+  padding-left: 5%;
+  padding-right: 5%;
+  margin-top: 0;
+  font-size: 1.5em;
+  background-color: rgba(150,150,150,.5)
+}
+
+#picInfo {
+	position: fixed;
+    left: 40%;
+    bottom: 0;
+	margin: 0 0 3rem;
+}
+
+  /* radio button group styling */
+
+  fieldset {
+    margin: 0;
+    padding: 2rem;
+    box-sizing: border-box;
+    display: block;
+    border: none;
+    /* border: solid 1px crimson; */
+    min-width: 0;
+    background-color: transparent;
+    position: fixed;
+    left: 5%;
+    bottom: 0;
+	
+  }
+
+  body:not(:-moz-handler-blocked) fieldset {
+    display: table-cell;
+  }
+
+  /* TOGGLE STYLING */
+  .toggle {
+    margin: 0 0 1.5rem;
+    box-sizing: border-box;
+    font-size: 0;
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: flex-start;
+    align-items: stretch;
+  }
+  .toggle input {
+    width: 0;
+    height: 0;
+    position: absolute;
+    left: -9999px;
+  }
+  .toggle input + label {
+    margin: 0;
+    padding: 0.75rem 2rem;
+    box-sizing: border-box;
+    position: relative;
+    display: inline-block;
+    border: solid 1px #fff;
+    /* background-color: #FFF; */
+    background-color: transparent;
+    font-size: 1rem;
+    line-height: 140%;
+    font-weight: 600;
+    text-align: center;
+    color: whiteSmoke;
+    /* opacity: 0.5; */
+    mix-blend-mode: exclusion;
+    /* box-shadow: 0 0 0 rgba(255, 255, 255, 0); */
+    transition: border-color 0.15s ease-out, color 0.25s ease-out, background-color 0.15s ease-out, box-shadow 0.15s ease-out;
+    /* ADD THESE PROPERTIES TO SWITCH FROM AUTO WIDTH TO FULL WIDTH */
+    flex: 0 0 50%; display: flex; justify-content: center; align-items: center;
+    /* ----- */
+  }
+  .toggle input + label:first-of-type {
+    border-radius: 6px 0 0 6px;
+    border-right: none;
+  }
+  .toggle input + label:last-of-type {
+    border-radius: 0 6px 6px 0;
+    border-left: none;
+  }
+  .toggle input:hover + label {
+    /* border-color: #213140; */
+  }
+  .toggle input:checked + label {
+    background-color: whiteSmoke;
+    color: crimson;
+    /* box-shadow: 0 0 10px rgba(102, 179, 251, 0.5); */
+    border-color: whiteSmoke;
+    z-index: 1;
+    /* opacity: 0.5; */
+    mix-blend-mode: exclusion;
+  }
+  .toggle input:focus + label {
+    /* outline: dotted 1px #CCC;
+    outline-offset: 0.45rem; */
+  }

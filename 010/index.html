@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8">
+  <title>CodePen - Word Clock </title>
+  <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/5.0.0/normalize.min.css"> -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/meyer-reset/2.0/reset.min.css">
+<link rel='stylesheet' href='https://use.fontawesome.com/releases/v5.4.1/css/all.css'>
+<link rel="stylesheet" href="common.css">
+<!--<link rel="stylesheet" id="style1" href="./style08.css">-->
+
+</head>
+<body>
+<p class="info">
+  <span class="time howto">Loading . . . </span>
+  <span id="myDate">Loading . . . </span>
+</p>
+  <fieldset>
+  	<div class="toggle">
+  		<input type="radio" name="sizeBy" value="0815" id="sizeWeight" onchange="setMonth(this)" checked="checked" />
+  		<label for="sizeWeight">AUG</label>
+		
+  		<input type="radio" name="sizeBy" value="1015" onchange="setMonth(this)" id="sizeDimensions" />
+  		<label for="sizeDimensions">OCT</label>
+  	</div>
+  </fieldset>
+  <h1 id='picInfo'>date and time of photo</h1>
+
+        <!-- partial -->
+  <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js'></script>
+  <script  src="script.js"></script>
+
+</body>
+</html>
