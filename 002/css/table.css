@@ -1,0 +1,55 @@
+/*
+body {
+  margin: 0 auto;
+  padding: 1em;
+  width: 50em;
+}
+ */
+
+
+
+table {
+  overflow: hidden;
+  text-align: left;
+  border: 1px solid #cdcdcd;
+  border-collapse: collapse;
+  margin: 0 auto;
+  padding: 50px;
+}
+
+th,td {
+  padding: 10px;
+  position: relative;
+  outline: 0;
+}
+
+th {
+  text-align: left;
+  border: 1px solid #cdcdcd;
+  color: crimson;
+
+}
+
+td {
+  text-align: center;
+  border: 1px solid #cdcdcd;
+}
+
+.header {
+  color: crimson;
+}
+
+.hover {
+  background: #e3e3e3;
+}
+
+td:hover {
+  background: #fff;
+  color: crimson;
+  font-weight: bold;
+}
+
+th:hover {
+  background: #777;
+  color: crimson;
+}

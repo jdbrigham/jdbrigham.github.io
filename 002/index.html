@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8">
+  <title>JKLEm Family Photos</title>
+  <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/meyer-reset/2.0/reset.min.css">
+  <link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css'>
+  <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css'> -->
+  <!-- <link rel="stylesheet" href="css/button.css"> -->
+  <link rel="stylesheet" href="css/menustyle.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/table.css">
+  <script src="https://unpkg.com/feather-icons"></script>
+  <!-- this next line is requried to make the jquery buttons work -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+</head>
+<body>
+<nav role="navigation">
+  <div id="menuToggle">
+    <input type="checkbox" />
+    <span></span>
+    <span></span>
+    <span></span>
+    <ul id="menu">
+    	<h1>Show:</h1>
+        <li><a href='index.html#' id="btn1" class="active"> All</a></li>
+        <li><a href='index.html#' id="btn2" class="inactive"> Both girls</a></li>
+        <li><a href='index.html#' id="btn3" class="inactive"> Just Lily</a></li>
+        <li><a href='index.html#' id="btn4" class="inactive"> Just Emme</a></li>
+        <li><a href='index.html#' id="btn5" class="inactive"> New Photo</a></li>
+        <li><a href='index.html#' id="btn6" class="inactive"> Revert New</a></li>
+        <!-- <li><a href='index_info2.html' id="btn7" class="inactive">INFO2 (np)</a></li> -->
+        <li><a href='index.html#' id="btn8" class="inactive"> Tabulation</a></li>
+    </ul>
+  </div>
+</nav>
+<!-- css will add 'click' or 'touch' before the following line dependent on the device being used -->
+<h3> any photo to learn more about it.</h3>
+<!-- <button id="btn1">Animate height & width</button> -->
+<section class="container">
+
+	<div class="item-1 both">
+		<a href="photos/01/index.php">
+			<div class="itemcontainer conboth">
+          <!-- <h1 class="label"></h1> -->
+      </div>
+    </a>
+	</div>
+
+	<div class="item-2 lily">
+	   <a href="https://jbrigham.com/002/photos/02/">
+       <div class="itemcontainer conlily">
+           <!-- content -->
+       </div>
+     </a>
+	</div>
+
+	<div class="item-3 lily">
+    <a href="https://jbrigham.com/002/photos/03/">
+      <div class="itemcontainer conlily">
+          <!-- content -->
+      </div>
+    </a>
+  </div>
+
+	<div class="item-4 emme">
+    <a href="https://jbrigham.com/002/photos/04/">
+      <div class="itemcontainer conemme">
+          <!-- content -->
+      </div>
+    </a>
+  </div>
+
+	<div class="item-5 lily">
+    <a href="https://jbrigham.com/002/photos/05/">
+      <div class="itemcontainer conlily">
+          <!-- content -->
+      </div>
+    </a>
+  </div>
+
+  	<div class="item-6 lily">
+      <a href="https://jbrigham.com/002/photos/06/">
+        <div class="itemcontainer conlily">
+            <!-- content -->
+        </div>
+      </a>
+    </div>
+
+  	<div class="item-7 emme">
+      <a href="https://jbrigham.com/002/photos/07/">
+        <div class="itemcontainer conemme">
+            <!-- content -->
+        </div>
+      </a>
+    </div>
+
+  	<div class="item-8 both">
+      <a href="https://jbrigham.com/002/photos/08/">
+        <div class="itemcontainer conboth">
+            <!-- <h1 class="label"></h1> -->
+        </div>
+      </a>
+    </div>
+
+  	<div class="item-9 emme">
+      <a href="https://jbrigham.com/002/photos/09/">
+        <div class="itemcontainer conemme">
+            <!-- content -->
+        </div>
+      </a>
+    </div>
+
+  	<div class="item-10 emme">
+      <a href="https://jbrigham.com/002/photos/10/">
+        <div class="itemcontainer conemme">
+            <!-- content -->
+        </div>
+      </a>
+    </div>
+
+</section>
+
+<div class="drawer" id="drawer-01">
+  <div class="wrapper">
+    <hr>
+    <table>
+      <colgroup></colgroup>
+      <colgroup></colgroup>
+      <colgroup></colgroup>
+      <colgroup></colgroup>
+      <colgroup></colgroup>
+      <thead>
+        <tr>
+          <th></th>
+          <th>Horizontal</th>
+          <th>Vertical</th>
+          <th>Square</th>
+          <th>Totals</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="header">Lily</td>
+          <td>2</td>
+          <td>1</td>
+          <td>1</td>
+          <td>4</td>
+        </tr>
+        <tr>
+          <td class="header">Emme</td>
+          <td>1</td>
+          <td>1</td>
+          <td>2</td>
+          <td>4</td>
+        </tr>
+        <tr>
+          <td class="header">Lily & Emme</td>
+          <td>0</td>
+          <td>1</td>
+          <td>1</td>
+          <td>2</td>
+        </tr>
+        <tr>
+          <td class="header">Totals</td>
+          <td>3</td>
+          <td>3</td>
+          <td>4</td>
+          <td>10</td>
+        </tr>
+      </tbody>
+    </table>
+    <!-- <a data-drawer="#drawer-01" href="#!">Close The Drawer</a> -->
+  </div>
+</div>
+
+ <script  src="js/script.js"></script>
+ <script src="js/table.js"></script>
+ <script>
+ // highlight the active button in the list and uncheck the others
+ $('ul li a').click(function() {
+    $('ul li a').removeClass('active');
+    $('ul li a').addClass('inactive');
+    $(this).addClass('active');
+    $(this).removeClass('inactive');
+
+ });
+
+ $( "#btn1" ).click(function() {
+   $( ".both , .lily , .emme" ).removeClass("highlight");
+   $( ".conlily , .conemme, .conboth" ).removeClass("lowlight");
+   $('.container').removeClass("container-sm");
+   $('.drawer').removeClass("is-open");
+});
+
+$( "#btn2" ).click(function() {
+  // reset to remvoe any/all highlights and lowlights
+  $( ".both , .lily , .emme" ).removeClass("highlight");
+  $( ".conlily , .conemme, .conboth" ).removeClass("lowlight");
+ // add highlight to .both
+ $( ".both" ).addClass("highlight");
+ // and add lowlight to the others
+ $( ".conlily , .conemme" ).addClass("lowlight");
+});
+
+$( "#btn3" ).click(function() {
+  // reset to remvoe any/all highlights and lowlights
+  $( ".both , .lily , .emme" ).removeClass("highlight");
+  $( ".conlily , .conemme, .conboth" ).removeClass("lowlight");
+  // add .highlight to .lily
+ $( ".lily" ).addClass("highlight");
+ // and add .lowlight to the others
+ $( ".conboth , .conemme" ).addClass("lowlight");
+});
+
+$( "#btn4" ).click(function() {
+  // reset to remvoe any/all highlights and lowlights
+  $( ".both , .lily , .emme" ).removeClass("highlight");
+  $( ".conlily , .conemme, .conboth" ).removeClass("lowlight");
+  // add .highlight to .emme
+ $( ".emme" ).addClass("highlight");
+ // and add .lowlight to the others
+ $( ".conlily , .conboth" ).addClass("lowlight");
+});
+
+$( "#btn5" ).click(function() {
+ $('.item-8').css('background-image','url(img/08a.jpg)');
+});
+
+$( "#btn6" ).click(function() {
+ $('.item-8').css('background-image','url(img/08.jpg)');
+});
+
+$( "#btn7" ).click(function() {
+  $( ".both , .lily , .emme" ).removeClass("highlight");
+  $( ".conlily , .conemme, .conboth" ).removeClass("lowlight");
+  $('.container').addClass("container-sm");
+});
+
+$( "#btn8" ).click(function() {
+  setTimeout(function() {
+    $(".container").addClass("container-sm",1000);
+    $(".drawer").addClass("is-open",1000);
+  }, 2000);
+});
+
+
+</script>
+<!-- $(e.target).animate({width: '100%', height: 500}, 500); -->
+</body>
+</html>
