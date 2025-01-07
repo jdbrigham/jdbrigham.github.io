@@ -1,0 +1,557 @@
+@import url('https://fonts.googleapis.com/css2?family=Alfa+Slab+One&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Gilda+Display&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bitter:wght@600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Raleway:ital,wght@1,600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Reenie+Beanie&display=swap');
+
+
+@font-face {
+  font-family: SonderSans;
+  src: url(webfont/SonderSans-Black.otf);
+}
+
+html {
+  /* border: 20px solid #3D4849; */
+}
+
+body {
+  padding : 10px ;
+  margin: 0;
+  background-color: #8899A6;
+
+}
+
+img.icon {
+  display:inline-block;
+  box-shadow: none;
+  width: 100px;
+}
+
+h1.small {
+  line-height: 150%;
+  text-align:center;
+  font-size: 6rem;
+  font-family: 'SonderSans', sans-serif;
+  letter-spacing: 3px;
+  color: black;
+  -webkit-text-fill-color: #8899A6; /* Will override color (regardless of order) */
+  -webkit-text-stroke-width: 1px;
+  -webkit-text-stroke-color: #fff;
+  }
+
+/* this addresses the tab name links */
+a {
+  font-size: 3rem;
+  }
+
+hr.hr--logo {
+  border-top: solid #fff 1px;
+  margin: 50px 0;
+}
+hr.hr--logo:after {
+  content: url( 'logogram.png' );
+  /* Controls the position of the logo */
+  left: 50%;
+  position: absolute;
+  transform: translateY(-50%) translateX(-50%);
+  /* Controls the whitespace around the symbol */
+  padding: 20px;
+  background: transparent;
+}
+
+.container {
+  width: 100%;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.contact {
+	font-family: 'Bitter', serif;
+	color: #fff;
+  font-size: 3rem;
+	}
+
+/* plus links for modal */
+
+/* unvisited link */
+.myModalLink:link {
+  color: whiteSmoke;
+  outline: none !important;
+   box-shadow: none;
+}
+
+/* visited link */
+.myModalLink:visited {
+  color: whiteSmoke;
+  outline: none !important;
+   box-shadow: none;
+}
+
+/* mouse over link */
+.myModalLink:hover {
+  color: darkOrange;
+  outline: none !important;
+   box-shadow: none;
+}
+
+/* selected link */
+.myModalLink:active {
+  color: whiteSmoke;
+  outline: none !important;
+   box-shadow: none;
+}
+
+/* links for size comparison modal */
+
+/* unvisited link */
+.mySize:link {
+  color: whiteSmoke;
+  outline: none !important;
+   box-shadow: none;
+   font-size: 24px;
+}
+
+/* visited link */
+.mySize:visited {
+  color: whiteSmoke;
+  outline: none !important;
+   box-shadow: none;
+   font-size: 24px;
+}
+
+/* mouse over link */
+.mySize:hover {
+  color: darkOrange;
+  outline: none !important;
+   box-shadow: none;
+   font-size: 24px;
+}
+
+/* selected link */
+.mySize:active {
+  color: whiteSmoke;
+  outline: none !important;
+   box-shadow: none;
+   font-size: 24px;
+}
+
+
+
+.myNote {
+	color: whiteSmoke;
+  text-align: center;
+	}
+
+.plus {
+	color: whiteSmoke;
+	font-family: 'Raleway', sans-serif;
+	font-size: 120%;
+	/*
+font-size: 125%;
+	font-weight: 900;
+ */
+	/*
+display: inline-block;
+	position: relative;
+	top: 5px;
+	left: 5px;
+ */
+	}
+
+.theType {
+	/* vertical-align: sub; */
+  line-height: 1.6;
+	}
+
+.plus:hover {
+	color: darkOrange;
+	}
+
+/* the myBtn styles are only used in the legacy orange buttons */
+.mybtn {
+	background-color: transparent;
+	border-color: 1px solid #ff9900;
+	border-radius: 0;
+	color: #ff9900;
+  	display: inline;
+  	margin-left: 22px;
+	}
+
+.mybtn:hover {
+	background-color: #ff9900;
+	border-color: #fff;
+	color: #fff;
+	}
+
+
+/* btn-info isn't used anywhere but shows how to style all variations of a button */
+.btn-info {
+  background-color: transparent;
+  border-color: #ff9900;
+  margin-left: 35%;
+  border-radius: 0;
+}
+
+/* other button classes to use/change */
+
+.btn-info:hover {
+  background-color: #ff9900;
+  border-color: #fff;
+}
+
+.btn-info:focus, .btn-info.focus {
+  background-color: #ff9900;
+  border-color: #fff;
+}
+
+.btn-primary.disabled, .btn-primary:disabled {
+
+}
+
+.btn-primary:active, .btn-primary.active,
+.show > .btn-primary.dropdown-toggle {
+  /* background-color: #0069d9;
+  background-image: none;
+  border-color: #0062cc; */
+}
+
+/* remove border radius for the tab */
+
+#exTab1 .nav-pills > li > a {
+  border-radius: 15;
+}
+
+.nav-tabs > li > a, .nav-pills > li > a {
+  margin-left:25px;
+  margin-right:27px;
+}
+
+.nav-pills>li.active>a, .nav-pills>li.active>a:hover, .nav-pills>li.active>a:focus {
+  color: #fff;
+  background-color: #3D4849;
+  margin-left:0px;
+}
+
+/* change border radius for the tab , apply corners on top*/
+
+#exTab3 .nav-pills > li > a {
+  border-radius: 4px 4px 0 0 ;
+}
+
+#exTab3 .tab-content {
+  color : white;
+  background-color: #3D4849;
+  padding : 5px 15px;
+}
+
+/*   Change Color for Inactive Tabs     */
+.nav-pills>li>a {
+  background-color: whiteSmoke;
+  /* border-color: #FFFFFF; */
+  color: #888;
+}
+
+img {
+  max-width: 100%;
+}
+
+img.cards {
+  padding: 20px;
+  margin:0 auto;
+}
+
+.itemDetails {
+  padding-top: 50px;
+  font-family: 'Bitter', serif;
+  /* background-color: cadetblue; */
+}
+
+
+/* Corner Badge */
+
+.item {
+    position:relative;
+    padding-top:20px;
+    display:inline-block;
+}
+.notify-badge{
+    position: absolute;
+    right:-5px;
+    top:25px;
+    background:darkOrange;
+    text-align: center;
+    border-radius: 30px 30px 30px 30px;
+    color:white;
+    padding:5px 10px;
+    font-size:20px;
+    font-family: 'Bitter', serif;
+}
+
+/*
+.notify-badge:hover{
+    position: absolute;
+    right:-5px;
+    top:25px;
+    background:whiteSmoke;
+    text-align: center;
+    border-radius: 30px 30px 30px 30px;
+    border: 1px solid darkOrange;
+    color:darkOrange;
+    padding:5px 10px;
+    font-size:20px;
+    font-family: 'Bitter', serif;
+}
+ */
+
+.myBadge {
+  cursor: pointer;
+  outline: none !important;
+   box-shadow: none;
+}
+
+.myBadge:active {
+  cursor: pointer;
+  outline: none !important;
+   box-shadow: none;
+}
+
+/* for the Modal */
+
+.modal {
+  text-align: center;
+  padding: 0!important;
+}
+
+.modal:before {
+  content: '';
+  display: inline-block;
+  height: 100%;
+  vertical-align: middle;
+  margin-right: -4px;
+}
+
+.modal-dialog {
+  display: inline-block;
+  text-align: left;
+  vertical-align: middle;
+}
+
+/* my own additions */
+
+#myLargeModalLabel {
+  font-size: 2vw;
+  color: #fff;
+  /* color: cadetblue; */
+  text-align: center;
+}
+
+.modal-header {
+     padding:9px 15px;
+     border-bottom:1px solid #eee;
+     background-color: #3D4849 !important;
+ }
+
+ .sizeLabel {
+      font-family: 'Reenie Beanie', cursive;
+      color: crimson;
+      font-size: 24px;
+      display: block;
+      position: absolute;
+      top: 0px;
+      /* right: 20px; */
+      margin: 0;
+      transform: rotate(-20deg);
+      }
+
+ .close {
+    color: whiteSmoke;
+    opacity: 1;
+    font-size: 26px;
+    font-weight: 800;
+  }
+
+ .close:hover {
+    color: #fff;
+  }
+
+  .modal-body {
+     background-color: #8899A6;
+     margin-left: 0;
+     margin-right: 0;
+     width: 100%;
+  }
+
+  .modalcolheader {
+    font-size: 2em;
+    /* color: steelblue; */
+  }
+
+.findme {
+  border: 10px solid rebeccapurple;
+  border-radius: 5px;
+}
+
+.modaltext {
+    font-size: 2rem;
+    text-align: left;
+    margin-left: 50px;
+    }
+
+/* hr {
+  color: 2px solid crimson;
+  } */
+
+/* .modal-footer {
+  background-color: #8899A6;
+  font-size: 200%;
+} */
+
+/* Footer fixed to the bottom of the modal */
+.modal-footer {
+/*
+  position: sticky;
+  bottom: 0;
+ */
+  background-color: #3D4849; /* [1] */
+  z-index: 1055; /* [2] */
+}
+
+#modal-close-btn {
+	border: 2px solid #fff;
+	background-color: #3D4849;
+	}
+
+.modal-lg {
+  width: 90%;
+  /* background-color: rebeccapurple; */
+  }
+
+/* Responsiveness */
+
+/* for iPhone 2426 x 1125 */
+@media (max-width: 992px) {
+	img.icon {
+  		width: 200px;
+	}
+	h1.small {
+  		line-height: 150%;
+  		font-size: 10rem;
+ 		letter-spacing: 5px;
+  }
+  .contact {
+  	font-size: 4rem;
+    /* color: crimson; */
+  	}
+
+  /* .details {
+  text-align: center;
+  font-size: 150%;
+  color: crimson;
+  } */
+
+  /* h2.itemDetails {
+	  text-align: center;
+  	  font-size: 200%;
+      color: darkOrange;
+	} */
+
+  /* h3.itemDetails {
+	  text-align: center;
+  	  font-size: 200%;
+      color: darkOrange;
+	} */
+
+  .mySize {
+    font-size: 36px;
+    color: crimson;
+  }
+
+  /* for the modal */
+  .modal-header {
+       /* background-color: crimson !important; */
+   }
+   .modal-title {
+     font-size: 8vw;
+     color: cadetblue;
+   }
+
+   #myLargeModalLabel {
+     font-size: 8rem;
+     /* color: #fff; */
+     /* color: khaki; */
+     text-align: center;
+   }
+
+   #modal-close-btn {
+   	border: 2px solid #fff;
+   	background-color: #3D4849;
+    font-size: 4em;
+   	}
+
+   .modaltext {
+     font-size: 4vw;
+     /* color: crimson; */
+     }
+    .modalcolheader {
+      font-size: 4em;
+      /* color: steelblue; */
+    }
+    .modal-lg {
+    max-width: 100% !important;
+    /* background-color: rebeccapurple; */
+    }
+
+    .myModalLink {
+    color: crimson;
+    text-decoration: underline;
+    }
+}
+
+
+
+/* Bootstrap Responsive Experiments */
+
+
+/*==========  Non-Mobile First Method  ==========*/
+
+/* From https://stackoverflow.com/questions/19592968/bootstrap-3-breakpoints-and-media-queries */
+
+/* Large Devices, Wide Screens */
+@media only screen and (max-width : 1200px) {
+/* body {
+	background-color: AliceBlue;
+	}
+} */
+
+/* Medium Devices, Desktops */
+@media only screen and (max-width : 992px) {
+/* this is what is showing in my iPhone 12 Pro and iPhone XR*/
+/* moved to modalStyle.css */
+/*
+body {
+	background-color: Aquamarine;
+	}
+ */
+}
+}
+
+/* Small Devices, Tablets */
+@media only screen and (max-width : 768px) {
+/* body {
+	background-color: Coral;
+	} */
+}
+
+/* Extra Small Devices, Phones */
+@media only screen and (max-width : 480px) {
+/* body {
+	background-color: LightSteelBlue;
+	} */
+}
+
+/* Custom, iPhone Retina */
+@media only screen and (max-width : 320px) {
+/* body {
+	background-color: Salmon ;
+	} */
+}
