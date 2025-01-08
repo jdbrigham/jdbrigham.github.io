@@ -1,0 +1,774 @@
+body {
+    background: #444;
+    box-sizing: border-box;
+    background: linear-gradient(45deg, #13547a, #80d0c7) fixed;
+    background-size: cover;
+    overflow: hidden;
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.video-container {
+    height: 449px;
+    width: 800px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%,-50%);
+    overflow:hidden;
+}
+
+/*purplish transparent overlay from line 1311 of index.html*/
+.myOverlay {
+    height: 449px;
+    width: 800px;
+    position: absolute;
+    top: 0;
+    left: 0;
+/*    background: rgb(56 56 196 / 60%);*/
+    background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+    opacity: 0.5;
+    filter: saturate(8);
+	background-size: 400% 400%;
+	animation: gradient 15s ease infinite;
+    z-index: 20;
+    display: none;
+}
+
+.rainy {
+/*    filter: brightness(40%) grayscale(40%);*/
+    animation: gettingRainy 2s linear;
+    animation-fill-mode: forwards;
+}
+
+.video-container video {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  object-fit: cover;
+  z-index: 0;
+/*  filter: saturate(0.5);*/
+/*  filter: brightness(50%);*/
+}
+
+#mountains {
+    /*  top, right, bottom and left*/
+    clip-path: inset(0px 0px 25% 0px);
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 20;
+    max-width: 100%;
+}
+
+#topVid {
+    z-index: 2;
+}
+
+#slow {
+    /*  top, right, bottom and left*/
+/*    clip-path: inset(0px 0px 25% 0px);*/
+    z-index: 4;
+    position: absolute;
+    top: 0;
+    left: 0;
+/*    transform: translateY(-50%);*/
+}
+
+#myVideo {
+   position: fixed;
+  right: 75px;
+  top: 34%; 
+}
+
+.paused {
+    animation-play-state: paused;
+}
+
+.rain {
+    z-index: 100;
+    fill: #bbb;
+    width: 100%;
+    height: auto;
+    visibility: hidden;
+}
+
+/*the actual raindrops for .rain*/
+.drop {
+  background:-webkit-gradient(linear,0% 0%,0% 100%, from(rgba(13,52,58,1) ), to(rgba(255,255,255,0.6))  );
+  background: -moz-linear-gradient(top, rgba(13,52,58,1) 0%, rgba(255,255,255,.6) 100%);
+	width:1px;
+	height:89px;
+	position: absolute;
+	bottom:200px;
+    z-index: 100;
+	animation: fall .63s linear infinite;
+}
+
+.hide {
+    visibility: hidden;
+}
+
+/* waves */
+.lake {
+  height: 80px; /* change the height of the waves here */
+  width: 100%;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  overflow-x: hidden;
+  display: none;
+}
+
+.wave {
+    
+background: url('data:image/svg+xml,<%3Fxml version="1.0" encoding="UTF-8" standalone="no"%3F><svg viewBox="0 0 2400 88.7" version="1.1" id="svg826" sodipodi:docname="wave-line-3.svg" inkscape:version="1.1.2 (b8e25be8, 2022-02-05)" width="2400" height="88" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg"><path id="path1008" style="fill:none;stroke:%23bbbbbb;stroke-opacity:1;stroke-width:2.01590909;stroke-miterlimit:4;stroke-dasharray:none" d="M 1590,67 C 1611.7262,71.166667 1648.75,90.958333 1694.2857,87 C 1739.8214,83.041667 1760.9524,47.791667 1808.5714,48 C 1856.1905,48.208333 1875.2381,89.25 1922.8571,88 C 1970.4762,86.75 1989.5238,43.25 2037.1429,42 C 2084.7619,40.75 2103.8095,78.458333 2151.4286,82 C 2199.0476,85.541667 2218.0952,55.666667 2265.7143,59 C 2313.3333,62.333333 2353.8335,44.414404 2377.643,52.539404 M 800,57 C 831,57 885,62 950,59 C 1014,55 1043,40 1110,40 C 1176,41 1203,62 1270,63 C 1336,63 1363,44 1430,45 C 1496,45 1556,62.31666 1590,67 M 800,56.9 C 644.5,56.9 595.1,6.9 394.5,7 C 194.5,7 144.5,56.9 0,56.9" /></svg>');
+    
+    
+  position: absolute;
+  width: 200%;
+  height: 100%;
+  -webkit-animation: wave 10s -3s linear infinite;
+          animation: wave 10s -3s linear infinite;
+  transform: translate3d(0, 0, 0);
+  opacity: 0.8;
+}
+
+.wave:nth-of-type(2) {
+  bottom: 0;
+  animation: wave 18s linear reverse infinite;
+  opacity: 0.5;
+}
+.wave:nth-of-type(3) {
+  bottom: 0;
+  -webkit-animation: wave 20s -1s linear infinite;
+          animation: wave 20s -1s linear infinite;
+  opacity: 0.5;
+}
+
+#close {
+  display:none;
+  width: 100px;
+  padding: 6px;
+  position: fixed;
+  cursor: pointer;
+  top: 10px;
+  right: 10px;
+  font-size: 1.2em;
+  border: 2px solid #000;
+}
+#open {
+  display:block;
+  width: 100px;
+  padding: 6px;
+  position: fixed;
+  cursor: pointer;
+  top: 10px;
+  right: 10px;
+  font-size: 1.2em;
+  border: 2px solid #000;
+}
+
+/*
+Keep the position of sidebar fixed and set a width
+initially sidebar is Collapse and will be opened using
+javascript, for a bit animation feel keep transition 0.5s
+
+Set the top:0 and left:-width (width include border size also)
+*/
+#sidebar {
+  position: fixed;
+  top: 10%;
+  left: -406px;
+  height: 80vh;
+  width: 400px;
+/*  opacity: .5;*/
+  transition: 0.5s;
+  
+  background-color: rgba(200,200,200,0.5);
+/*  background-color: #4a4a4a;*/
+  backdrop-filter:blur(4px);
+  border:2px solid #fff;
+  border-left: 0;
+  z-index: 99;
+}
+
+#sidebar h3 {
+    text-align: center;
+    color: #fff;
+}
+
+#sidebar input {
+  padding: 0;
+  height: initial;
+  width: initial;
+  margin-bottom: -50px;
+  display: none;
+  cursor: pointer;
+}
+
+#sidebar label {
+  position: relative;
+  cursor: pointer;
+  padding-top: 25px;
+/*  border: 2px solid #fff;*/
+  height: 50px;
+  margin-left: 25px;
+/*
+    display: flex;
+    align-items: center;
+*/
+}
+
+#sidebar label svg {
+    position: absolute;
+    top: 50%;
+    top: 50%;
+    transform: translateY(-50%);
+    left: 10%;
+}
+
+.sideCheck {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    left: 10%;
+}
+
+#sidebar label:before {
+/*
+  content:'';
+  -webkit-appearance: none;
+  background-color: transparent;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05), inset 0px -15px 10px -12px rgba(0, 0, 0, 0.05);
+  padding: 10px;
+  display: inline-block;
+  position: relative;
+  vertical-align: middle;
+  cursor: pointer;
+  margin-right: 25px;
+  margin-left: -10px;
+*/
+}
+
+#sidebar input:checked + label:after {
+/*
+  content: '';
+  display: block;
+  position: absolute;
+  top: 2px;
+  left: 9px;
+  width: 6px;
+  height: 14px;
+  border: solid #fff;
+  background-color: whitesmoke;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  margin: 0 auto;
+*/
+}
+
+input[type="checkbox"] + .my-image {
+/*
+    fill: none;
+    stroke-width: 1;
+    stroke: #fff;
+*/
+     }
+        
+input[type="checkbox"]:checked + .my-image {
+/*
+    fill: #fff;
+    stroke-width: 0;
+*/
+     }
+/* Customize the label (the container) */
+.container {
+  display: block;
+  position: relative;
+/*
+  padding-left: 35px;
+  margin-left: 50px;
+*/
+/*  margin-bottom: 12px;*/
+  cursor: pointer;
+  font-size: 22px;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+/* Hide the browser's default checkbox */
+.container input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+/* Create a custom checkbox */
+.checkmark {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  left: 0;
+  height: 25px;
+  width: 25px;
+  background-color: #eee;
+}
+
+/* On mouse-over, add a grey background color */
+.container:hover input ~ .checkmark {
+  background-color: #ccc;
+}
+
+/* When the checkbox is checked, add a blue background */
+.container input:checked ~ .checkmark {
+  background-color: #13547a;
+}
+
+/* Create the checkmark/indicator (hidden when not checked) */
+.checkmark:after {
+  content: "";
+  position: absolute;
+  display: none;
+}
+
+/* Show the checkmark when checked */
+.container input:checked ~ .checkmark:after {
+  display: block;
+}
+
+/* Style the checkmark/indicator */
+.container .checkmark:after {
+  left: 9px;
+  top: 5px;
+  width: 5px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 3px 3px 0;
+  -webkit-transform: rotate(45deg);
+  -ms-transform: rotate(45deg);
+  transform: rotate(45deg);
+}
+
+.my-image {
+/*
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    left: 25%;
+*/
+/*
+    right: 0;
+    margin: auto;
+    text-align: center;
+*/
+    display: inline;
+    fill: #bbb;
+/*    border: 2px solid crimson;*/
+/*    margin-top: -5px;*/
+}
+
+.sideLabel {
+    color: lightblue;
+    display: block;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    margin-left: 85px;
+}
+
+.soundLines {
+    fill-rule:evenodd;
+    stroke:#bbb;
+    stroke-width:1;
+    stroke-linecap:round;
+    stroke-opacity:1;
+}
+
+/*possible way to animate the waves icon*/
+#path826 {
+/*
+    fill: crimson;
+    animation: wave 3s linear infinite;
+*/
+}
+
+#fg {
+    /*  top, right, bottom and left*/
+/*    clip-path: inset(0px 0px 25% 0px);*/
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    z-index: 999;
+    max-width: 100%;
+}
+
+.overlay {
+    max-height: 100%;
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 5;
+    width: 100%;
+    opacity: 0;
+}
+
+
+
+.cloudContainer {
+    max-height: 50%;
+    height: 80%;
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 5;
+    width: 100%;
+    background: linear-gradient(120deg, #a1c4fd 0%, #c2e9fb 100%);
+/*
+     background-image: url("../img/clouds/sunset.png");
+    background-size: cover;
+    background-repeat: no-repeat;
+    opacity: 1;
+    transition: opacity 1s ease-in-out;
+*/
+}
+
+/*for both layers, set the position and shared bg styles*/
+#bgImg1, #bgImg2 {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  background-position-x: center;
+  background-position-y: center;
+  background-size: cover; 
+  background-repeat: no-repeat;
+}
+
+/*set the initial image values for the layers*/
+#bgImg1 {
+  background-image: url("../img/clouds/sunset.png");
+/*  background-image: url("../img/_DSC0008.jpg");*/
+  z-index: 7;
+/*  the following flips it vertically*/
+/*  transform: scaleY(-1);*/
+
+}
+#bgImg2 {
+  background-image: url("../img/clouds/IMG_1109.png");
+  z-index: 6;
+  display:none;
+}
+
+/*
+.theFront {
+    position:absolute; z-index:14;
+}
+*/
+
+.overlay:nth-of-type(1) {
+  display: block;
+}
+
+.fog {
+    position: absolute;
+    bottom: 0;
+    height: 300px;
+    width: 100%;
+    z-index: 1000;
+    
+    background-size: 200%;
+}
+
+.fog::before {
+  content:"";
+  position:absolute;
+/*  top:0;*/
+   left:0;  /* change to right for the opposite direction */
+  bottom:0;
+  width:450%;
+  height: 200px;
+  background:url(../img/fog/fog1.png) 0/30% auto, url(../img/fog/fog2.png) 0/30% auto;
+  background-repeat: repeat-x;
+  animation:move 200s linear infinite;
+  opacity: .75;
+  visibility:hidden;
+}
+
+@keyframes move {
+  to {
+      transform:translateX(-50%);
+/*      transform:translateY(-50%);*/
+    
+    
+    } /* change to "50%" for the opposite direction */
+    
+}
+
+@keyframes MOVE-BG {
+   from {
+     transform: translateX(0);
+   }
+   to { 
+     transform: translateX(187%);
+   }
+}
+
+@keyframes gradient {
+	0% {
+		background-position: 0% 50%;
+	}
+	50% {
+		background-position: 100% 50%;
+	}
+	100% {
+		background-position: 0% 50%;
+	}
+}
+
+.fgImg {
+/*
+    z-index: 33;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 150%;
+    transform: translateX(200px);
+*/
+}
+
+@-webkit-keyframes wave {
+    0% {transform: translateX(0);}
+    50% {transform: translateX(-25%);}
+    100% {transform: translateX(-50%);}
+}
+
+@keyframes wave {
+    0% {transform: translateX(0);}
+    50% {transform: translateX(-25%);}
+    100% {transform: translateX(-50%);}
+}
+
+/* animate the drops*/
+@-webkit-keyframes fall {
+	to {margin-top:900px;}
+}
+@-moz-keyframes fall {
+	to {margin-top:900px;}
+}
+
+@keyframes loading {
+  0%, 25%, 100% {
+    background: #FF5722;
+    height: 10px;
+    transform: translateY(0);
+    box-shadow: 0 0 3px rgba(0, 0, 0, 0.1)
+  }
+  
+  50% {
+    background: #FF9800;
+    height: 30px;
+    transform: translateY(15px);
+    
+    box-shadow: 0 20px 3px rgba(0, 0, 0, 0.1)
+  }
+  
+}
+
+@keyframes animateSquiggles {
+  0% {
+    background-position: 0% 100%;
+  }
+  25% {
+    background-position: 25% 100%;
+  }
+  50% {
+    background-position: 50% 100%;
+  }
+  75% {
+    background-position: 75% 100%;
+  }
+  100% {
+    background-position: 100% 100%;
+  }
+}
+
+@keyframes gettingRainy {
+  0% {
+    filter: brightness(100%) grayscale(0%);
+  }
+  25% {
+    filter: brightness(90%) grayscale(10%);
+  }
+  50% {
+    filter: brightness(80%) grayscale(20%);
+  }
+  75% {
+    filter: brightness(60%) grayscale(40%);
+  }
+  100% {
+    filter: brightness(40%) grayscale(40%);
+  }
+}
+
+
+/*styles for the larger menu icons*/
+.checkbox-group {
+/*
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: 97%;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: -120px;
+  max-width: 1200px;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+      -ms-user-select: none;
+          user-select: none;
+  transition: all 0.7s ease-out;
+*/
+}
+.checkbox-group > * {
+/*  margin: 0.25rem;*/
+}
+.checkbox-group-legend {
+/*
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #9c9c9c;
+  text-align: center;
+  line-height: 1.125;
+  margin-bottom: 1.25rem;
+*/
+}
+.checkbox-input {
+/*
+  clip: rect(0 0 0 0);
+  -webkit-clip-path: inset(100%);
+          clip-path: inset(100%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+*/
+}
+.checkbox-input:checked + .checkbox-tile {
+/*
+  border-color: #fff;
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+  color: #fff;
+*/
+}
+.checkbox-input:checked + .checkbox-tile:before {
+/*
+  transform: scale(1);
+  opacity: 1;
+  background-color: #fff;
+  border-color: #fff;
+*/
+}
+.checkbox-input:checked + .checkbox-tile .checkbox-icon, .checkbox-input:checked + .checkbox-tile .checkbox-label {
+/*  color: #fff;*/
+}
+.checkbox-input:focus + .checkbox-tile {
+/*
+  border-color: #fff;
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1), 0 0 0 4px #b5c9fc;
+*/
+}
+.checkbox-input:focus + .checkbox-tile:before {
+/*
+  transform: scale(1);
+  opacity: 1;
+*/
+}
+.checkbox-tile {
+/*
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 7rem;
+  min-height: 7rem;
+  border-radius: 0.5rem;
+  border: 2px solid #fff;
+  background-color: #333;
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+  transition: 0.15s ease;
+  cursor: pointer;
+  position: relative;
+*/
+}
+.checkbox-tile:before {
+  content: "";
+  position: absolute;
+  display: block;
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid #b5bfd9;
+  background-color: #eee;
+  border-radius: 50%;
+  top: 0.25rem;
+  left: 0.25rem;
+  opacity: 0;
+  transform: scale(0);
+  transition: 0.25s ease;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='192' height='192' fill='%23000000' viewBox='0 0 256 256'%3E%3Crect width='256' height='256' fill='none'%3E%3C/rect%3E%3Cpolyline points='216 72.005 104 184 48 128.005' fill='none' stroke='%23000000' stroke-linecap='round' stroke-linejoin='round' stroke-width='32'%3E%3C/polyline%3E%3C/svg%3E");
+  background-size: 12px;
+  background-repeat: no-repeat;
+  background-position: 50% 50%;
+}
+.checkbox-tile:hover {
+/*
+  border-color: #fff;
+  color: #fff;
+*/
+}
+.checkbox-tile:hover:before {
+/*
+  transform: scale(1);
+  opacity: 1;
+*/
+}
+.checkbox-icon {
+/*
+  transition: 0.375s ease;
+  color: #666;
+*/
+}
+.checkbox-icon:hover {
+/*  color: #fff;*/
+}
+.checkbox-icon:hover + .checkbox-label {
+/*  color: #fff;*/
+}
+.checkbox-icon svg {
+/*
+  width: 3rem;
+  height: 3rem;
+*/
+}
+.checkbox-label {
+/*
+  color: #707070;
+  transition: 0.375s ease;
+  text-align: center;
+*/
+}
+.checkbox-label:hover {
+/*  color: #fff;*/
+}
