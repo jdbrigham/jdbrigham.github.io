@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8">
+  <title>CodePen - CSS pow() for aspect-ratio-determined layouts</title>
+  <link rel="stylesheet" href="style.css">
+    
+  <link rel="icon" type="image/png" href="apple-touch-icon.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="apple-touch-icon.png" />
+   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+<!--   jquery 1.12.4 CDN-->
+  <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+</head>
+<body>
+<header>
+    <h1>Time Lapse Calculator</h1>
+    <h3>for day-long captures</h3>
+</header>
+<div id='parent'>
+    <div class='child'>
+        <h1>RANGE</h1>
+        <div id="rangeContainer">
+       <p>
+          <label for="timeMeridiem" id='rangeLabel'></label>
+         <span id="timeMeridiem" ></span> (<span id="myInfo"></span> hours)     
+        </p>
+        <section class="range-slider">
+                    <span class="rangeValues"></span>
+                    <input id="rangeOne" value="310" min="180" max="1260" step="30" type="range">
+                    <input id="rangeTwo" value="1200" min="180" max="1260" step="30" type="range">
+                </section>
+  </div> 
+    <div id='myScale'>
+        <p>3am</p>
+        <p>6am</p>
+        <p>9am</p>
+        <p>12pm</p>
+        <p>3pm</p>
+        <p>6pm</p>
+        <p>9pm</p>
+    </div>
+    </div>
+    <div class='child'>
+        <h1>INTERVAL</h1>
+
+        <h3 id="myResults"><span id="hoursResults">x</span>H <span id="minutesResults">y</span>M <span id="secondsResults">z</span>S</h3>
+
+       <!--	slider for hours-->
+
+        <section class="range-slider">
+            <span class="rangeValues">H:</span>
+            <input id="hoursInput" value="0" min="0" max="60" step="1" type="range">
+        </section>
+
+        <!-- slider for minutes -->
+
+        <section class="range-slider">
+            <span class="rangeValues">M:</span>
+            <input id="minutesInput" value="0" min="0" max="60" step="1" type="range">
+        </section>
+
+        <!-- slider for seconds -->
+
+        <section class="range-slider">
+            <span class="rangeValues">S:</span>
+            <input id="secondsInput" value="0" min="0" max="60" step="1" type="range">
+        </section>
+    </div>
+    <div class='child'>
+        <h1>RESULTS</h1>
+        <h3 id="myCalculations">calcs</h3>
+    </div>
+    
+    
+</div>
+    
+<script  src="script.js"></script>
+
+  
+</body>
+</html>

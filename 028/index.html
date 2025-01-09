@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8">
+  <title>CodePen - Two buttons</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/5.0.0/normalize.min.css">
+<link rel="stylesheet" href="style.css">
+
+</head>
+<body>
+<!-- partial:index.partial.html -->
+<div id='buttonContainer'>
+<a href="a/index.html" onmouseover="hoverOne(this);" onmouseout="unhover(this);">
+    <button class="first">A - the all day</button>
+</a>
+<a href="b/index.html" onmouseover="hoverTwo(this);" onmouseout="unhover(this);">
+    <button class="sec">B - the other</button>
+</a>
+<a href="css-card-flip/index.html" onmouseover="hoverTwo(this);" onmouseout="unhover(this);">
+    <button class="sec">C - the flip</button>
+</a>
+</div>
+
+    
+<!--<img src='img/noun-photography-43315 copy.png' />-->
+<img id='myImage' src='img/camera.png'  />
+<!-- partial -->
+
+<script>                                                                                                       
+function hoverOne(element) {
+   document.getElementById("myImage").setAttribute('src', 'img/a.png');
+}
+    
+function hoverTwo(element) {
+   document.getElementById("myImage").setAttribute('src', 'img/b.png');
+}
+
+function unhover(element) {
+  document.getElementById("myImage").setAttribute('src', 'img/camera.png');
+} 
+</script>
+                                                             </body>
+</body>
+</html>

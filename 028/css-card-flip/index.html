@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8">
+  <title>CodePen - CSS Card Flip</title>
+  <link rel="stylesheet" href="newStyles.css">
+</head>
+<body>
+<div class="card-cont">
+   <div class="card">
+      <div class="card_front">
+        <header>
+            <h1>Time Lapse Calculator</h1>
+            <h3>for day-long captures</h3>
+        </header>
+          <input type="image" src="front3.png" name="flipper" id="flipIcon" />
+        <div id='parent'>
+          <div class='child'>
+            <h1>RANGE</h1>
+            <div id="rangeContainer"> 
+               <p>
+                  <label for="timeMeridiem" id='rangeLabel'></label>
+                 <span id="timeMeridiem" ></span>
+                   <br />
+              (<span id="myInfo"></span> hours)     
+                </p>
+                <section class="range-slider">
+                    <span class="rangeValues"></span>
+                    <input id="rangeOneFront" value="310" min="180" max="1260" step="30" type="range">
+                    <input id="rangeTwoFront" value="1200" min="180" max="1260" step="30" type="range">
+                </section>
+                <div id='myScaleFront'>
+                    <p>3am</p>
+                    <p>6am</p>
+                    <p>9am</p>
+                    <p>12pm</p>
+                    <p>3pm</p>
+                    <p>6pm</p>
+                    <p>9pm</p>
+                </div> 
+          </div>
+          </div>
+          <div class='child'>
+            <h1>INTERVAL</h1>
+            <h3 id="myResultsFront"><span id="hoursResultsFront">x</span>H <span id="minutesResultsFront">y</span>M <span id="secondsResultsFront">z</span>S</h3>
+              
+            <!--	slider for hours-->
+            <section class="range-slider">
+                <span class="rangeValues">hours</span>
+                <input id="hoursInputFront" value="0" min="0" max="60" step="1" type="range">
+            </section>
+
+            <!-- slider for minutes -->
+            <section class="range-slider">
+                <span class="rangeValues">minutes</span>
+                <input id="minutesInputFront" value="0" min="0" max="60" step="1" type="range">
+            </section>
+
+            <!-- slider for seconds -->
+            <section class="range-slider">
+                <span class="rangeValues">seconds</span>
+                <input id="secondsInputFront" value="0" min="0" max="60" step="1" type="range">
+            </section>
+          </div>
+            
+          <div class='child'>
+            <h1>RESULTS</h1>
+            <h3 id="myCalculationsFront">calcs</h3>
+            
+          </div>
+      </div>
+    </div>
+      <div class="card_back">
+        <header>
+            <h1>Time Lapse Calculator</h1>
+            <h3>for quicker captures</h3>
+               <input type="image" src="front3.png" name="flipper" id="flipIcon" />
+<!--            <h2 class='flipText'>B<span class='flippedText'>F</span></h2>-->
+        </header>
+        <div id='parent'>
+            <div class='child'>
+               <h1>RANGE</h1>
+               <div id="rangeContainer"> 
+                    <p>Start: <span id='dispValueOne'>60</span>, End: <span id='dispValueTwo'>200</span>
+                    <br />
+                    (<span id='dispDifference'>xxx</span>)</p>
+              <section class="range-slider">
+                    <span class="rangeValues"></span>
+                    <input id="rangeOneBack" value="60" min="0" max="240" step="5" type="range">
+                    <input id="rangeTwoBack" value="235" min="0" max="240" step="5" type="range">
+                </section>
+                <div id='myScaleBack'>
+                    <p>t-1</p>
+                    <p>t</p>
+                    <p>t+1</p>
+                    <p>t+2</p>
+                    <p>t+3</p>
+                </div>
+            </div> 
+            </div>
+            <div class='child'>
+               <h1>INTERVAL</h1>
+               <h3 id="myResultsBack">
+                    <span id="hoursResultsBack">x</span>H
+                    <span id="minutesResultsBack">y</span>M 
+                    <span id="secondsResultsBack">z</span>S
+                </h3>
+                <!-- slider for minutes -->
+                <section class="range-slider">
+                    <span class="rangeValues">M:</span>
+                    <input id="minutesInputBack" value="0" min="0" max="60" step="1" type="range">
+                </section>
+
+                <!-- slider for seconds -->
+                <section class="range-slider">
+                    <span class="rangeValues">S:</span>
+                    <input id="secondsInputBack" value="0" min="0" max="60" step="1" type="range">
+                </section>
+            </div>
+            <div class='child'>
+               <h1>RESULTS</h1>
+               <h3 id="myCalculationsBack">calcs</h3>
+            </div>
+        </div>
+
+        </div>
+    </div>
+</div>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script  src="newScript.js"></script>
+</body>
+</html>

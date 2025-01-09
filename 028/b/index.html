@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8">
+  <title>CodePen - CSS pow() for aspect-ratio-determined layouts</title>
+  <link rel="stylesheet" href="style.css">
+    
+  <link rel="icon" type="image/png" href="apple-touch-icon.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="apple-touch-icon.png" />
+   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+<!--   jquery 1.12.4 CDN-->
+  <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+</head>
+<body>
+    
+<header>
+    <h1>Time Lapse Calculator</h1>
+    <h3>for quicker captures</h3>
+</header>
+    
+<div id='parent'>
+    <div class='child'>
+        <h1>RANGE</h1>
+        <p><span id='dispValueOne'>60</span> - <span id='dispValueTwo'>200</span><br />(<span id='dispDifference'>xxx</span>)</p>
+        <section class="range-slider">
+            <span class="rangeValues"></span>
+            <input id="rangeOne" value="60" min="0" max="240" step="5" type="range">
+            <input id="rangeTwo" value="235" min="0" max="240" step="5" type="range">
+        </section>
+        <div id='myScale'>
+            <p>t-1</p>
+            <p>t</p>
+            <p>t+1</p>
+            <p>t+2</p>
+            <p>t+3</p>
+        </div>
+    </div>
+    <div class='child'>
+        <h1>INTERVAL</h1>
+        <h3 id="myResults">
+        <span id="minutesResults">y</span>M 
+        <span id="secondsResults">z</span>S
+        </h3>
+        <!-- slider for minutes -->
+        <section class="range-slider">
+            <span class="rangeValues">M:</span>
+            <input id="minutesInput" value="0" min="0" max="60" step="1" type="range">
+        </section>
+
+        <!-- slider for seconds -->
+        <section class="range-slider">
+            <span class="rangeValues">S:</span>
+            <input id="secondsInput" value="0" min="0" max="60" step="1" type="range">
+        </section>
+    </div>
+    <div class='child'>
+        <h1>RESULTS</h1>
+        <h3 id="myCalculations">calcs</h3>
+    </div>
+</div>
+
+<script  src="script.js"></script>
+
+  
+</body>
+</html>
