@@ -1,0 +1,136 @@
+#testImage {
+/*	transform: translateX(11px) translateY(20px) translateZ(500px) perspective(200px);*/
+transform: perspective(250px)  translateZ(-500px);
+}
+
+.parent {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%,-50%);
+}
+
+#figure {
+	position: absolute;
+	bottom: -25px;
+	height: 200px;
+	animation-name: rotate;
+    animation-duration: 4s;
+/*	animation-fill-mode: forwards;*/
+}
+
+#phone {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%,-50%);
+	height: 200px;
+	animation-name: rotateTwo;
+    animation-duration: 4s;
+/*	animation-fill-mode: forwards;*/
+}
+
+.child {
+/*  flex: 1 0 21%;*/
+/*  margin: 5px;*/
+  height: 343px;
+  background-color: blue;
+/*  border: 2px solid crimson;*/
+  transition: 3s;
+   
+}
+
+#a {
+/*	animation-name: tilt_a;*/
+/*    animation-duration: 4s;*/
+/*	animation-fill-mode: forwards;*/
+}
+
+.a_tilted {
+	animation-name: tilt_a;
+    animation-duration: 4s;
+	animation-fill-mode: forwards;
+	transition: 3s;
+}
+
+#b {
+	
+}
+
+.b_tilted {
+	animation-name: tilt_b;
+    animation-duration: 4s;
+	animation-fill-mode: forwards;
+	transition: 3s;
+}
+
+#c {
+	
+}
+
+.c_tilted {
+	animation-name: tilt_c;
+    animation-duration: 4s;
+	animation-fill-mode: forwards;
+	transition: 3s;
+}
+
+#d {
+	
+}
+
+.d_tilted {
+	animation-name: tilt_d;
+    animation-duration: 4s;
+	animation-fill-mode: forwards;
+	transition: 3s;
+}
+
+#a:hover {
+/*	transform: perspective(200px) rotate3D(0, 1, 0, 10deg) translateX(40px);*/
+}
+
+#b:hover {
+/*  	transform: perspective(250px)  translateZ(-30px) translateX(15px);*/
+}
+
+#c:hover {
+/*	transform: perspective(250px)  translateZ(-30px) translateX(-15px);*/
+}
+
+#d:hover {
+/*	transform: perspective(200px) rotate3D(0, 1, 0, -10deg)  translateX(-40px);*/
+}
+
+@keyframes tilt_a {
+  to {transform: perspective(200px) rotate3D(0, 1, 0, 10deg) translateX(42px);}
+}
+
+@keyframes tilt_b {
+  to {transform: perspective(250px)  translateZ(-30px) translateX(15px);}
+}
+
+@keyframes tilt_c {
+  to {transform: perspective(250px)  translateZ(-30px) translateX(-15px);}
+}
+
+@keyframes tilt_d {
+  from {}
+  to {transform: perspective(200px) rotate3D(0, 1, 0, -10deg)  translateX(-42px);}
+}
+
+@keyframes rotate {
+	from {transform: rotateY(0deg);}
+  to {transform: rotateY(150deg);}
+}
+
+@keyframes rotateTwo {
+	0% {transform: translate(-50%,-50%) rotateY(0deg) rotateX(0deg);}
+  	25% {transform: translate(-50%,-50%) rotateY(75deg);}
+	50% {transform: translate(-50%,-50%) rotateY(0deg);}
+	100% {transform: translate(-50%,-50%) rotateY(-75deg);}
+}

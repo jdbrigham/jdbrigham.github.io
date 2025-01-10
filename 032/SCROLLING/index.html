@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<style>
+	
+	body {
+/*		height: 2083px;*/
+		height: 2750px;
+	}
+.parallax {
+  /* The image used */
+  background-image: url("../scrolling/IMG_0541_sm.png");
+
+  /* Set a specific height */
+  height: 100vh;
+  width: 100vw;
+
+  /* Create the parallax scrolling effect */
+/*  background-attachment: fixed;*/
+  background-position: 0px;
+  background-repeat: no-repeat;
+  background-size: cover;
+	
+  position: fixed;
+  top: 0;
+  left: 0;
+}
+	
+	#natural {
+		position: fixed;
+		top: 15px;
+		left: 40px;
+		z-index: 100;
+	}
+	#appearance {
+		position: fixed;
+		top: 50px;
+		left: 40px;
+		z-index: 100;
+	}
+	#calculation {
+		position: fixed;
+		top: 85px;
+		left: 40px;
+		z-index: 100;
+	}
+	#leftPos {
+		position: fixed;
+		top: 15px;
+		right: 40px;
+		z-index: 100;
+	}
+</style>
+</head>
+<body>
+
+<h1 id='appearance'></h1>
+<h1 id='natural'></h1>
+<h1 id='calculation'></h1>
+<h1 id='leftPos'></h1>
+<div id='myParallax' class="parallax"></div>
+	
+
+<script>
+	$(window).scroll(function() {
+    	var x = $(this).scrollTop();
+		// $('.parallax').css({'backgroundPosition': '-' + x + 'px ' + 0 + 'px'});
+		$('.parallax').css({'backgroundPosition': '-' + x + 'px '});
+
+    	var clientHeight = document.getElementById('myParallax').clientHeight;
+		
+		document.getElementById('appearance').innerHTML = "Div height: " + clientHeight + "px";
+		
+		var w = window.innerWidth;
+		// console.log(w);
+		
+		
+		
+		myPos = $('#myParallax').css("background-position");
+
+		// myPos[0] <-- will contain the X-value, "50px"
+		// myPos[1] <-- will contain the Y-value, "100px"
+		document.getElementById('leftPos').innerHTML = myPos;
+		
+	
+
+		var newImg = new Image();
+		newImg.onload = function(e) {
+	   		// console.log( this.naturalWidth ); // This is the width you are looking for
+	   		// console.log( this.naturalHeight ); // .. similarly the height.
+	  		document.getElementById('natural').innerHTML = "Image dimensions: " + this.naturalHeight + "px x " + this.naturalWidth + "px";
+		
+	  		var myFactor = (clientHeight/this.naturalHeight);
+	  
+	  		var myWidth = (this.naturalWidth*myFactor);
+	  		// console.log(myWidth);
+	  		myWidth = Math.round(myWidth);
+	  		document.getElementById('calculation').innerHTML = "Calculated width: " + myWidth + "px";
+			
+			document.body.style.height = myWidth - clientHeight + 350 + 'px';
+			// console.log(document.body.style.height);
+		}
+		newImg.src = "IMG_0541_sm.png";
+});
+
+</script>
+</body>
+</html>

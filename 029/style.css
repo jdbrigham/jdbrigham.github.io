@@ -1,0 +1,85 @@
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background-color: #fefefe;
+  margin: 0;
+}
+
+#shapeOne {
+/*
+    transform-box: fill-box;
+    outline: 1px solid red;
+*/
+}
+
+#shapeTwo {
+/*
+    transform-box: fill-box;
+    outline: 1px solid red;
+*/
+}
+#shapeThree {
+/*
+    transform:rotate(-45deg);
+    transform-box: fill-box;
+    transform-origin: 100% 72%;
+    outline: 1px solid red;
+*/
+}
+
+#shapeFour {
+/*
+    transform:rotate(-45deg);
+    transform-box: fill-box;
+    transform-origin: 84% 100%;
+    outline: 1px solid red;
+*/
+}
+
+#shapeFive {
+/*
+    transform:rotate(-45deg);
+    transform-box: fill-box;
+    transform-origin: 84% 100%;
+    outline: 1px solid red;
+*/
+}
+
+#shapeSix {
+/*
+    transform:rotate(-45deg);
+    transform-box: fill-box;
+    transform-origin: 84% 100%;
+    outline: 1px solid red;
+*/
+}
+
+#shapeFseven {
+/*
+    transform:rotate(-45deg);
+    transform-box: fill-box;
+    transform-origin: 84% 100%;
+    outline: 1px solid red;
+*/
+}
+
+#shapeEight {
+/*
+    transform:rotate(-45deg);
+    transform-box: fill-box;
+    transform-origin: 84% 100%;
+    outline: 1px solid red;
+*/
+}
+
+.rotateAll {
+/*
+    transform:rotate(15deg);
+    transform-box: fill-box;
+    transform-origin: top left;
+*/
+/*    outline: 1px solid red;*/
+}

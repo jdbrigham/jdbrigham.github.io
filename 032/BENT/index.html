@@ -1,0 +1,54 @@
+<!doctype html>
+
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>The HTML5 Herald</title>
+		<meta name="description" content="The HTML5 Herald">
+		<meta name="author" content="SitePoint">
+		<link rel="stylesheet" href="../bent/css/styles.css%3Fv=1.0.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+	</head>
+
+<body>
+<button id='mover'>MOVE</button>
+<div class="container">
+  	<div class='slice'>01</div>
+  	<div class='slice'>02</div>
+	<div class='slice'>03</div>
+	<div class='slice'>04</div>
+	<div class='slice'>05</div>
+	<div class='slice'>06</div>
+	<div class='slice'>07</div>
+	<div class='slice'>08</div>
+	<div class='slice'>09</div>
+	<div class='slice'>10</div>
+	<div class='slice'>&nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp 11</div>
+	<div class='slice'>12</div>
+	<div class='slice'>13</div>
+	<div class='slice'>14</div>
+	<div class='slice'>15</div>
+	<div class='slice'>16</div>
+	<div class='slice'>17</div>
+	<div class='slice'>18</div>
+	<div class='slice'>19</div>
+	<div class='slice'>20</div>
+	<div class='slice'>21</div>
+</div>
+<!--<input type="range" min="2200" max="4200" value="2200" class="slider" id="myRange" onchange="updateSlider(this.value)">-->
+<script src="../bent/js/script.js"></script>
+	
+<script>
+	var elem = document.querySelector(".slice");
+var prop = window.getComputedStyle(elem,null).getPropertyValue("width");
+var height = window.getComputedStyle(elem,null).getPropertyValue("width");
+	
+let _1vw = Math.round(window.innerWidth / 100)
+console.log(prop);
+console.log(height);
+console.log(_1vw);
+	
+	
+</script>
+</body>
+</html>

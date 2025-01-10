@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8">
+  <title>CodePen - Motion &amp; Orientation access test on iOS 13</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+  <link rel="stylesheet" href="../straight/styles.css">
+</head>
+<body>
+<div id="nodeviceorientation">
+  <button id="request" onclick="requestDeviceOrientationPermission();">Request Permission</button>
+</div>
+	
+<div id='statusInfo' class='statusInfo'>
+	<p id='myStatus'></p>
+	<span id='closebtn'>dismiss</span>
+</div>
+
+<h1 id='myMessage' class='message'>placeholder for initial values</h1>
+<h1 id='myValues' class='message'>placeholder for dynamic values</h1>
+<h1 id="windowSize"></h1>
+<!--<div id='picContainer' class="thePic"><img id='theImage' src='360.jpg' /></div>-->
+<div class="container">
+  <div class="sliding-background"></div>
+</div>
+<script  src="../straight/script.js"></script>
+
+</body>
+</html>
