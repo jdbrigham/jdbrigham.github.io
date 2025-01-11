@@ -1,0 +1,266 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap');
+
+@charset "UTF-8";
+/* Please ❤ this if you like it! */
+* {
+  margin: 0;
+  box-sizing: border-box;
+  font-family: "Roboto", sans-serif;
+  font-weight: 500;
+  font-style: normal;
+}
+
+:root {
+    --switches-bg-color: goldenrod;
+    --switches-label-color: white ;
+    --switch-bg-color: white;
+    --switch-text-color: goldenrod ;
+}
+
+.canvas {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #111;
+  overflow: hidden;
+}
+.canvas .cube-wrapper {
+  perspective: 1000px;
+  filter: drop-shadow(0px 20px 60px rgba(255, 255, 255, 0.2));
+}
+.canvas .cube-wrapper .cube {
+  width: clamp(150px, 40vw, 400px);
+  height: clamp(150px, 40vw, 400px);
+  position: relative;
+  transform-style: preserve-3d;
+  border-radius: 0px;
+/*
+  animation: rotate 8s infinite linear;
+  transform: rotateY(30deg) rotateX(30deg);
+  animation-play-state: paused;
+*/
+}
+
+.animation {
+  animation: rotate 8s infinite linear;
+  transform: rotateY(30deg) rotateX(30deg);
+  animation-play-state: paused;
+}
+
+.canvas .cube-wrapper .cube .side {
+  position: absolute;
+  width: clamp(150px, 40vw, 400px);
+  height: clamp(150px, 40vw, 400px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 20px;
+  color: white;
+  border: 1px solid #fff;
+  border-radius: 0px;
+  background-size: cover;
+  background-position: center center;
+  filter: contrast(1.1);
+  transition: 200ms;
+}
+.canvas .cube-wrapper .cube .side:hover {
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+}
+.canvas .cube-wrapper .cube .side.front {
+  background-color: #ff7f0e;
+  background-image: url("photos/all.png");
+  transform: translateZ(calc(clamp(150px, 40vw, 400px) / 2));
+}
+.canvas .cube-wrapper .cube .side.back {
+  background-color: #2ca02c;
+  background-image: url("https://jbrigham.com/photos/benjamin01.png");
+  transform: rotateY(180deg) translatÏeZ(calc(clamp(150px, 40vw, 400px) / 2));
+}
+.canvas .cube-wrapper .cube .side.left {
+  background-color: #1f77b4;
+  background-image: url("photos/benjamin01.png");
+  transform: rotateY(-90deg) translateZ(calc(clamp(150px, 40vw, 400px) / 2));
+}
+.canvas .cube-wrapper .cube .side.right {
+  background-color: #d62728;
+  background-image: url("photos/katie01.png");
+  transform: rotateY(90deg) translateZ(calc(clamp(150px, 40vw, 400px) / 2));
+}
+.canvas .cube-wrapper .cube .side.top {
+  background-color: #9467bd;
+  background-image: url("photos/lily01.png");
+  transform: rotateX(90deg) translateZ(calc(clamp(150px, 40vw, 400px) / 2));
+}
+.canvas .cube-wrapper .cube .side.bottom {
+  background-color: #8c564b;
+  background-image: url("photos/jenny01.png");
+  transform: rotateX(-90deg) translateZ(calc(clamp(150px, 40vw, 400px) / 2));
+}
+@keyframes rotate {
+  from {
+    transform: rotateY(0deg) rotateX(0deg);
+  }
+  to {
+    transform: rotateY(360deg) rotateX(360deg);
+  }
+}
+.canvas .toggle-button {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 120px;
+  height: 120px;
+  border: none;
+  background-color: transparent;
+  cursor: pointer;
+  outline: none;
+}
+.canvas .toggle-button .play-icon,
+.canvas .toggle-button .pause-icon {
+  width: 100%;
+  height: 100%;
+  fill: #fff;
+}
+
+.draggable {
+    width: 100%;
+    height: 100%;
+/*    border: solid blue 1px;*/
+	margin: 0 auto;
+	margin-top: 100px;
+	perspective: 1000px;
+	transform-style: preserve-3d;
+	
+	position: absolute;
+	top: 0;
+	left: 0;
+}
+
+
+#switchcontainer {
+	position: fixed;
+	top: 30px;
+	left: 50px;
+	width: 300px;
+/*	border: 2px solid #fff;*/
+}
+/* container for all of the switch elements 
+    - adjust "width" to fit the content accordingly 
+*/
+.switches-container {
+    width: 16rem;
+    position: relative;
+    display: flex;
+    padding: 0;
+    position: relative;
+    background: var(--switches-bg-color);
+    line-height: 3rem;
+    border-radius: 3rem;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* input (radio) for toggling. hidden - use labels for clicking on */
+.switches-container input {
+    visibility: hidden;
+    position: absolute;
+    top: 0;
+}
+
+/* labels for the input (radio) boxes - something to click on */
+.switches-container label {
+    width: 50%;
+    padding: 0;
+    margin: 0;
+    text-align: center;
+    cursor: pointer;
+    color: var(--switches-label-color);
+}
+
+/* switch highlighters wrapper (sliding left / right) 
+    - need wrapper to enable the even margins around the highlight box
+*/
+.switch-wrapper {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 50%;
+    padding: 0.15rem;
+    z-index: 3;
+    transition: transform .5s cubic-bezier(.77, 0, .175, 1);
+    /* transition: transform 1s; */
+}
+
+/* switch box highlighter */
+.switch {
+    border-radius: 3rem;
+    background: var(--switch-bg-color);
+    height: 100%;
+}
+
+/* switch box labels
+    - default setup
+    - toggle afterwards based on radio:checked status 
+*/
+.switch div {
+    width: 100%;
+    text-align: center;
+    opacity: 0;
+    display: block;
+    color: var(--switch-text-color) ;
+    transition: opacity .2s cubic-bezier(.77, 0, .175, 1) .125s;
+    will-change: opacity;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+/* slide the switch box from right to left */
+.switches-container input:nth-of-type(1):checked~.switch-wrapper {
+    transform: translateX(0%);
+}
+
+/* slide the switch box from left to right */
+.switches-container input:nth-of-type(2):checked~.switch-wrapper {
+    transform: translateX(100%);
+}
+
+/* toggle the switch box labels - first checkbox:checked - show first switch div */
+.switches-container input:nth-of-type(1):checked~.switch-wrapper .switch div:nth-of-type(1) {
+    opacity: 1;
+}
+
+/* toggle the switch box labels - second checkbox:checked - show second switch div */
+.switches-container input:nth-of-type(2):checked~.switch-wrapper .switch div:nth-of-type(2) {
+    opacity: 1;
+}
+
+/* for iPhone 2426 x 1125 */
+@media (max-width: 1100px) {
+	.switches-container {
+/*
+    	width: 32rem;
+		line-height: 6rem;
+*/
+	}
+	
+	.canvas .toggle-button {
+/*
+  		width: 240px;
+  		height: 240px;
+		bottom: 1rem;
+  		right: 1rem;
+*/
+	}
+	.canvas .cube-wrapper .cube {
+/*
+  		width: 90%
+  		height: 90%;
+  		position: relative;
+  		transform-style: preserve-3d;
+  		border-radius: 0px;
+*/
+	}
+}

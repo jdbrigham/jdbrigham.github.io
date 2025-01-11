@@ -1,0 +1,507 @@
+/*bring on the fonts*/
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap');
+
+@import url('https://fonts.googleapis.com/css2?family=Overpass:ital,wght@0,100..900;1,100..900&display=swap');
+
+body {
+	  font-family: "Roboto", sans-serif;
+	  font-weight: 400;
+	  font-style: normal;
+	  text-align: center;
+}
+
+/*styles for the game counter progress bar */
+#container {
+	width: 90%;
+	height: 2em;
+	margin: 0 auto;
+	border: 2px solid #bbb;
+	display: flex;
+    align-items: center;
+    justify-content: center;
+	padding-left: 10px;
+	padding-right: 10px;
+	z-index: 12;
+}
+progress {
+  border-radius: 7px; 
+  width: 80%;
+  height: 22px;
+  margin: 0 auto;
+}
+progress::-webkit-progress-bar {
+  background-color: #bbb;
+}
+progress::-webkit-progress-value {
+  background-color: #BD3039;
+}
+
+#leader {
+	font-size: 3em;
+    line-height: 1em;
+}
+
+/*styles for the previous/next game schedule and location info*/
+.schedulecontainer {
+  border: 1px solid red;
+  height: 15em;
+  margin-top: 3em;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  flex-wrap: nowrap;
+  padding: 2em;
+}
+.scheduleItem {
+	border: 2px dashed skyblue;
+	flex-basis: 22%;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+}
+.scheduleItem svg {
+	width: 100%;
+	stroke-width: 1px;
+}
+
+/*.fields is the class applied to all of the ballpark field outlines.  */
+.fields {
+	stroke: #ccc;
+	fill: none;
+	stroke-width: 1px;
+}
+#lgvname, #ngvname {
+	transform: translateY(50px);
+	font-weight: 500;
+}
+#previousgame h3, #nextgame h3,#previousgame p, #nextgame div {
+	transform: translateY(30px);
+}
+#p_gen, #n_gen {
+	stroke-dasharray: 200;
+/*	stroke-dashoffset: 200;*/
+	opacity: .2;
+	stroke: #bbb;
+	stroke-width: 1px;
+	fill: none;
+}
+/*svg1 is the entire ballpark svg, both previous and next game */
+#svg1 {
+	transform: translateY(-50px);
+}
+/*all the svg ballfields*/
+#p_ari,#n_ari {
+	stroke-dasharray: 200;
+	stroke-dashoffset: 200;
+}
+#p_atl,#n_atl {
+    stroke-dasharray: 200;
+    stroke-dashoffset: 200;
+}
+#p_bal,#n_bal {
+    stroke-dasharray: 200;
+    stroke-dashoffset: 200;
+}
+#p_bos,#n_bos {
+    stroke-dasharray: 200;
+    stroke-dashoffset: 200;
+}
+#p_chc,#n_chc {
+    stroke-dasharray: 200;
+    stroke-dashoffset: 200;
+}
+#p_chw,#n_chw {
+    stroke-dasharray: 200;
+    stroke-dashoffset: 200;
+}
+#p_cin,#n_cin {
+    stroke-dasharray: 200;
+    stroke-dashoffset: 200;
+}
+#p_cle,#n_cle {
+    stroke-dasharray: 200;
+    stroke-dashoffset: 200;
+}
+#p_col,#n_col {
+    stroke-dasharray: 200;
+    stroke-dashoffset: 200;
+}
+#p_det,#n_det {
+    stroke-dasharray: 200;
+    stroke-dashoffset: 200;
+}
+#p_hou,#n_hou {
+    stroke-dasharray: 200;
+    stroke-dashoffset: 200;
+}
+#p_kan,#n_kan {
+    stroke-dasharray: 200;
+    stroke-dashoffset: 200;
+}
+#p_laa,#n_laa {
+    stroke-dasharray: 200;
+    stroke-dashoffset: 200;
+}
+#p_lad,#n_lad {
+    stroke-dasharray: 200;
+    stroke-dashoffset: 200;
+}
+#p_mil,#n_mil {
+    stroke-dasharray: 200;
+    stroke-dashoffset: 200;
+}
+#p_mia,#n_mia {
+    stroke-dasharray: 200;
+    stroke-dashoffset: 200;
+}
+#p_min,#n_min {
+    stroke-dasharray: 200;
+    stroke-dashoffset: 200;
+}
+#p_nym,#n_nym {
+    stroke-dasharray: 200;
+    stroke-dashoffset: 200;
+}
+#p_nyy,#n_nyy {
+    stroke-dasharray: 200;
+    stroke-dashoffset: 200;
+}
+#p_oak,#n_oak{
+    stroke-dasharray: 200;
+    stroke-dashoffset: 200;
+}
+#p_phi,#n_phi{
+    stroke-dasharray: 200;
+    stroke-dashoffset: 200;
+}
+#p_pit,#n_pit {
+    stroke-dasharray: 200;
+    stroke-dashoffset: 200;
+}
+#p_sdp,#n_sdp{
+    stroke-dasharray: 200;
+    stroke-dashoffset: 200;
+}
+#p_sea,#n_sea{
+    stroke-dasharray: 200;
+    stroke-dashoffset: 200;
+}
+#p_sfg,#n_sfg{
+    stroke-dasharray: 200;
+    stroke-dashoffset: 200;
+}
+#p_slc,#n_slc{
+    stroke-dasharray: 200;
+    stroke-dashoffset: 200;
+}
+#p_tbr,#n_tbr{
+    stroke-dasharray: 200;
+    stroke-dashoffset: 200;
+}
+#p_tor,#n_tor{
+    stroke-dasharray: 200;
+    stroke-dashoffset: 200;
+}
+#p_txr,#n_txr{
+    stroke-dasharray: 200;
+    stroke-dashoffset: 200;
+}
+#p_was,#n_was{
+    stroke-dasharray: 200;
+    stroke-dashoffset: 200;
+}
+
+.info {
+	display: block;
+	width: 100%;
+	text-align: center;
+	height: 1em;
+	font-size: .5em;
+}
+#locationType, #nextLocationType {
+	display: inline;
+	width: 50px;
+	height: 50px;
+	background-image: url('');
+  	background-repeat: no-repeat;
+  	background-position: center;
+}
+
+/* styles for the scoreboards */
+/*scoreboards use grid not flex*/
+
+#scoreboardcontainer {
+	display: flex;
+	width: 100%;
+	justify-content: center;
+	margin-top: 5vh;
+}
+/*#scoreboard is the main (center) scoreboard*/
+/*.homeAway is used for the two smaller scoreboards*/
+#scoreboard, .homeAway{
+  display: grid;
+  width: 100vw;
+  grid-template-columns: 1fr 1fr;
+  color: #fff;
+  font-family: "Overpass", sans-serif;
+  padding: 5vw;
+  z-index: 10;
+  border: 2px solid crimson;
+}
+.homeAway {
+	width: 100vw;
+	height: 5vw;
+  	line-height: 5vw;
+	margin-top: 2em;
+}
+.title {
+	display: inline-block;
+	width: 45%;
+	margin-top: -1em;
+	margin-bottom: -1em;
+}
+.item {
+  	border: 1px dashed blue;
+	flex-basis: 25%
+	align-items: center;
+	background-image: url('');
+  	background-repeat: no-repeat;
+  	background-position: center;
+	text-align: center;
+    border: 1px solid #54796d;
+    justify-content: center;
+}
+
+/* numbered items are the individual cells of the scoreboards*/
+.item-1 {
+  background-color: #54796d;
+  grid-column: 1/ span 2;
+  font-size: 2em;
+  line-height: 2em;
+  font-weight: 900;
+}
+.item-2 {
+  background-color: #54796d;
+  height: 1.5em;
+  line-height: 1.5em;
+  font-size: 4em;
+}
+.item-3 {
+  background-color: #54796d;
+  height: 1.5em;
+  line-height: 1.5em;
+  font-size: 4em;
+}
+/*items-sm are the cells for the smaller scoreboards*/
+.item-1-sm {
+  background-color: #54796d;
+  grid-column: 1/ span 2;
+  line-height: 2em;
+  font-weight: 900;
+  background-image: url('home.svg');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 15%;
+}
+.item-2-sm {
+  background-color: #54796d;
+  height: 50px;
+  line-height: 50px;
+}
+.item-3-sm {
+  background-color: #54796d;
+  height: 50px;
+  line-height: 50px;
+}
+#awayIcon {
+	background-image: url('away.svg');
+	background-repeat: no-repeat;
+  	background-position: center;
+	background-size: 15%;
+}
+
+.streaks {
+/*
+	width: 100%;
+	border: 2px solid crimson;
+	font-size: 3em;
+	color: #ccc;
+	overflow: scroll;
+*/
+}
+
+/*styles for the standings table*/
+table {
+  table-layout: fixed;
+  width: 100%;
+  border-collapse: collapse;
+  border: 3px solid #BD3039;
+  margin-top: 150px;
+}
+
+th,
+td {
+  border: 1px solid #ddd;
+	padding: 8px;
+	text-align: left;
+}
+
+th {
+	background-color: #f2f2f2;
+}
+
+.draw {
+	animation: dash 1s linear forwards;
+	 animation-delay: 1s;
+}
+
+.undraw {
+	animation: undash 1s linear forwards;
+}
+
+/* for iPhone 2426 x 1125 */
+@media (max-width: 1100px) {
+	.schedulecontainer {
+      
+		/* display:none; */
+/*		flex-wrap: wrap;*/
+		flex-direction: column;
+		height: auto;
+		}
+	#previousgame {order: 1;}
+	#nextgame {order: 2;}
+	#lgvenue {order: 3;}
+	#ngvenue {order: 4;}
+	#previousgame h3, #nextgame h3,#previousgame p, #nextgame div {
+	transform: translateY(0px);
+	}
+	.scheduleItem svg {
+		height: 30%;
+		width: auto;
+		stroke-width: 1px;
+	}
+	#lgvname, #ngvname {
+		transform: translateY(150px);
+	}
+	
+	
+	.#scoreboardcontainer {
+/*		flex-direction: column;*/
+	}
+	#scoreboardcontainer {
+/*		display: block;*/
+		display: flex; flex-direction: column;
+		width: 100%;
+		justify-content: center;
+	/*	margin-top: -5vh;*/
+	}
+	
+	#homeGames { order: 2; }
+	#scoreboard { order: 1; }
+	#awayGames { order: 3; }
+	
+	/*#scoreboard is the main (center) scoreboard*/
+	/*.homeAway is used for the two smaller scoreboards*/
+	#scoreboard, .homeAway{
+/*	  display: grid;*/
+	  width: 80vw;
+/*	  grid-template-columns: 1fr 1fr;*/
+	  color: #fff;
+	  font-family: "Overpass", sans-serif;
+/*	  padding: 5vw;*/
+	  padding: 0;
+	  z-index: 10;
+	  border: 2px solid crimson;
+	  margin: 0 auto;
+	  margin-top: 2em;
+	  margin-bottom: 2em;
+	}
+	.homeAway {
+		width: 40vw;
+		padding: 0;
+		margin: 0 auto;
+		height: auto;
+		margin-top: 2em;
+	  margin-bottom: 2em;
+/*
+		height: 5vw;
+		line-height: 5vw;
+		margin-top: 6em;
+*/
+	}
+	
+	.item {
+		border: 1px dashed blue;
+	/*
+		flex-basis: 25%
+		align-items: center;
+	*/
+		background-image: url('');
+		background-repeat: no-repeat;
+		background-position: center;
+		text-align: center;
+		border: 1px solid #54796d;
+		justify-content: center;
+	}
+
+	/* numbered items are the individual cells of the scoreboards*/
+	.item-1 {
+	  background-color: #54796d;
+/*	  grid-column: 1/ span 2;*/
+	  font-size: 2em;
+	  line-height: 2em;
+	  font-weight: 900;
+	}
+	.item-2 {
+	  background-color: #54796d;
+	  height: 1.5em;
+	  line-height: 1.5em;
+	  font-size: 4em;
+	}
+	.item-3 {
+	  background-color: #54796d;
+	  height: 1.5em;
+	  line-height: 1.5em;
+	  font-size: 4em;
+	}
+	/*items-sm are the cells for the smaller scoreboards*/
+	.item-1-sm {
+	  background-color: #54796d;
+/*	  grid-column: 1/ span 2;*/
+	  line-height: 2em;
+	  font-weight: 900;
+	  background-image: url('home.svg');
+	  background-repeat: no-repeat;
+	  background-position: center;
+	  background-size: 10%;
+	}
+	.item-2-sm {
+	  background-color: #54796d;
+	  height: 50px;
+	  line-height: 50px;
+	}
+	.item-3-sm {
+	  background-color: #54796d;
+	  height: 50px;
+	  line-height: 50px;
+	}
+	#awayIcon {
+		background-image: url('away.svg');
+		background-repeat: no-repeat;
+		background-position: center;
+		background-size: 10%;
+	}
+
+
+    }
+
+@keyframes dash {
+  from {stroke-dashoffset: 200;}
+  to {stroke-dashoffset: 400;}
+}
+
+@keyframes undash {
+  from {stroke-dashoffset: 0;}
+  to {stroke-dashoffset: 200;}
+}
+    

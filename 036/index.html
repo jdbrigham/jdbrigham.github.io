@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8">
+  <title>CodePen - Responsive 3D Cube</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+
+</head>
+<body>
+<!--<button id='myTest'>TEST</button>-->
+<div id='switchcontainer'>
+	<div class="switches-container">
+    <input type="radio" id="switchAuto" name="switchMode" value="auto" checked="checked" />
+	<label for="switchAuto">AUTO</label>
+    <input type="radio" id="switchManual" name="switchMode" value="manual" />
+    <label for="switchManual">MANUAL</label>
+    <div class="switch-wrapper">
+      <div class="switch">
+        <div>AUTO</div>
+        <div>MANUAL</div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="canvas">
+	
+  <div class="cube-wrapper">
+    <div id='thecube' class="cube animation">
+      <div class="side front"></div>
+      <div class="side back"></div>
+      <div class="side left"></div>
+      <div class="side right"></div>
+      <div class="side top"></div>
+      <div class="side bottom"></div>
+    </div>
+  </div>
+
+
+  <button id='abutton' class="toggle-button" onclick="toggleRotation()">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="play-icon" >
+      <polygon points="5 3 19 12 5 21 5 3"></polygon>
+    </svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="pause-icon" style="display: none;">
+      <rect x="6" y="4" width="4" height="16"></rect>
+      <rect x="14" y="4" width="4" height="16"></rect>
+   </svg>
+  </button>
+</div>
+<!-- partial -->
+	
+<div class="draggable">
+<!--    <div id="element"></div>-->
+</div>
+  <script  src="script.js"></script>
+  
+
+</body>
+</html>
