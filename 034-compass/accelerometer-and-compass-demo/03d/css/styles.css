@@ -1,0 +1,66 @@
+#accelPermsButton{
+   height: 300px;
+   width: 100%;
+   border: 6px solid #18f98d;
+   margin: auto;
+   border-radius: 10px;
+   position: relative;
+   color: #18f98d;
+   transition: 0.5s;
+   background-color: #00002a;
+	z-index: 999;
+}
+
+button>span {
+    font-size: 25px;
+    font-family: "Poppins", sans-serif;
+    font-weight: 500;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, 80%);
+}
+
+.container {
+	width: 500px;
+	margin: 0 auto;
+	border: 2px solid crimson;
+}
+
+#g5 {
+	transform: rotate(-85deg);
+	transform-origin: 50% 50%;
+/*
+	animation-name: spin;
+  	animation-duration: 2000ms;
+  	animation-iteration-count: infinite;
+  	animation-timing-function: linear;
+	width: 100%;
+*/
+}
+
+#textPath5 {
+/*
+	transform: rotate(-25deg);
+	transform-origin: 50% 50%;
+*/
+}
+
+#text1 {
+/*
+	transform: rotate(-25deg);
+	transform-origin: 50% 50%;
+*/
+}
+
+#path5 {
+	transform: rotate(3deg);
+	transform-origin: 50% 50%;
+}
+
+
+@keyframes spin {
+    0% {transform:rotate(-45deg);}
+    50% {transform:rotate(-55deg);}
+	100% {transform:rotate(-45deg);}
+}
