@@ -42,53 +42,53 @@ function getAccel(){
         const latitude = position.coords.latitude;
         const longitude = position.coords.longitude;
 		
-		var lakeLatitude = 43.48287;
-		var lakeLongitude = -73.2141504;
-		console.log(lakeLatitude + "(" + typeof lakeLatitude + ")," + lakeLongitude + "("+ typeof lakeLongitude + ")");
+//		var lakeLatitude = 43.48287;
+//		var lakeLongitude = -73.2141504;
+//		console.log(lakeLatitude + "(" + typeof lakeLatitude + ")," + lakeLongitude + "("+ typeof lakeLongitude + ")");
 		// confirmed from console these are captured as type=Number
 		
-		var distanceToLake = getDistanceFromLatLonInKm(latitude,longitude,43.48287,-73.2141504).toFixed(1);
+//		var distanceToLake = getDistanceFromLatLonInKm(latitude,longitude,43.48287,-73.2141504).toFixed(1);
+//		
+//		var angleToLake = angleFromCoordinate(latitude,longitude,43.48287,-73.2141504).toFixed(1);
+//		
+//		angleToLake = Number(angleToLake);
+//		
+//		angleToLake = Math.abs(angleToLake)
+//		
+//		$("#myDistance").html(distanceToLake + " miles away.");
 		
-		var angleToLake = angleFromCoordinate(latitude,longitude,43.48287,-73.2141504).toFixed(1);
-		
-		angleToLake = Number(angleToLake);
-		
-		angleToLake = Math.abs(angleToLake)
-		
-		$("#myDistance").html(distanceToLake + " miles away.");
-		
-		var adjustedHeading = (compassdir+angleToLake);
+//		var adjustedHeading = (compassdir+angleToLake);
 		
 		// document.getElementById('diff').innerHTML = "The difference: " + adjustedAngle + "&deg;";
 		// rotate pine tree arrow 
-		document.getElementById('svg4').style.transform = 'rotate('+ adjustedHeading +'deg)';
+		document.getElementById('svg4').style.transform = 'rotate('+ compassdir +'deg)';
 		// rotate outer compass
 		// document.getElementById('g1').style.transform = 'rotate('+ angleToLake +'deg)';
 		
-		if (compassdir >= 0 && compassdir <= 180) {
-		  
-			compassdir = Math.round(compassdir);
-			document.getElementById('directions').innerHTML = "Facing " + compassdir + "&deg; (turn left)";
-			 document.getElementById("bg").style.opacity = "0";
-		} else if (compassdir > 180 && compassdir <= 290) {
-		  compassdir = Math.round(compassdir);
-			document.getElementById('directions').innerHTML = "Facing " + compassdir + "&deg; (turn right)";
-			 document.getElementById("bg").style.opacity = "0";
-		} else if (compassdir >= 310 && compassdir <= 360) {
-		  compassdir = Math.round(compassdir);
-			document.getElementById('directions').innerHTML = "Facing " + compassdir + "&deg; (turn left)";
-			
-			document.getElementById("bg").style.opacity = "0";
-		} else {
-		 
-			compassdir = Math.round(compassdir);
-			document.getElementById('directions').innerHTML = "Facing " + compassdir + "&deg; (this way!)";
-			document.getElementById("bg").style.opacity = "1.0";
-			document.getElementById("svg4").style.opacity = ".5";
-			
-			document.getElementById("accelPermsButton").style.opacity = ".1";
-		}
-		
+//		if (compassdir >= 0 && compassdir <= 180) {
+//		  
+//			compassdir = Math.round(compassdir);
+//			document.getElementById('directions').innerHTML = "Facing " + compassdir + "&deg; (turn left)";
+//			 document.getElementById("bg").style.opacity = "0";
+//		} else if (compassdir > 180 && compassdir <= 290) {
+//		  compassdir = Math.round(compassdir);
+//			document.getElementById('directions').innerHTML = "Facing " + compassdir + "&deg; (turn right)";
+//			 document.getElementById("bg").style.opacity = "0";
+//		} else if (compassdir >= 310 && compassdir <= 360) {
+//		  compassdir = Math.round(compassdir);
+//			document.getElementById('directions').innerHTML = "Facing " + compassdir + "&deg; (turn left)";
+//			
+//			document.getElementById("bg").style.opacity = "0";
+//		} else {
+//		 
+//			compassdir = Math.round(compassdir);
+//			document.getElementById('directions').innerHTML = "Facing " + compassdir + "&deg; (this way!)";
+//			document.getElementById("bg").style.opacity = "1.0";
+//			document.getElementById("svg4").style.opacity = ".5";
+//			
+//			document.getElementById("accelPermsButton").style.opacity = ".1";
+//		}
+//		
     });
         
             });
