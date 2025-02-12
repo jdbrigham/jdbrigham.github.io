@@ -27,8 +27,8 @@
 <body onload="setSeason()">
 
     <div id = "top" class="container">
-        <h1 class="date-header">NOV 22 2024</h1>
-        <h3 class = 'info'>Day xx of 365</h3>
+        <h1 id='today' class="date-header">FEB 09 2025</h1>
+        <h3 id='nthday' class = 'info'>Day of 365</h3>
       <div class="labels">
         <div>JAN</div>
         <div>|</div>
@@ -54,7 +54,7 @@
         <div>|</div>
         <div>DEC</div>
         </div>
-        <progress max="365" value='300'></progress>
+        <progress id='progressBar' max="365" value='300'></progress>
         <hr id="divider">
         <!-- begin moon phase info -->
         <div class="center" id="thecenter">
@@ -68,14 +68,13 @@
       </div><!--  close the row -->
 
        <div class="row" id="contain_moon">
-        <div class="col"><h3 style="text-align: center; margin:0;"><?php echo $thephasename ?></h3></div>
-        <div class="col"><h3 style="text-align: center; margin:0;"><?php echo $theilluminationpercentage ?></h3></div>
-        <div class="col"><h3 style="text-align: center; margin:0;">&nbsp;&nbsp;<?php echo $age ?></h3></div>
+        <div class="col"><h3 style="text-align: center; margin:0;"><span id='moonphasename'>$theilluminationpercentage</span></h3></div>
+        <div class="col"><h3 style="text-align: center; margin:0;"><span id='moonilluminationpercentage'>$theilluminationpercentage</span></h3></div>
+        <div class="col"><h3 style="text-align: center; margin:0;">&nbsp;&nbsp;<span id='moonage'>$theilluminationpercentage</span></h3></div>
         <div class="last" /></div>
       </div><!--  close the row -->
 
-
-       <p class = "calinfo"><a class = "callink" href="https://jbrigham.com/003/mooncalendar.php">current lunar cycle</a> |  Next full moon: <?php echo $thenextfull ?></p>
+       <p class = "calinfo"><a class = "callink" href="https://jbrigham.com/003/mooncalendar.php">current lunar cycle</a> |  Next full moon: $thenextfull</p>
          <hr id="divider">
       <!-- begin sunrise icon and info -->
 
@@ -86,21 +85,19 @@
                   <!-- <h1>Grid Column LEFT</h1> -->
                   <div class="flipcard">
                       <div class="face front">
-                        <!-- <i class = 'material-icons-outlined loc'>location_city</i> -->
                         <div class='border-left'></div>
                         <h2 class="sunrise-label"><i class = 'material-icons myDir'>north_east</i>rising</h2>
                         <!-- the sun -->
-                        <p id='thesunrise' class="sunrise"><i class = 'material-icons mysize'>wb_sunny</i>6:45 am</p>
+                        <p id='thesunriseboston' class="sunrise"><i class = 'material-icons mysize'>wb_sunny</i></p>
                         <!-- the moon -->
-                        <h1 class="moon-info"><i class = 'material-icons-outlined mysize_moon'>dark_mode</i><?php echo $moonRiseTime_boston; ?></h1>
+                        <h1 class="moon-info"><i class = 'material-icons-outlined mysize_moon'>dark_mode</i><span id='moonriseboston'>mrb</span></h1>
                       </div>
                        <div class="face back">
-                         <!-- <i class = 'material-icons-outlined loc'>cottage</i> -->
                          <h2 class="sunrise-label"><i class = 'material-icons myDir'>north_east</i>rising</h2>
                          <!-- the sun -->
-                         <p id="thesunset" class="sunset"><i class = 'material-icons mysize'>wb_sunny</i><?php echo $mySunriseTime_lake;?></p>
+                         <p id="thesunriselake" class="sunset"><i class = 'material-icons mysize'>wb_sunny</i>$mySunriseTime_lake</p>
                          <!-- the moon -->
-                         <h1 class="moon-info"><i class = 'material-icons-outlined mysize_moon'>dark_mode</i>$moonRiseTime_lake</h1>
+                         <h1 class="moon-info"><i class = 'material-icons-outlined mysize_moon'>dark_mode</i><span id='moonriselake'>mrl</span></h1>
                          <div class='border-right'></div>
                       </div>
                     </div>
@@ -109,21 +106,20 @@
                   <!-- <h1>Grid Column RIGHT</h1> -->
                   <div class="flipcard">
                       <div class="face front">
-                        <!-- <i class = 'material-icons-outlined loc mysize_moon'>location_city</i> -->
                         <div class='border-left'></div>
                         <h2 class="sunrise-label">setting<i class = 'material-icons myDir'>south_east</i></h2>
                         <!-- the sun -->
-                        <p id='thesunrise' class="sunrise"><i class = 'material-icons mysize'>wb_sunny</i>4:18 pm</p>
+                        <p id='thesunsetboston' class="sunrise"><i class = 'material-icons mysize'>wb_sunny</i></p>
                         <!-- the moon -->
-                        <h1 class="moon-info"><i class = 'material-icons-outlined mysize_moon'>dark_mode</i>$moonSetTime_boston</h1>
+                        <h1 class="moon-info"><i class = 'material-icons-outlined mysize_moon'>dark_mode</i><span id='moonsetboston'>msb</span></h1>
                       </div>
                        <div class="face back">
                          <!-- <i class = 'material-icons-outlined loc mysize_moon'>cottage</i> -->
                          <h2 class="sunrise-label">setting<i class = 'material-icons myDir'>south_east</i></h2>
                          <!-- the sun -->
-                         <p id="thesunset" class="sunset"><i class = 'material-icons mysize'>wb_sunny</i><?php echo $mySunsetTime_lake;?></p>
+                         <p id="thesunsetlake" class="sunset"><i class = 'material-icons mysize'>wb_sunny</i>$mySunsetTime_lake</p>
                          <!-- the moon -->
-                         <h1 class="moon-info"><i class = 'material-icons-outlined mysize_moon'>dark_mode</i><?php echo $moonSetTime_lake; ?></h1>
+                         <h1 class="moon-info"><i class = 'material-icons-outlined mysize_moon'>dark_mode</i><span id='moonsetlake'>msl</span></h1>
                          <div class='border-right'></div>
                       </div>
                     </div>
@@ -134,11 +130,11 @@
                 <div class="flipcard">
                     <div class="face front">
                       <div class='border-left'></div>
-                      <h3 id = 'timediff' class = 'info'> x hours x  minutes of daylight </h3>
+                      <h3 id = 'timediffboston' class = 'info'> x hours x  minutes of daylight </h3>
 
                     </div>
                      <div class="face back">
-                       <h3 id = 'timediff' class = 'info'><?php echo $timediff_lake->format('%h hours %i minutes') ?> of daylight </h3>
+                       <h3 id = 'timedifflake' class = 'info'><?php echo $timediff_lake->format('%h hours %i minutes') ?> of daylight </h3>
                        <div class='border-right'></div>
                     </div>
                   </div>
@@ -185,7 +181,10 @@
   <script src='https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/0.5.5/chartjs-plugin-annotation.js'></script>
   <script src='https://cdnjs.cloudflare.com/ajax/libs/ocanvas/2.8.3/ocanvas.min.js'></script>
   <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js'></script>
+  <script  src="js/chartinfo.js"></script>
   <script  src="js/script.js"></script>
+  <script  src="js/suncalc.js"></script>
+  <script  src="js/mooninfo.js"></script>
   <script>
 
       // use variables and target necessary elements (as done in styles.php)

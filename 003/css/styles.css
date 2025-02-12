@@ -377,6 +377,14 @@ progress::-webkit-progress-value {
     color: #fff;
     }
 
+.moon-info span {
+	display: inline;
+}
+
+#moonage {
+	display: inline;
+}
+
 /*
 .loc {
     display: block;
