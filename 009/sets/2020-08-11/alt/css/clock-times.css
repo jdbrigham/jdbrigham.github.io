@@ -1,8 +1,0 @@
-/* test class for setting the time to 3:15 PM */
-.threePMhour {
-    transform: rotate(420deg);
-}
-
-.quarter-after-three {
-    transform: rotate(3330deg);
-}
