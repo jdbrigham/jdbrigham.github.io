@@ -30,6 +30,7 @@ body {
     color: inherit;        /* Inherits text color */
     display: block;        /* Ensures the <a> tag takes up the size of the image */
     width: calc(25% - 15px); /* Matches the image width */
+	height: calc(25% - 15px);
 	border: 2px solid #666;
 	background-color: #eee;
 }
