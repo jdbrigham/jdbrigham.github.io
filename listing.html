@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Directory Listing</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        h1 {
+            text-align: center;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            padding: 8px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+        }
+        li a {
+            text-decoration: none;
+            color: #007bff;
+            margin-left: 10px;
+        }
+        li a:hover {
+            text-decoration: underline;
+        }
+        .icon {
+            width: 20px;
+            height: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Directory Listing</h1>
+    <ul id="file-list"></ul>
+
+    <script>
+        const repoOwner = "jdbrigham";
+        const repoName = "https://github.com/jdbrigham/jdbrigham.github.io";
+        const branch = "main"; 
+        const apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/`;
+        
+        async function fetchFiles(path = "") {
+            const response = await fetch(apiUrl + path);
+            const data = await response.json();
+            return data;
+        }
+
+        async function renderFiles(path = "", container = document.getElementById("file-list")) {
+            const files = await fetchFiles(path);
+            files.forEach(file => {
+                const listItem = document.createElement("li");
+                const link = document.createElement("a");
+                const icon = document.createElement("img");
+                
+                icon.classList.add("icon");
+                if (file.type === "dir") {
+                    icon.src = "https://img.icons8.com/ios-filled/50/000000/folder.png";
+                    link.href = "#";
+                    link.onclick = (e) => {
+                        e.preventDefault();
+                        const sublist = document.createElement("ul");
+                        listItem.appendChild(sublist);
+                        renderFiles(file.path, sublist);
+                    };
+                } else {
+                    icon.src = "https://img.icons8.com/ios-filled/50/000000/file.png";
+                    link.href = file.html_url;
+                    link.target = "_blank";
+                }
+                
+                link.textContent = file.name;
+                listItem.appendChild(icon);
+                listItem.appendChild(link);
+                container.appendChild(listItem);
+            });
+        }
+
+        renderFiles();
+    </script>
+</body>
+</html>
