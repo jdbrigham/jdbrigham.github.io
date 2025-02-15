@@ -86,6 +86,25 @@
         }
 
         renderFiles();
+		
+		async function fetchFiles(path = "") {
+    const response = await fetch(apiUrl + path);
+    const data = await response.json();
+    console.log("API Response:", data); // Debugging log
+    return data;
+			
+			async function renderFiles(path = "", container = document.getElementById("file-list")) {
+    const files = await fetchFiles(path);
+    if (!Array.isArray(files)) {
+        console.error("Unexpected API response:", files);
+        container.innerHTML = "<p>Error loading directory. Please check the console.</p>";
+        return;
+    }
+    files.forEach(file => {
+        // File rendering logic remains unchanged
+    });
+}
+}
     </script>
 </body>
 </html>
