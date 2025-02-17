@@ -46,6 +46,14 @@ fetch(url_boston)
 	const result2boston = reformatdate(sunsettimeboston);
 	
 	const hoursofboston = splittime (daylengthboston);
+	
+	const daylighthours = justminutes (daylengthboston);
+	
+	$('.today').width(daylighthours);
+	
+//	const daylighthourspercentage = (daylighthours/1440);
+	
+//	console.log(daylighthours);
 	document.querySelector('#thesunriseboston').innerHTML = result1boston;
     document.querySelector('#thesunsetboston').innerHTML = result2boston
 	document.querySelector('#timediffboston').innerHTML = hoursofboston
@@ -96,4 +104,17 @@ function splittime(timestring) {
 	// console.log(myformattedtime);
 
   return mydaylight
+}
+
+// reformat to all minutes
+function justminutes(timestring) {
+  const elements = timestring.split(":");
+	
+  const daylighthours = (parseInt((elements[0]*60)));
+  const daylightminutes = (parseInt(elements[1]));
+  const totaldaylighttoday = ((daylighthours + daylightminutes)/1440);
+const totaldaylighttodaypercentage = (totaldaylighttoday * 100).toFixed(0) + '%';
+//	console.log(totaldaylighttodaypercentage);
+
+  return totaldaylighttodaypercentage;
 }
