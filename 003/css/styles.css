@@ -400,12 +400,19 @@ i {
     margin-left: 15px;
     margin-right: 15px;
     }
-
-span {
-    background-color: var(--bgcolor);
+       
+	
+.flipcard .back span {
+    background: #fff;
+       color: var(--bgcolor);
     width:100%;
     height:.1em;
     display:inline-block;
+    }
+
+.flipcard .back i {
+    background: #fff;
+       color: var(--bgcolor);
     }
 
 .fullday {
