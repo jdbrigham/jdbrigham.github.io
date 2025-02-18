@@ -50,12 +50,24 @@ h3.info {
     /* border: 1px solid green; */
     padding-left: 20px;
     padding-right: 20px;
+	
+	width: 500px;
+	margin: 0 auto;
+	
+	margin-bottom: 50px;
+	margin-top: 50px;
     }
 
 .col {
     float: left;
     width: 33.3%;
     text-align: center;
+	
+	width: 110px;
+	height: 110px;
+/*	border: 2px solid #fff;*/
+	padding-left: 25px;
+	padding-right: 25px;
     }
 
 .last{
@@ -553,4 +565,10 @@ ul {
   list-style-type: none;
   padding: 0;
   margin: 0;
+}
+
+.imageHolder img{
+  height: 15vh;
+  width: 100%;
+  object-fit: contain;
 }

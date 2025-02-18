@@ -57,34 +57,34 @@ if (moonsetTime_lake) {
 
 let moonInfo = SunCalc.getMoonIllumination(today);
 
-document.querySelector('#moonilluminationpercentage').innerHTML = formatAsPercent(moonInfo.fraction);
+//document.querySelector('#moonilluminationpercentage').innerHTML = formatAsPercent(moonInfo.fraction);
 
 let moonphase = moonInfo.phase;
-console.log(moonphase);
+//console.log(moonphase);
 
-if ((moonphase >= 0) & (moonphase <0.1)) {
-	document.querySelector('#moonphasename').innerHTML = "new moon";
-} else if ((moonphase >= 0.1) & (moonphase <0.24)) {
-  document.querySelector('#moonphasename').innerHTML = "waxing crescent";
-} else if ((moonphase >= 0.24) & (moonphase <=0.26)) {
-  document.querySelector('#moonphasename').innerHTML = "first quarter";
-} else if ((moonphase > 0.26) & (moonphase <0.48)) {
-  document.querySelector('#moonphasename').innerHTML = "waxing gibbous";
-} else if ((moonphase >= 0.48) & (moonphase <=0.52)) {
-  document.querySelector('#moonphasename').innerHTML = "full moon";
-} else if ((moonphase > 0.52) & (moonphase <0.74)) {
-  document.querySelector('#moonphasename').innerHTML = "waning gibbous";
-} else if ((moonphase >= 0.74) & (moonphase <=0.76)) {
-  document.querySelector('#moonphasename').innerHTML = "last quarter";
-} else if ((moonphase > 0.76) & (moonphase <1.0)) {
-  document.querySelector('#moonphasename').innerHTML = "waning crescent";	
-} else {
-  //  block of code to be executed if the condition1 is false and condition2 is false
-}
+//if ((moonphase >= 0) & (moonphase <0.1)) {
+//	document.querySelector('#moonphasename').innerHTML = "new moon";
+//} else if ((moonphase >= 0.1) & (moonphase <0.24)) {
+//  document.querySelector('#moonphasename').innerHTML = "waxing crescent";
+//} else if ((moonphase >= 0.24) & (moonphase <=0.26)) {
+//  document.querySelector('#moonphasename').innerHTML = "first quarter";
+//} else if ((moonphase > 0.26) & (moonphase <0.48)) {
+//  document.querySelector('#moonphasename').innerHTML = "waxing gibbous";
+//} else if ((moonphase >= 0.48) & (moonphase <=0.52)) {
+//  document.querySelector('#moonphasename').innerHTML = "full moon";
+//} else if ((moonphase > 0.52) & (moonphase <0.74)) {
+//  document.querySelector('#moonphasename').innerHTML = "waning gibbous";
+//} else if ((moonphase >= 0.74) & (moonphase <=0.76)) {
+//  document.querySelector('#moonphasename').innerHTML = "last quarter";
+//} else if ((moonphase > 0.76) & (moonphase <1.0)) {
+//  document.querySelector('#moonphasename').innerHTML = "waning crescent";	
+//} else {
+//  //  block of code to be executed if the condition1 is false and condition2 is false
+//}
 
 let moonAge = calculateMoonAge(today);
 let moonAgeRounded = Math.round(moonAge * 100) / 100;
-document.querySelector('#moonage').innerHTML = moonAgeRounded + " days";
+//document.querySelector('#moonage').innerHTML = moonAgeRounded + " days";
 
 function formatAsPercent(number, decimalPlaces = 0) {
   return (number * 100).toFixed(decimalPlaces) + "%";
