@@ -28,37 +28,37 @@ var Moon = {
     
     switch (b) {
       case 0:
-        pageImage.src = "https://raw.githubusercontent.com/tallulahh/moon-phase/main/newmoon.png";
+        pageImage.src = "images/newmoon.png";
         phase.innerHTML = 'New-Moon';
         break;
       case 1:
-        pageImage.src = 'https://raw.githubusercontent.com/tallulahh/moon-phase/main/waxingcrescent.png';
+        pageImage.src = 'images/waxingcrescent.png';
         phase.innerHTML = 'Waxing-Crescent-Moon';
         break;
       case 2:
-        pageImage.src = "https://raw.githubusercontent.com/tallulahh/moon-phase/main/firstquarter.png";
+        pageImage.src = "images/firstquarter.png";
         phase.innerHTML = 'Quarter-Moon';
         break;
         
       case 3:
-        pageImage.src = "https://raw.githubusercontent.com/tallulahh/moon-phase/main/waxinggibbous.png";
+        pageImage.src = "images/waxinggibbous.png";
         phase.innerHTML = 'Waxing-Gibbous-Moon';
         break;
       case 4:
-        pageImage.src = "https://raw.githubusercontent.com/tallulahh/moon-phase/main/fullmoon.png";
+        pageImage.src = "images/fullmoon.png";
         phase.innerHTML = 'Full-Moon';
         break;
       case 5:
-        pageImage.src = "https://raw.githubusercontent.com/tallulahh/moon-phase/main/waninggibbous.png";
+        pageImage.src = "images/waninggibbous.png";
         phase.innerHTML = 'Waning-Gibbous-Moon';
         break;
       case 6:
-        pageImage.src = "https://raw.githubusercontent.com/tallulahh/moon-phase/main/lastquarter.png";
+        pageImage.src = "images/lastquarter.png";
         phase.innerHTML = 'Last-Quarter-Moon';
         
         break;
       case 7:
-        pageImage.src = "https://raw.githubusercontent.com/tallulahh/moon-phase/main/waningcrescent.png";
+        pageImage.src = "../images/waningcrescent.png";
         phase.innerHTML = 'Waning-Crescent-Moon';
         break;
     }
@@ -70,18 +70,18 @@ var Moon = {
 
 // console.log(Moon.phase());
 
-document.addEventListener("keydown", function(e){
-  if (e.keyCode === 13){
-    dd = document.getElementById("day").value;
-    mm = document.getElementById("month").value;
-    yy = document.getElementById("year").value;
-    Moon.phase(yy,mm,dd);
-    document.getElementById("day").value = "";
-    document.getElementById("month").value = "";
-    document.getElementById("year").value = "";
-    document.querySelector(".imageHeader").innerHTML = `Moon phase on ${dd}/${mm}/${yy}: `;
-  }
-});
+//document.addEventListener("keydown", function(e){
+//  if (e.keyCode === 13){
+//    dd = document.getElementById("day").value;
+//    mm = document.getElementById("month").value;
+//    yy = document.getElementById("year").value;
+//    Moon.phase(yy,mm,dd);
+//    document.getElementById("day").value = "";
+//    document.getElementById("month").value = "";
+//    document.getElementById("year").value = "";
+//    document.querySelector(".imageHeader").innerHTML = `Moon phase on ${dd}/${mm}/${yy}: `;
+//  }
+//});
 
 //const search = document.querySelector(".searchBtn");
 //search.addEventListener("click", function(){

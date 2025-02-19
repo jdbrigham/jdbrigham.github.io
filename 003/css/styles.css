@@ -563,37 +563,39 @@ canvas{
 	display: grid;
 	grid-auto-columns: minmax(0, 1fr);
    grid-auto-flow: column;
-	border: 2px solid crimson;
+/*	border: 2px solid crimson;*/
 }
 
 .mooncontainer div {
-	border: 2px solid orange;
+/*	border: 2px solid orange;*/
 }
 
 svg {
-	width: 20%;
+	width: 25%;
 	margin: 0 auto;
 	display: block;
 }
 
 ul {
+/*
   list-style-type: none;
   padding: 0;
   margin: 0;
+*/
 }
 
 .imageHolder {
-	border: 2px solid #000;
+/*	border: 2px solid #000;*/
 }
 
 .imageHolder img{
-  height: 20vh;
+  height: 17vh;
   width: 100%;
   object-fit: contain;
 }
 
 #newmoondate, #fullmoondate {
 	text-align: center;
-	margin-top: -40px;
+	margin-top: -20px;
 	font-size: 1.2em;
 }
