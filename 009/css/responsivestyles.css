@@ -1,0 +1,71 @@
+/* for iPhone 2426 x 1125 */
+@media (max-width: 1100px) {
+	blockquote {
+	  width: 80%;
+	  margin: 0 auto;
+	  color: crimson;
+	  margin-top: 150px;
+	}
+    
+    .site-title {
+        font-size: 1.5em;
+    }
+
+    }
+
+/* for iPad Mini 2048 x 1536 */
+
+@media only screen
+and (min-device-width : 768px)
+and (max-device-width : 1024px)
+and (-webkit-min-device-pixel-ratio: 1)  {
+
+/* STYLES GO HERE */
+		.section {
+			padding: 5px 10px;
+			 background: #7B96A3; 
+		}
+		.container {
+			max-width: 100%;
+			margin: auto;
+		}
+		.grid-row {
+			display: grid;
+			grid-template-columns: repeat(auto-fill, minmax(100px, 200px));
+			grid-gap: 7px 7px;
+			justify-content: center;
+			align-items: baseline;
+		}
+
+		.grid-row .grid-item {
+			  border: 5px solid steelblue;
+		}
+
+  }
+
+
+/* for desktop 2560‑by‑1600 */
+
+@media (min-width: 1100px) {
+
+  .container {
+
+  }
+
+}
+
+/* for click devices */
+
+ @media (hover: hover) {
+    h3:before {
+
+  }
+}
+
+/* for toouch devices */
+
+@media (hover: none) {
+    h3:before {
+
+  }
+}
