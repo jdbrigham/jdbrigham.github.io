@@ -571,7 +571,7 @@ canvas{
 }
 
 svg {
-	width: 25%;
+	width: 33%;
 	margin: 0 auto;
 	display: block;
 }
@@ -586,6 +586,7 @@ ul {
 
 .imageHolder {
 /*	border: 2px solid #000;*/
+	object-fit: contain;
 }
 
 .imageHolder img{
