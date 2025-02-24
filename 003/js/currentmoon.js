@@ -58,7 +58,7 @@ var Moon = {
         
         break;
       case 7:
-        pageImage.src = "../images/waningcrescent.png";
+        pageImage.src = "images/waningcrescent.png";
         phase.innerHTML = 'Waning-Crescent-Moon';
         break;
     }
