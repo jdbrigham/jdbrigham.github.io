@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8">
+  <title>CodePen - A Pen by Chris Coyier </title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/5.0.0/normalize.min.css">
+<link rel="stylesheet" href="./style.css">
+
+</head>
+<body>
+<!-- partial:index.partial.html -->
+<!--
+<article>
+<p>Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante. Donec eu libero sit amet quam egestas semper. Aenean ultricies mi vitae est. Mauris placerat eleifend leo.</p>  
+</article>
+-->
+    
+<div class="cloud" id="cloud-back"></div>
+    <div class="cloud" id="cloud-mid"></div>
+    <div class="cloud" id="cloud-front"></div>  
+    
+<div class="cloudTwo" id="cloudTwo-back"></div>
+    <div class="cloudTwo" id="cloudTwo-mid"></div>
+    <div class="cloudTwo" id="cloudTwo-front"></div> 
+<!--   77, 327,109, 841, 2319, 5032, 1094, 892, 6739, 512, 84 -->
+<svg width="0" height="0"> 
+  <!--Top Layer-->
+    <filter id="filter-back">
+      <feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="4" 
+seed="0" />     
+      <feDisplacementMap  in="SourceGraphic" scale="170" />
+    </filter>
+       <filter id="filter-mid">
+        <feTurbulence type="fractalNoise"  baseFrequency="0.012" numOctaves="2" 
+seed="0"/>
+      <feDisplacementMap  in="SourceGraphic" scale="150" />
+    </filter>
+    <filter id="filter-front">
+        <feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="2" 
+seed="0"/>
+      <feDisplacementMap  in="SourceGraphic" scale="100" />
+    </filter>
+</svg>
+<!-- partial -->
+  
+</body>
+</html>

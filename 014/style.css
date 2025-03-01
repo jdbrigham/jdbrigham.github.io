@@ -1,0 +1,61 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@100,300&display=swap');
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #121212;
+}
+
+.container {
+    width: 70%;
+    max-width: 1200px;
+    margin: 0 auto;
+/*	margin-top: -125px;*/
+}
+
+.grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 5px;
+}
+
+/* Reset default styles for links */
+.grid a {
+    text-decoration: none; /* Removes underline */
+    color: inherit;        /* Inherits text color */
+    display: block;        /* Ensures the <a> tag takes up the size of the image */
+    width: calc(50% - 15px); /* Matches the image width */
+	height: calc(50% - 15px);
+	border: 1px solid rgba(200,200,200,.3);
+	background-color: #121212;
+}
+
+/* Ensure images retain styles */
+.grid img {
+    display: block; /* Prevents gaps caused by inline images */
+    width: 50%;    /* Ensures the image fills its parent <a> */
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+	margin: 0 auto;
+	
+	padding: 25px;
+}
+
+/* Hover effect for links/images */
+.grid a:hover img {
+    transform: scale(1.05);
+    cursor: pointer;
+}
+
+.grid p {
+	text-align: center;
+	color: #eee;
+	font-family: 'Roboto';
+}
+
