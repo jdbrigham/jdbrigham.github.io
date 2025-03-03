@@ -1,0 +1,56 @@
+figure {
+  position: relative;
+  margin: 0;
+  width: 100%;
+  background: #fafafa;
+  border: 2px solid #e8e8e8;
+}
+@media (min-width: 40em) {
+  figure {
+    overflow: hidden;
+  }
+}
+figure figcaption {
+  position: absolute;
+  width: 100%;
+  /* background: #2775b5; */
+  color: #fafafa;
+  top: 15%;
+  text-align: center;
+}
+
+.altcolor {
+  color: crimson;
+}
+@media (min-width: 40em) {
+  figure figcaption {
+    /* bottom: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: all 0.35s ease-out; */
+  }
+}
+figure figcaption .details,
+figure figcaption .actions {
+  color: #fafafa;
+  display: block;
+}
+@media (min-width: 40em) {
+  figure:hover figcaption {
+    /* opacity: 0.5; */
+    top: 15%;
+    color: rebeccapurple;
+  }
+}
+
+/* For demo only */
+#app {
+  padding-top: 1rem;
+  background: #484848;
+  background-image: radial-gradient(circle at top center, #6e6e6e, #080808);
+  min-height: 100vh;
+}
+#app h1 {
+  color: #f0f0f0;
+}
