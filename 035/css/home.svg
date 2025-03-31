@@ -40,7 +40,7 @@
      id="layer1">
     <text
        xml:space="preserve"
-       style="font-style:normal;font-weight:normal;font-size:4.23333px;line-height:1.25;font-family:sans-serif;fill:black;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       style="font-style:normal;font-weight:normal;font-size:4.23333px;line-height:1.25;font-family:sans-serif;fill:white;fill-opacity:1;stroke:none;stroke-width:0.264583"
        x="0.17647672"
        y="4.1472034"
        id="text1"><tspan
@@ -48,6 +48,6 @@
          id="tspan1"
          x="0.17647672"
          y="4.1472034"
-         style="font-size:4.23333px;stroke-width:0.264583;fill:black;fill-opacity:1">HOME</tspan></text>
+         style="font-size:4.23333px;stroke-width:0.264583;fill:white;fill-opacity:1">HOME</tspan></text>
   </g>
 </svg>

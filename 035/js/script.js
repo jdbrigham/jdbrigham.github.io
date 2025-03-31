@@ -250,8 +250,8 @@ function findPark(venueID,which) {
 		return sid == venueID;
 	}
 	
-	console.log(theStadiumIndex);
-	console.log(cssids[theStadiumIndex]);
+	// console.log(theStadiumIndex);
+	// console.log(cssids[theStadiumIndex]);
 	
 	
 	// erase the ones to be erased (initially, #gen)
