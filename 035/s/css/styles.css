@@ -1,0 +1,123 @@
+/*bring on the fonts*/
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap');
+
+@import url('https://fonts.googleapis.com/css2?family=Overpass:ital,wght@0,100..900;1,100..900&display=swap');
+
+body {
+	  font-family: "Roboto", sans-serif;
+	  font-weight: 400;
+	  font-style: normal;
+	  text-align: center;
+}
+
+/*styles for the game counter progress bar */
+#container {
+/*
+	width: 90%;
+	height: 2em;
+	margin: 0 auto;
+	border: 2px solid #bbb;
+	display: flex;
+    align-items: center;
+    justify-content: center;
+	padding-left: 10px;
+	padding-right: 10px;
+	z-index: 12;
+*/
+}
+progress {
+/*
+  border-radius: 7px; 
+  width: 80%;
+  height: 22px;
+  margin: 0 auto;
+*/
+}
+progress::-webkit-progress-bar {
+/*  background-color: #bbb;*/
+}
+progress::-webkit-progress-value {
+/*  background-color: #BD3039;*/
+}
+
+#leader {
+/*
+	font-size: 3em;
+    line-height: 1em;
+*/
+}
+
+/*styles for the previous/next game schedule and location info*/
+.schedulecontainer {
+  border: 1px solid red;
+  height: 50vh;
+  margin-top: 3em;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  flex-wrap: nowrap;
+  padding: 2em;
+}
+.scheduleItem {
+	border: 2px dashed skyblue;
+	flex-basis: 80%;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+}
+
+h3 {
+	font-size: 4vw;
+}
+
+p {
+	font-size: 3vw;
+}
+.scheduleItem svg {
+/*
+	width: 100%;
+	stroke-width: 1px;
+*/
+}
+
+/*.fields is the class applied to all of the ballpark field outlines.  */
+.fields {
+/*
+	stroke: #ccc;
+	fill: none;
+	stroke-width: 1px;
+*/
+}
+#lgvname, #ngvname {
+/*
+	transform: translateY(50px);
+	font-weight: 500;
+*/
+}
+#previousgame h3, #nextgame h3,#previousgame p, #nextgame div {
+/*	transform: translateY(30px);*/
+}
+#p_gen, #n_gen {
+/*	stroke-dasharray: 200;*/
+/*	stroke-dashoffset: 200;*/
+/*
+	opacity: .2;
+	stroke: #bbb;
+	stroke-width: 1px;
+	fill: none;
+*/
+}
+/*svg1 is the entire ballpark svg, both previous and next game */
+#svg1 {
+/*	
+
+@keyframes dash {
+  from {stroke-dashoffset: 200;}
+  to {stroke-dashoffset: 400;}
+}
+
+@keyframes undash {
+  from {stroke-dashoffset: 0;}
+  to {stroke-dashoffset: 200;}
+}
+    
