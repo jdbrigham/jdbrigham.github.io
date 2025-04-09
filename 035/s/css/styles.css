@@ -67,11 +67,11 @@ progress::-webkit-progress-value {
 }
 
 h3 {
-	font-size: 4vw;
+	font-size: 8vw;
 }
 
 p {
-	font-size: 3vw;
+	font-size: 6vw;
 }
 .scheduleItem svg {
 /*
