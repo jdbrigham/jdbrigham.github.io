@@ -54,7 +54,7 @@ body {
 .grid p {
 	text-align: center;
 	color: #555;
-	font-family: 'Roboto';
+	font-family: 'Roboto'; 
 }
 
 /* for iPhone 2426 x 1125 */
@@ -66,8 +66,14 @@ body {
 	  }
 	.grid p {
 	   color: crimson;
-	   margin: 0;
+	   margin: 0 auto;
+		display: block;
 	  text-align: left;
+		width: 50%;
+	
+	overflow: hidden;
+  white-space: nowrap; 
+  text-overflow: ellipsis;
 	
 
     }
