@@ -64,6 +64,10 @@ body {
 /*      max-width: 1200px;*/
       margin: 0 auto;
 	  }
+	.grid p {
+	   color: crimson;
+	   margin: 0;
+	  text-align: left;
 	
 
     }
