@@ -57,3 +57,13 @@ body {
 	font-family: 'Roboto';
 }
 
+/* for iPhone 2426 x 1125 */
+@media (max-width: 1100px) {
+	.container {
+      width: 100%;
+/*      max-width: 1200px;*/
+      margin: 0 auto;
+	  }
+	
+
+    }
