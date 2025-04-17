@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MLB Standings</title>
+<link rel="stylesheet" href="css/styles.css?v=1.0">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+</head>
+<body>
+<div class='schedulecontainer'>
+	
+	<div id='previousgame' class='scheduleItem'>
+		<h3>Latest Game</h3>
+		<div class="item" id='leader'>
+			<p class='info'><span id='numGames'>-</span> games played</p>
+  		</div>
+		<p id="score"></p>
+		<p>Streak: <span id='streak'></span></p>
+		
+		<div class="record"><span id='wins'>-</span></div>
+  <div class="record"><span id='losses'></span></div>
+	</div>	
+</div>
+	
+<div id='scoreboardcontainer'>
+
+<!--small scoreboard for home games-->
+<!--
+<div id='homeGames' class="homeAway">
+  <div class="item item-1-sm">
+	<p class='title'>W</p>
+	<p class='title'>L</p>
+  </div>
+  <div class="item item-2-sm"><span id='hwins'></span></div>
+  <div class="item item-3-sm"><span id='hlosses'></span></div>
+</div>
+-->
+	
+<!--large scoreboard-->
+<div id="scoreboard">
+  <div class="item item-1">
+	<p class='title'>W</p>
+	<p class='title'>L</p>
+  </div>
+  <div class="item item-2"><span id='wins'>-</span></div>
+  <div class="item item-3"><span id='losses'></span></div>
+	
+</div>
+
+<!--small scoreboard for away games-->
+<!--
+<div id='awayGames' class="homeAway">
+  <div class="item item-1-sm" id='awayIcon'>
+	<p class='title'>W</p>
+	<p class='title'>L</p>
+  </div>
+  <div class="item item-2-sm"><span id='awins'></span></div>
+  <div class="item item-3-sm"><span id='alosses'></span></div>
+</div>
+-->
+</div>
+
+
+<script src="js/script.js"></script>
+<!--<script src="js/stadium-arrays.js"></script>-->
+</body>
+</html>
