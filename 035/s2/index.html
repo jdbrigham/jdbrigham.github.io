@@ -8,59 +8,25 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 </head>
 <body>
-<div class='schedulecontainer'>
-	
-	<div id='previousgame' class='scheduleItem'>
-		<h3>Latest Game</h3>
-		<div class="item" id='leader'>
-			<p class='info'><span id='numGames'>-</span> games played</p>
-  		</div>
-		<p id="score"></p>
-		<p>Streak: <span id='streak'></span></p>
-		
-		<div class="record"><span id='wins'>-</span></div>
-  <div class="record"><span id='losses'></span></div>
-	</div>	
-</div>
-	
-<div id='scoreboardcontainer'>
 
-<!--small scoreboard for home games-->
-<!--
-<div id='homeGames' class="homeAway">
-  <div class="item item-1-sm">
-	<p class='title'>W</p>
-	<p class='title'>L</p>
-  </div>
-  <div class="item item-2-sm"><span id='hwins'></span></div>
-  <div class="item item-3-sm"><span id='hlosses'></span></div>
-</div>
--->
+<div class="wrapper">
+<!--  <div class="box a">A</div>-->
+<!--  <div class="box b">B</div>-->
+  <div class="box c">
+	  Latest Game
+	  <hr />
+	  <p id="score"></p>
+	  <p>Next Game:  Chicago White Sox at Boston Red Sox 4/18/2025, 7:10 PM</p>
 	
-<!--large scoreboard-->
-<!--
-<div id="scoreboard">
-  <div class="item item-1">
-	<p class='title'>W</p>
-	<p class='title'>L</p>
-  </div>
-  <div class="item item-2"><span id='wins'>-</span></div>
-  <div class="item item-3"><span id='losses'></span></div>
 	
-</div>
--->
-
-<!--small scoreboard for away games-->
-<!--
-<div id='awayGames' class="homeAway">
-  <div class="item item-1-sm" id='awayIcon'>
-	<p class='title'>W</p>
-	<p class='title'>L</p>
   </div>
-  <div class="item item-2-sm"><span id='awins'></span></div>
-  <div class="item item-3-sm"><span id='alosses'></span></div>
-</div>
--->
+  <div class="box d">
+    <div class="box e">Streak: <span id='streak'></span><hr /></div>
+    <div class="box f"><p class='title'>W</p></div>
+    <div class="box g"><p class='title'>L</p></div>
+	<div class="box h"><span id='wins'>-</span></div>
+    <div class="box i"><span id='losses'></span></div>
+  </div>
 </div>
 
 

@@ -85,10 +85,10 @@
 
 			// document.getElementById('awins').innerHTML = awayWins;
 			// document.getElementById('alosses').innerHTML = awayLosses;
-			 document.getElementById('numGames').innerHTML = gamesPlayed;
+//			 document.getElementById('numGames').innerHTML = gamesPlayed;
 			// document.getElementById('season').value = gamesPlayed;
-			 document.getElementById('wins').innerHTML = theWins + " wins";
-			 document.getElementById('losses').innerHTML = theLosses + " losses";
+			 document.getElementById('wins').innerHTML = theWins;
+			 document.getElementById('losses').innerHTML = theLosses;
 			document.getElementById('streak').innerHTML = theStreak;
 
 			}

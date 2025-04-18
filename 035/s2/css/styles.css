@@ -10,107 +10,28 @@ body {
 	  text-align: center;
 }
 
-/*styles for the game counter progress bar */
-#container {
-/*
-	width: 90%;
-	height: 2em;
-	margin: 0 auto;
-	border: 2px solid #bbb;
-	display: flex;
-    align-items: center;
-    justify-content: center;
-	padding-left: 10px;
-	padding-right: 10px;
-	z-index: 12;
-*/
-}
-progress {
-/*
-  border-radius: 7px; 
-  width: 80%;
-  height: 22px;
-  margin: 0 auto;
-*/
-}
-/*
-progress::-webkit-progress-bar {
-  background-color: #bbb;
-}
-progress::-webkit-progress-value {
-  background-color: #BD3039;
-}
-
-#leader {
-	font-size: 3em;
-    line-height: 1em;
-}
-*/
-
 /*styles for the previous/next game schedule and location info*/
 .schedulecontainer {
-/*  border: 1px solid red;*/
-  width: 1200px;
-	height: 300px;
-/*  margin-top: 1em;*/
+  border: 1px solid red;
+  height: 15em;
+  margin-top: 3em;
   display: flex;
   flex-direction: row;
-  justify-content: left;
+  justify-content: center;
   flex-wrap: nowrap;
-/*  padding: 2em;*/
-	color: #fff;
-	font-size: 2em;
-	margin-top: 0;
-}
-.schedulecontainer h3 {
-	text-align: center;
-	font-size: 1.2em;
-	margin-top: 0;
-	margin-bottom: 0;
-	
-}
-
-.schedulecontainer p {
-	line-height: 150%;
-	text-transform: uppercase;
-	
-}
-
-.info {
-	font-size: 18px;
-	padding-top: -15px;
-	line-height: normal;
-}
-
-.item {
-/*	border: 2px solid #000;*/
-	text-align: center;
-	margin-top: -25px;
-}
-
-.record {
-	display:inline;
+  padding: 2em;
 }
 .scheduleItem {
-/*	border: 2px dashed skyblue;*/
-	flex-basis: 100%;
+	border: 2px dashed skyblue;
+	flex-basis: 22%;
 	align-items: center;
 	justify-content: center;
-	text-align: left;
-	background-color: #54796d;
-	padding-left: 2em;
-	padding-right: 2em;
+	text-align: center;
 }
-/*
 .scheduleItem svg {
 	width: 100%;
 	stroke-width: 1px;
 }
-*/
-
-/*.fields is the class applied to all of the ballpark field outlines.  */
-
-
 
 /* styles for the scoreboards */
 /*scoreboards use grid not flex*/
@@ -141,12 +62,12 @@ progress::-webkit-progress-value {
 }
 .title {
 	display: inline-block;
-	width: 45%;
-	margin-top: -1em;
-	margin-bottom: -1em;
+/*	width: 45%;*/
+	margin-top: -2em;
+	margin-bottom: -2em;
+	font-weight: 900;
 }
 .item {
-/*
   	border: 1px dashed blue;
 	flex-basis: 25%
 	align-items: center;
@@ -156,7 +77,6 @@ progress::-webkit-progress-value {
 	text-align: center;
     border: 1px solid #54796d;
     justify-content: center;
-*/
 }
 
 /* numbered items are the individual cells of the scoreboards*/
@@ -200,195 +120,99 @@ progress::-webkit-progress-value {
   height: 50px;
   line-height: 50px;
 }
-#awayIcon {
-	background-image: url('away.svg');
-	background-repeat: no-repeat;
-  	background-position: center;
-	background-size: 15%;
-}
 
-.streaks {
-/*
-	width: 100%;
-	border: 2px solid crimson;
-	font-size: 3em;
-	color: #ccc;
-	overflow: scroll;
-*/
-}
-
-/*styles for the standings table*/
-table {
-  table-layout: fixed;
+/*new grid*/
+.grid-container {
+  display: grid;
+  grid-template-columns: auto auto;
+  border: 2px solid orange;
   width: 100%;
-  border-collapse: collapse;
-  border: 3px solid #BD3039;
-  margin-top: 150px;
+}
+.grid-item {
+ height: 2em;
+ border: 2px dashed steelblue;
 }
 
-th,
-td {
-  border: 1px solid #ddd;
-	padding: 8px;
-	text-align: left;
-}
+/*new nested grid*/
 
-th {
-	background-color: #f2f2f2;
+hr {
+	color: #fff;
 }
+.wrapper {
+		display: grid;
+        grid-gap: 10px;
+		grid-template-columns: repeat(4, [col] 300px ) ;
+		grid-template-rows: repeat(2, [row] auto  );
+		background-color: #fff;
+		color: #fff;
+	    font-family: "Overpass", sans-serif; 
+	}
 
-.draw {
-	animation: dash 1s linear forwards;
-	 animation-delay: 1s;
-}
+	.box {
+		background-color: #54796d;
+		color: #fff;
+		border-radius: 5px;
+		padding: 20px;
+		font-size: 150%;
 
-.undraw {
-	animation: undash 1s linear forwards;
-}
+	}
 
-/* for iPhone 2426 x 1125 */
-@media (max-width: 1100px) {
-	.schedulecontainer {
-      
-		/* display:none; */
-/*		flex-wrap: wrap;*/
-		flex-direction: column;
-		height: auto;
-		}
-	#previousgame {order: 1;}
-	#nextgame {order: 2;}
-	#lgvenue {order: 3;}
-	#ngvenue {order: 4;}
-	#previousgame h3, #nextgame h3,#previousgame p, #nextgame div {
-	transform: translateY(0px);
+	.box .box {
+		background-color: #54796d;
+		color: #fff;
 	}
-	.scheduleItem svg {
-		height: 30%;
-		width: auto;
-		stroke-width: 1px;
-	}
-	#lgvname, #ngvname {
-		transform: translateY(150px);
-	}
-	
-	
-	.#scoreboardcontainer {
-/*		flex-direction: column;*/
-	}
-	#scoreboardcontainer {
-/*		display: block;*/
-		display: flex; flex-direction: column;
-		width: 100%;
-		justify-content: center;
-	/*	margin-top: -5vh;*/
-	}
-	
-	#homeGames { order: 2; }
-	#scoreboard { order: 1; }
-	#awayGames { order: 3; }
-	
-	/*#scoreboard is the main (center) scoreboard*/
-	/*.homeAway is used for the two smaller scoreboards*/
-	#scoreboard, .homeAway{
-/*	  display: grid;*/
-	  width: 80vw;
-/*	  grid-template-columns: 1fr 1fr;*/
-	  color: #fff;
-	  font-family: "Overpass", sans-serif;
-/*	  padding: 5vw;*/
-	  padding: 0;
-	  z-index: 10;
-	  border: 2px solid crimson;
-	  margin: 0 auto;
-	  margin-top: 2em;
-	  margin-bottom: 2em;
-	}
-	.homeAway {
-		width: 40vw;
-		padding: 0;
-		margin: 0 auto;
-		height: auto;
-		margin-top: 2em;
-	  margin-bottom: 2em;
+
 /*
-		height: 5vw;
-		line-height: 5vw;
-		margin-top: 6em;
+	.a {
+		grid-column: col / span 2;
+		grid-row: row;
+	}
+
+	.b {
+		grid-column: col 3 / span 2;
+		grid-row: row;
+	}
 */
-	}
-	
-	.item {
-		border: 1px dashed blue;
-	/*
-		flex-basis: 25%
-		align-items: center;
-	*/
-		background-image: url('');
+
+	.c {
+		grid-column: col / span 2;
+		grid-row: row 2;
+		background-image: url("boston-red-sox-logo-vector.svg");
 		background-repeat: no-repeat;
-		background-position: center;
-		text-align: center;
-		border: 1px solid #54796d;
-		justify-content: center;
 	}
 
-	/* numbered items are the individual cells of the scoreboards*/
-	.item-1 {
-	  background-color: #54796d;
-/*	  grid-column: 1/ span 2;*/
-	  font-size: 2em;
-	  line-height: 2em;
-	  font-weight: 900;
-	}
-	.item-2 {
-	  background-color: #54796d;
-	  height: 1.5em;
-	  line-height: 1.5em;
-	  font-size: 4em;
-	}
-	.item-3 {
-	  background-color: #54796d;
-	  height: 1.5em;
-	  line-height: 1.5em;
-	  font-size: 4em;
-	}
-	/*items-sm are the cells for the smaller scoreboards*/
-	.item-1-sm {
-	  background-color: #54796d;
-/*	  grid-column: 1/ span 2;*/
-	  line-height: 2em;
-	  font-weight: 900;
-	  background-image: url('home.svg');
-	  background-repeat: no-repeat;
-	  background-position: center;
-	  background-size: 10%;
-	}
-	.item-2-sm {
-	  background-color: #54796d;
-	  height: 50px;
-	  line-height: 50px;
-	}
-	.item-3-sm {
-	  background-color: #54796d;
-	  height: 50px;
-	  line-height: 50px;
-	}
-	#awayIcon {
-		background-image: url('away.svg');
-		background-repeat: no-repeat;
-		background-position: center;
-		background-size: 10%;
+	.d{
+		grid-column: col 3 / span 2;
+		grid-row: row 2;
+		display: grid;
+        grid-gap: 15px;
+		grid-template-columns: 1fr 1fr;
 	}
 
+	.e {
+		grid-column: 1 / 3;
+		grid-row: 1;
+/*		border: 2px dashed #fff;*/
+		font-size: 22px;
+		padding: 0;
+	}
 
-    }
+	.f {
+		grid-column: 1;
+		grid-row: 2;
+		padding-top: 0;
+		height: 20px;
+		border-bottom: 2px solid #fff;
+	}
 
-@keyframes dash {
-  from {stroke-dashoffset: 200;}
-  to {stroke-dashoffset: 400;}
+	.g {
+		grid-column: 2;
+		grid-row: 2;
+		padding-top: 0;
+		height: 20px;
+		border-bottom: 2px solid #fff;
+	}
+
+.logo {
+	width: 30px;
 }
-
-@keyframes undash {
-  from {stroke-dashoffset: 0;}
-  to {stroke-dashoffset: 200;}
-}
-    
