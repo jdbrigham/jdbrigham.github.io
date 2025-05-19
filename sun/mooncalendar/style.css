@@ -80,3 +80,12 @@ padding:5% 15%;
 #svg2:hover {
 	fill: #fff;
 }
+
+/* for iPhone 2426 x 1125 */
+@media (max-width: 1100px) {
+	#ex3{    
+/*	  max-width: 700px;*/
+      width: 100%;
+		}
+
+    }
