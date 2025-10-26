@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Year Grid Tracker (Color Cells)</title>
+<style>
+  body {
+    font-family: sans-serif;
+    padding: 1em;
+    background: #f7f7f7;
+  }
+  #tabBar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5em;
+    margin-bottom: 1em;
+  }
+	
+  .tracker-container {
+     display: flex;
+     justify-content: center;
+   }
+  .tab {
+    background: #ddd;
+    border: none;
+    padding: 0.4em 0.8em;
+    border-radius: 0.3em;
+    cursor: pointer;
+  }
+  .tab.active {
+    background: #4a90e2;
+    color: white;
+  }
+  #trackers > div {
+    display: none;
+    background: white;
+    border-radius: 0.4em;
+    padding: 1em;
+    box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    overflow-x: auto;
+  }
+  #trackers > div.active {
+    display: block;
+  }
+  button#createNew {
+    margin-bottom: 1em;
+    background: #4a90e2;
+    color: white;
+    border: none;
+    padding: 0.5em 1em;
+    border-radius: 0.4em;
+    cursor: pointer;
+  }
+  input.trackerName {
+    font-size: 1.1em;
+    font-weight: bold;
+    border: none;
+    border-bottom: 1px solid #ccc;
+    width: 100%;
+    margin-bottom: 0.8em;
+  }
+  input.trackerName:focus {
+    outline: none;
+    border-color: #4a90e2;
+  }
+  table.yearGrid {
+    border-collapse: collapse;
+    font-size: 0.8em;
+  }
+  table.yearGrid th, table.yearGrid td {
+    border: 1px solid #fff;
+    text-align: center;
+    width: 24px;
+    height: 24px;
+  }
+  table.yearGrid th {
+    background: #fff;
+    position: sticky;
+    top: 0;
+  }
+  td.dayCell {
+    background: white;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+  }
+  td.dayCell.active {
+    background: fireBrick;
+  }
+  td.dayCell:hover {
+/*    transform: scale(1.1);*/
+	  background: crimson;
+  }
+</style>
+</head>
+<body>
+
+<h2>Year Grid Trackers</h2>
+<button id="createNew">➕ New Tracker</button>
+<div id="tabBar"></div>
+<div id="trackers" class='tracker-container'></div>
+
+<script>
+const monthNames = ['J','F','M','A','M','J','J','A','S','O','N','D'];
+const daysInMonth = [31,28,31,30,31,30,31,31,30,31,30,31];
+
+let trackerCount = JSON.parse(localStorage.getItem('trackerCount')) || 1;
+let trackerNames = JSON.parse(localStorage.getItem('trackerNames')) || {};
+let currentTracker = 1;
+
+function saveGrid(trackerId) {
+  const cells = document.querySelectorAll(`#tracker${trackerId} td.dayCell`);
+  const states = Array.from(cells).map(c => c.classList.contains('active'));
+  localStorage.setItem(`tracker_${trackerId}`, JSON.stringify(states));
+}
+
+function loadGrid(trackerId) {
+  const states = JSON.parse(localStorage.getItem(`tracker_${trackerId}`)) || [];
+  const cells = document.querySelectorAll(`#tracker${trackerId} td.dayCell`);
+  cells.forEach((c, i) => {
+    if (states[i]) c.classList.add('active');
+    else c.classList.remove('active');
+  });
+}
+
+function saveName(trackerId, newName) {
+  trackerNames[trackerId] = newName;
+  localStorage.setItem('trackerNames', JSON.stringify(trackerNames));
+  const tab = document.querySelector(`.tab[data-id="${trackerId}"]`);
+  if (tab) tab.textContent = newName || `Tracker ${trackerId}`;
+}
+
+function createGrid(trackerId) {
+  const table = document.createElement('table');
+  table.className = 'yearGrid';
+
+  // Header row with month letters
+  const header = document.createElement('tr');
+  header.appendChild(document.createElement('th')); // corner cell
+  monthNames.forEach(m => {
+    const th = document.createElement('th');
+    th.textContent = m;
+    header.appendChild(th);
+  });
+  table.appendChild(header);
+
+  // Rows for days 1–31
+  for (let day = 1; day <= 31; day++) {
+    const row = document.createElement('tr');
+    const dayCell = document.createElement('th');
+    dayCell.textContent = day;
+    row.appendChild(dayCell);
+
+    for (let month = 0; month < 12; month++) {
+      const td = document.createElement('td');
+      if (day <= daysInMonth[month]) {
+        td.className = 'dayCell';
+        td.addEventListener('click', () => {
+          td.classList.toggle('active');
+          saveGrid(trackerId);
+        });
+      } else {
+        td.style.background = '#f0f0f0'; // non-existent days
+      }
+      row.appendChild(td);
+    }
+    table.appendChild(row);
+  }
+  return table;
+}
+
+function createTracker(trackerId) {
+  const name = trackerNames[trackerId] || `Tracker ${trackerId}`;
+
+  // Tab
+  const tab = document.createElement('button');
+  tab.className = 'tab';
+  tab.textContent = name;
+  tab.dataset.id = trackerId;
+  tab.addEventListener('click', () => switchTracker(trackerId));
+  document.getElementById('tabBar').appendChild(tab);
+
+  // Tracker content
+  const div = document.createElement('div');
+  div.id = `tracker${trackerId}`;
+  const nameInput = document.createElement('input');
+  nameInput.className = 'trackerName';
+  nameInput.type = 'text';
+  nameInput.value = name;
+  nameInput.placeholder = 'Enter tracker name';
+  nameInput.addEventListener('input', () => saveName(trackerId, nameInput.value));
+  div.appendChild(nameInput);
+
+  const grid = createGrid(trackerId);
+  div.appendChild(grid);
+  document.getElementById('trackers').appendChild(div);
+
+  loadGrid(trackerId);
+}
+
+function switchTracker(trackerId) {
+  currentTracker = trackerId;
+  document.querySelectorAll('.tab').forEach(tab =>
+    tab.classList.toggle('active', tab.dataset.id == trackerId)
+  );
+  document.querySelectorAll('#trackers > div').forEach(div =>
+    div.classList.toggle('active', div.id === `tracker${trackerId}`)
+  );
+  localStorage.setItem('currentTracker', trackerId);
+}
+
+function addNewTracker() {
+  trackerCount++;
+  localStorage.setItem('trackerCount', trackerCount);
+  createTracker(trackerCount);
+  saveName(trackerCount, `Tracker ${trackerCount}`);
+  switchTracker(trackerCount);
+}
+
+// Initialize
+for (let i = 1; i <= trackerCount; i++) createTracker(i);
+const savedCurrent = localStorage.getItem('currentTracker');
+if (savedCurrent) switchTracker(savedCurrent);
+else switchTracker(1);
+
+document.getElementById('createNew').addEventListener('click', addNewTracker);
+</script>
+
+</body>
+</html>
