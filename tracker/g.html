@@ -164,18 +164,21 @@ function toggleView(trackerId, button) {
   const div = document.getElementById(`tracker${trackerId}`);
   const wasOverview = isOverview[trackerId];
 
-  // Clear old grid
+  // Remove the old table
   const oldTable = div.querySelector('table');
   if (oldTable) oldTable.remove();
 
-  // Create new grid
+  // Create new one
   const newGrid = wasOverview
-    ? createGrid(trackerId)         // back to 3-week
-    : createYearOverview(trackerId); // zoom out
+    ? createGrid(trackerId)
+    : createYearOverview(trackerId);
 
   div.appendChild(newGrid);
 
-  // Update button label and state
+  // ✅ Ensure the new grid reloads its saved states
+  loadGrid(trackerId);
+
+  // Update button text & state
   isOverview[trackerId] = !wasOverview;
   button.textContent = wasOverview ? 'View Overview' : 'View 3-Week Tracker';
 }
@@ -259,7 +262,7 @@ function createGrid(trackerId) {
   }
 
   // Load any saved states for visible dates
-  loadGrid(trackerId);
+  // loadGrid(trackerId);
 
   return table;
 }
