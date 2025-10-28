@@ -6,67 +6,118 @@
 <title>3-Week + Year Tracker</title>
 <style>
   body {
-    font-family: system-ui, sans-serif;
-    padding: 20px;
+    font-family: sans-serif;
+    padding: 1em;
+    background: #f7f7f7;
   }
-  table {
-    border-collapse: collapse;
-    margin-top: 10px;
+  #tabBar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5em;
+    margin-bottom: 1em;
   }
-  th, td {
-    border: 1px solid #ccc;
-    text-align: center;
-    width: 24px;
-    height: 24px;
-    font-size: 12px;
-    cursor: pointer;
-  }
-  th {
-    background: #f5f5f5;
-  }
-  td.dayCell.active {
-    background: #007aff;
-  }
-  .todayCell {
-    outline: 2px solid red;
-  }
-  .yearOverview td.active {
-    background: #66bb6a;
-  }
+	
+  .tracker-container {
+     display: flex;
+     justify-content: center;
+   }
   .tab {
     background: #ddd;
     border: none;
-    padding: 5px 10px;
+    padding: 0.4em 0.8em;
+    border-radius: 0.3em;
     cursor: pointer;
-    border-radius: 5px 5px 0 0;
-    margin-right: 4px;
   }
   .tab.active {
-    background: #007aff;
+    background: #4a90e2;
     color: white;
-  }
-  #tabBar {
-    margin-bottom: 10px;
   }
   #trackers > div {
     display: none;
+    background: white;
+    border-radius: 0.4em;
+    padding: 1em;
+    box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    overflow-x: auto;
   }
   #trackers > div.active {
     display: block;
   }
-  .trackerName {
-    display: block;
-    margin-bottom: 6px;
-  }
-  .toggleView {
-    margin: 0.5em 0;
-    padding: 0.4em 0.8em;
-    border: none;
-    border-radius: 6px;
-    background: #007aff;
+  button#createNew {
+    margin-bottom: 1em;
+    background: #4a90e2;
     color: white;
+    border: none;
+    padding: 0.5em 1em;
+    border-radius: 0.4em;
     cursor: pointer;
   }
+  input.trackerName {
+    font-size: 1.1em;
+    font-weight: bold;
+    border: none;
+    border-bottom: 1px solid #ccc;
+    width: 100%;
+    margin-bottom: 0.8em;
+  }
+  input.trackerName:focus {
+    outline: none;
+    border-color: #4a90e2;
+  }
+  table.yearGrid {
+    border-collapse: collapse;
+    font-size: 0.8em;
+  }
+  table.yearGrid th, table.yearGrid td {
+    border: 1px solid #fff;
+    text-align: center;
+    width: 24px;
+    height: 24px;
+  }
+  table.yearGrid th {
+    background: #fff;
+    position: sticky;
+    top: 0;
+  }
+  td.dayCell {
+    background: white;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+  }
+  td.dayCell.active {
+    background: fireBrick;
+  }
+  td.dayCell:hover {
+/*    transform: scale(1.1);*/
+	  background: crimson;
+  }
+	
+  .todayCell {
+  	outline: 2px solid red;
+  	outline-offset: -2px;
+	}
+	
+  .toggleView {
+  margin: 0.5em 0;
+  padding: 0.4em 0.8em;
+  border: none;
+  border-radius: 6px;
+  background: #007aff;
+  color: white;
+  cursor: pointer;
+}
+
+.yearOverview td.active {
+  background: #66bb6a;
+}
+
+.threeWeekGrid td.active {
+  background: #007aff;
+}
+
+.todayCell {
+  outline: 2px solid red;
+}
 </style>
 </head>
 <body>
