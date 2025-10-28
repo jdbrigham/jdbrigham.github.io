@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3-Week + Year Tracker</title>
+<style>
+  body {
+    font-family: system-ui, sans-serif;
+    padding: 20px;
+  }
+  table {
+    border-collapse: collapse;
+    margin-top: 10px;
+  }
+  th, td {
+    border: 1px solid #ccc;
+    text-align: center;
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  th {
+    background: #f5f5f5;
+  }
+  td.dayCell.active {
+    background: #007aff;
+  }
+  .todayCell {
+    outline: 2px solid red;
+  }
+  .yearOverview td.active {
+    background: #66bb6a;
+  }
+  .tab {
+    background: #ddd;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 5px 5px 0 0;
+    margin-right: 4px;
+  }
+  .tab.active {
+    background: #007aff;
+    color: white;
+  }
+  #tabBar {
+    margin-bottom: 10px;
+  }
+  #trackers > div {
+    display: none;
+  }
+  #trackers > div.active {
+    display: block;
+  }
+  .trackerName {
+    display: block;
+    margin-bottom: 6px;
+  }
+  .toggleView {
+    margin: 0.5em 0;
+    padding: 0.4em 0.8em;
+    border: none;
+    border-radius: 6px;
+    background: #007aff;
+    color: white;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<div id="tabBar"></div>
+<button id="createNew">+ New Tracker</button>
+<div id="trackers"></div>
+
+<script>
+// -----------------------------
+// Persistent data
+// -----------------------------
+const monthNames = ['J','F','M','A','M','J','J','A','S','O','N','D'];
+const daysInMonth = [31,28,31,30,31,30,31,31,30,31,30,31];
+
+let trackerCount = JSON.parse(localStorage.getItem('trackerCount')) || 1;
+let trackerNames = JSON.parse(localStorage.getItem('trackerNames')) || {};
+let currentTracker = 1;
+let isOverview = {}; // store per-tracker view mode
+
+// -----------------------------
+// Save / Load by date
+// -----------------------------
+function saveGrid(trackerId) {
+  const cells = document.querySelectorAll(`#tracker${trackerId} td.dayCell`);
+  const saved = JSON.parse(localStorage.getItem(`tracker_${trackerId}`)) || {};
+
+  cells.forEach(c => {
+    const dateKey = c.dataset.date;
+    saved[dateKey] = c.classList.contains('active');
+  });
+
+  localStorage.setItem(`tracker_${trackerId}`, JSON.stringify(saved));
+}
+
+function loadGrid(trackerId) {
+  const saved = JSON.parse(localStorage.getItem(`tracker_${trackerId}`)) || {};
+  const cells = document.querySelectorAll(`#tracker${trackerId} td.dayCell`);
+
+  cells.forEach(c => {
+    const dateKey = c.dataset.date;
+    if (saved[dateKey]) c.classList.add('active');
+    else c.classList.remove('active');
+  });
+}
+
+// -----------------------------
+// Tracker name save/load
+// -----------------------------
+function saveName(trackerId, newName) {
+  trackerNames[trackerId] = newName;
+  localStorage.setItem('trackerNames', JSON.stringify(trackerNames));
+  const tab = document.querySelector(`.tab[data-id="${trackerId}"]`);
+  if (tab) tab.textContent = newName || `Tracker ${trackerId}`;
+}
+
+// -----------------------------
+// 3-Week grid view
+// -----------------------------
+function createGrid(trackerId) {
+  const table = document.createElement('table');
+  table.className = 'threeWeekGrid';
+
+  const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const today = new Date();
+
+  function getWeekNumber(date) {
+    const tmp = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNum = tmp.getUTCDay() || 7;
+    tmp.setUTCDate(tmp.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(tmp.getUTCFullYear(),0,1));
+    return Math.ceil((((tmp - yearStart) / 86400000) + 1) / 7);
+  }
+
+  // Header row
+  const header = document.createElement('tr');
+  header.appendChild(document.createElement('th'));
+  dayNames.forEach(d => {
+    const th = document.createElement('th');
+    th.textContent = d;
+    header.appendChild(th);
+  });
+  table.appendChild(header);
+
+  // Create 3 weeks: current + next 2
+  for (let weekOffset = 0; weekOffset < 3; weekOffset++) {
+    const row = document.createElement('tr');
+    const tempDate = new Date(today);
+    tempDate.setDate(today.getDate() + weekOffset * 7);
+    const weekNum = getWeekNumber(tempDate);
+
+    const label = document.createElement('th');
+    label.textContent = `Week ${weekNum}`;
+    row.appendChild(label);
+
+    const sunday = new Date(tempDate);
+    sunday.setDate(tempDate.getDate() - sunday.getDay());
+
+    for (let i = 0; i < 7; i++) {
+      const dayDate = new Date(sunday);
+      dayDate.setDate(sunday.getDate() + i);
+      const td = document.createElement('td');
+      td.className = 'dayCell';
+      td.dataset.date = dayDate.toISOString().split('T')[0];
+
+      td.addEventListener('click', () => {
+        td.classList.toggle('active');
+        saveGrid(trackerId);
+      });
+
+      if (
+        dayDate.getFullYear() === today.getFullYear() &&
+        dayDate.getMonth() === today.getMonth() &&
+        dayDate.getDate() === today.getDate()
+      ) {
+        td.classList.add('todayCell');
+      }
+
+      row.appendChild(td);
+    }
+
+    table.appendChild(row);
+  }
+
+  return table;
+}
+
+// -----------------------------
+// Year overview view
+// -----------------------------
+function createYearOverview(trackerId) {
+  const table = document.createElement('table');
+  table.className = 'yearOverview';
+  const saved = JSON.parse(localStorage.getItem(`tracker_${trackerId}`)) || {};
+
+  const header = document.createElement('tr');
+  header.appendChild(document.createElement('th'));
+  monthNames.forEach(m => {
+    const th = document.createElement('th');
+    th.textContent = m;
+    header.appendChild(th);
+  });
+  table.appendChild(header);
+
+  for (let day = 1; day <= 31; day++) {
+    const row = document.createElement('tr');
+    const th = document.createElement('th');
+    th.textContent = day;
+    row.appendChild(th);
+
+    for (let month = 0; month < 12; month++) {
+      const td = document.createElement('td');
+      if (day <= daysInMonth[month]) {
+        const dateKey = new Date(new Date().getFullYear(), month, day)
+          .toISOString()
+          .split('T')[0];
+        td.className = 'dayCell';
+        if (saved[dateKey]) td.classList.add('active');
+      } else {
+        td.style.background = '#f0f0f0';
+      }
+      row.appendChild(td);
+    }
+    table.appendChild(row);
+  }
+  return table;
+}
+
+// -----------------------------
+// Toggle between 3-week & year
+// -----------------------------
+function toggleView(trackerId, button) {
+  const div = document.getElementById(`tracker${trackerId}`);
+  const wasOverview = isOverview[trackerId];
+
+  const oldTable = div.querySelector('table');
+  if (oldTable) oldTable.remove();
+
+  const newGrid = wasOverview
+    ? createGrid(trackerId)
+    : createYearOverview(trackerId);
+
+  div.appendChild(newGrid);
+
+  // ✅ Always reload current states
+  loadGrid(trackerId);
+
+  isOverview[trackerId] = !wasOverview;
+  button.textContent = wasOverview ? 'View Overview' : 'View 3-Week Tracker';
+}
+
+// -----------------------------
+// Tracker creation & switching
+// -----------------------------
+function createTracker(trackerId) {
+  const name = trackerNames[trackerId] || `Tracker ${trackerId}`;
+
+  // Tab
+  const tab = document.createElement('button');
+  tab.className = 'tab';
+  tab.textContent = name;
+  tab.dataset.id = trackerId;
+  tab.addEventListener('click', () => switchTracker(trackerId));
+  document.getElementById('tabBar').appendChild(tab);
+
+  // Tracker container
+  const div = document.createElement('div');
+  div.id = `tracker${trackerId}`;
+
+  const nameInput = document.createElement('input');
+  nameInput.className = 'trackerName';
+  nameInput.type = 'text';
+  nameInput.value = name;
+  nameInput.placeholder = 'Enter tracker name';
+  nameInput.addEventListener('input', () => saveName(trackerId, nameInput.value));
+  div.appendChild(nameInput);
+
+  const toggleBtn = document.createElement('button');
+  toggleBtn.textContent = 'View Overview';
+  toggleBtn.className = 'toggleView';
+  toggleBtn.addEventListener('click', () => toggleView(trackerId, toggleBtn));
+  div.appendChild(toggleBtn);
+
+  const grid = createGrid(trackerId);
+  div.appendChild(grid);
+
+  document.getElementById('trackers').appendChild(div);
+
+  loadGrid(trackerId);
+}
+
+function switchTracker(trackerId) {
+  currentTracker = trackerId;
+  document.querySelectorAll('.tab').forEach(tab =>
+    tab.classList.toggle('active', tab.dataset.id == trackerId)
+  );
+  document.querySelectorAll('#trackers > div').forEach(div =>
+    div.classList.toggle('active', div.id === `tracker${trackerId}`)
+  );
+  localStorage.setItem('currentTracker', trackerId);
+}
+
+function addNewTracker() {
+  trackerCount++;
+  localStorage.setItem('trackerCount', trackerCount);
+  createTracker(trackerCount);
+  saveName(trackerCount, `Tracker ${trackerCount}`);
+  switchTracker(trackerCount);
+}
+
+// -----------------------------
+// Initialization
+// -----------------------------
+for (let i = 1; i <= trackerCount; i++) createTracker(i);
+const savedCurrent = localStorage.getItem('currentTracker');
+if (savedCurrent) switchTracker(savedCurrent);
+else switchTracker(1);
+
+document.getElementById('createNew').addEventListener('click', addNewTracker);
+</script>
+</body>
+</html>
