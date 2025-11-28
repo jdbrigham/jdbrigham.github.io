@@ -32,6 +32,12 @@ html, body {
     border: 2px solid #bbb;
     text-align: left;
     padding: 10px;
+	
+	display: flex;
+      justify-content: center; /* Horizontally centers the content */
+      align-items: center;    /* Vertically centers the content */
+      /* Optional: Adjust spacing between checkboxes */
+      gap: 10px; 
 }
 
 label {
@@ -285,7 +291,7 @@ div:nth-of-type(6) {
 }
 
 .givenByPeter {
-  background: url("https://jbrigham.com/020/IMG_0592.png");
+  background: url("IMG_0592.png");
   background-position: center center;
   background-size: contain;
   background-color: #bbb;
