@@ -91,6 +91,30 @@ div:nth-of-type(6) {
 /*  background-color: var(--john);*/
 }
 
+.y2019 {
+	stroke: coral;
+}
+
+.y2020 {
+	stroke: steelblue;
+}
+
+.y2021 {
+	stroke: darkseagreen;
+}
+
+.y2022 {
+	stroke: crimson;
+}
+
+.y2023 {
+	stroke: seagreen;
+}
+
+.y2024 {
+	stroke: powderblue;
+}
+
 .boxRight {
   position: absolute;
   padding: .5em;

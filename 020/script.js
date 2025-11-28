@@ -1,6 +1,6 @@
 $('#2019').change(function() {
    if($(this).is(":checked")) {
-       $('.2019').addClass('draw');
+       $('.y2019').addClass('draw');
        
         $('#2019a').on('animationend webkitAnimationEnd', function() { 
         
@@ -33,7 +33,7 @@ $('#2019').change(function() {
        });
       return;
    }
-        $('.2019').removeClass('draw');
+        $('.y2019').removeClass('draw');
         $('#boxG2').css('color', '#000');
         $('#boxR2').css('color', '#000');
         $('#boxR9').removeClass('givenByAlison');
@@ -44,7 +44,7 @@ $('#2019').change(function() {
 
 $('#2020').change(function() {
    if($(this).is(":checked")) {
-        $('.2020').addClass('draw');
+        $('.y2020').addClass('draw');
        
        $('#2020a').on('animationend webkitAnimationEnd', function() { 
 //        pasted code (2020)
@@ -75,7 +75,7 @@ $('#2020').change(function() {
        });
       return;
    }
-        $('.2020').removeClass('draw');
+        $('.y2020').removeClass('draw');
         $(".recipient").css("background-image","url()");
         $(".recipient").html('?');
 
@@ -83,7 +83,7 @@ $('#2020').change(function() {
 
 $('#2021').change(function() {
    if($(this).is(":checked")) {
-       $('.2021').addClass('draw');
+       $('.y2021').addClass('draw');
        
        $('#2021a').on('animationend webkitAnimationEnd', function() { 
 //        pasted code (2021)
@@ -114,7 +114,7 @@ $('#2021').change(function() {
        });
       return;
    }
-        $('.2021').removeClass('draw');
+        $('.y2021').removeClass('draw');
         $(".recipient").css("background-image","url()");
         $(".recipient").html('?');
 
@@ -122,7 +122,7 @@ $('#2021').change(function() {
 
 $('#2022').change(function() {
    if($(this).is(":checked")) {
-       $('.2022').addClass('draw');
+       $('.y2022').addClass('draw');
        
        $('#2022a').on('animationend webkitAnimationEnd', function() { 
 		//  pasted code (2022)
@@ -153,7 +153,7 @@ $('#2022').change(function() {
        });
       return;
    }
-        $('.2022').removeClass('draw');
+        $('.y2022').removeClass('draw');
         $(".recipient").css("background-image","url()");
         $(".recipient").html('?');
 
@@ -161,9 +161,9 @@ $('#2022').change(function() {
 
 $('#2023').change(function() {
    if($(this).is(":checked")) {
-       $('.2023').addClass('draw');
+       $('.y2023').addClass('draw');
        
-       $('.2023').on('animationend webkitAnimationEnd', function() { 
+       $('.y2023').on('animationend webkitAnimationEnd', function() { 
 		   console.log('@2023a draw has ended');
 //        pasted code (2022)
         $("#circleP1").css("background-image","url(img/peter.png)");
@@ -193,7 +193,7 @@ $('#2023').change(function() {
        });
       return;
    }
-        $('.2023').removeClass('draw');
+        $('.y2023').removeClass('draw');
         $(".recipient").css("background-image","url()");
         $(".recipient").html('?');
 
@@ -201,9 +201,9 @@ $('#2023').change(function() {
 
 $('#2024').change(function() {
    if($(this).is(":checked")) {
-       $('.2024').addClass('draw');
+       $('.y2024').addClass('draw');
        
-       $('.2024').on('animationend webkitAnimationEnd', function() { 
+       $('.y2024').on('animationend webkitAnimationEnd', function() { 
         $("#circleP1").css("background-image","url(img/jenny.png)");
           $("#circleP1").html('');
         $("#circleP2").css("background-image","url(img/roblyn.png)");
@@ -231,7 +231,7 @@ $('#2024').change(function() {
        });
       return;
    }
-        $('.2024').removeClass('draw');
+        $('.y2024').removeClass('draw');
         $(".recipient").css("background-image","url()");
         $(".recipient").html('?');
 
