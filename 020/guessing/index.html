@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Button Grid</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            /*background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);*/
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .section h2 {
+            color: white;
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 24px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .btn {
+            padding: 5px 5px;
+            font-size: 14px;
+            font-weight: bold;
+            color: white;
+            /*background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);*/
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+        
+        #bottomGrid .btn {
+            background-color: darkmagenta;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn.selected {
+            border: 3px solid #ffd700;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+        }
+
+        .btn.clicked {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            opacity: 0.6;
+        }
+
+        .btn .assigned-name {
+            font-size: 14px;
+            font-weight: normal;
+            opacity: 0.9;
+        }
+
+        .btn.hidden {
+            display: none;
+        }
+
+        @media (max-width: 600px) {
+            .grid {
+                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+                gap: 10px;
+                padding: 15px;
+            }
+
+            .btn {
+                padding: 30px 15px;
+                font-size: 16px;
+            }
+
+            .section h2 {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="section">
+            <h2>Top Set</h2>
+            <div class="grid" id="topGrid"></div>
+        </div>
+        
+        <div class="section">
+            <h2>Bottom Set</h2>
+            <div class="grid" id="bottomGrid"></div>
+        </div>
+    </div>
+
+    <script>
+        const names = ['Googie', 'Alison', 'Ron', 'Benjamin', 'Peter', 'Roblyn', 'Katie', 'Jenny', 'John', 'Kate', 'Lily', 'Astro', 'Erica', 'Other'];
+        const buttonStates = {};
+        const buttonAssignments = {};
+        const hiddenButtons = {};
+        let selectedTopButton = null;
+
+        function initializeButtons() {
+            const topGrid = document.getElementById('topGrid');
+            const bottomGrid = document.getElementById('bottomGrid');
+            
+            // Create top set buttons
+            for (let i = 0; i < names.length; i++) {
+                const button = document.createElement('button');
+                button.className = 'btn';
+                button.dataset.id = i;
+                button.dataset.set = 'top';
+                
+                updateButtonText(button, names[i], buttonAssignments[i]);
+                
+                if (buttonStates[i]) {
+                    button.classList.add('clicked');
+                }
+                
+                button.addEventListener('click', function() {
+                    handleTopButtonClick(this);
+                });
+                
+                topGrid.appendChild(button);
+            }
+
+            // Create bottom set buttons
+            for (let i = 0; i < names.length; i++) {
+                const button = document.createElement('button');
+                button.className = 'btn';
+                button.dataset.id = i;
+                button.dataset.set = 'bottom';
+                button.textContent = names[i];
+                
+                if (hiddenButtons[i]) {
+                    button.classList.add('hidden');
+                }
+                
+                button.addEventListener('click', function() {
+                    handleBottomButtonClick(this);
+                });
+                
+                bottomGrid.appendChild(button);
+            }
+        }
+
+        function handleTopButtonClick(button) {
+            // Remove selection from previously selected button
+            if (selectedTopButton) {
+                selectedTopButton.classList.remove('selected');
+            }
+            
+            // Select this button
+            selectedTopButton = button;
+            button.classList.add('selected');
+        }
+
+        function handleBottomButtonClick(button) {
+            if (!selectedTopButton) {
+                return; // No top button selected, do nothing
+            }
+
+            const topButtonId = selectedTopButton.dataset.id;
+            const bottomButtonId = button.dataset.id;
+            const assignedName = names[bottomButtonId];
+
+            // Update top button with assigned name
+            buttonAssignments[topButtonId] = assignedName;
+            updateButtonText(selectedTopButton, names[topButtonId], assignedName);
+            
+            // Toggle clicked state on top button
+            selectedTopButton.classList.toggle('clicked');
+            buttonStates[topButtonId] = selectedTopButton.classList.contains('clicked');
+
+            // Hide bottom button
+            button.classList.add('hidden');
+            hiddenButtons[bottomButtonId] = true;
+
+            // Deselect top button
+            selectedTopButton.classList.remove('selected');
+            selectedTopButton = null;
+
+            saveState();
+        }
+
+        function updateButtonText(button, originalName, assignedName) {
+            button.innerHTML = originalName;
+            if (assignedName) {
+                button.innerHTML += '<div class="assigned-name">(' + assignedName + ')</div>';
+            }
+        }
+
+        function loadState() {
+            const savedStates = JSON.parse(localStorage.getItem('buttonStates') || '{}');
+            const savedAssignments = JSON.parse(localStorage.getItem('buttonAssignments') || '{}');
+            const savedHidden = JSON.parse(localStorage.getItem('hiddenButtons') || '{}');
+            Object.assign(buttonStates, savedStates);
+            Object.assign(buttonAssignments, savedAssignments);
+            Object.assign(hiddenButtons, savedHidden);
+        }
+
+        function saveState() {
+            localStorage.setItem('buttonStates', JSON.stringify(buttonStates));
+            localStorage.setItem('buttonAssignments', JSON.stringify(buttonAssignments));
+            localStorage.setItem('hiddenButtons', JSON.stringify(hiddenButtons));
+        }
+
+        loadState();
+        initializeButtons();
+    </script>
+</body>
+</html>
