@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Button Grid</title>
+    <title>Secret Santa Analysis</title>
     <style>
         * {
             margin: 0;
@@ -12,221 +12,465 @@
         }
 
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
             padding: 20px;
+            color: #333;
         }
 
         .container {
-            max-width: 1200px;
-            width: 100%;
-            display: flex;
-            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
         }
 
-        .section {
-            flex: 1;
-        }
-
-        .section h2 {
+        h1 {
             color: white;
             text-align: center;
-            margin-bottom: 15px;
-            font-size: 20px;
+            margin-bottom: 30px;
+            font-size: 36px;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
         }
 
-        .grid {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            padding: 15px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-            backdrop-filter: blur(10px);
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
         }
 
-        .btn {
-            padding: 20px 10px;
-            font-size: 15px;
-            font-weight: bold;
-            color: white;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: 2px solid rgba(255, 255, 255, 0.3);
+        .stat-card {
+            background: white;
+            padding: 20px;
             border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.3s ease;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        .stat-card .number {
+            font-size: 32px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-card .label {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .section {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            margin-bottom: 25px;
+        }
+
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        .heatmap {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+
+        th {
+            background: #667eea;
+            color: white;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+        }
+
+        td {
+            background: white;
+        }
+
+        .cell-0 { background: #f8f9fa; }
+        .cell-1 { background: #e3f2fd; }
+        .cell-2 { background: #90caf9; }
+        .cell-3 { background: #42a5f5; color: white; }
+        .cell-4 { background: #1e88e5; color: white; }
+        .cell-5 { background: #1565c0; color: white; }
+
+        .row-header {
+            background: #f0f0f0;
+            font-weight: bold;
+            text-align: left;
+            padding-left: 15px;
+        }
+
+        .list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .list li {
+            padding: 12px;
+            margin-bottom: 8px;
+            background: #f8f9fa;
+            border-radius: 8px;
             display: flex;
-            flex-direction: column;
+            justify-content: space-between;
             align-items: center;
-            justify-content: center;
-            gap: 5px;
         }
 
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        .list li:hover {
+            background: #e9ecef;
         }
 
-        .btn:active {
-            transform: translateY(0);
-        }
-
-        .btn.selected {
-            border: 3px solid #ffd700;
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
-        }
-
-        .btn.clicked {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            opacity: 0.6;
-        }
-
-        .btn .assigned-name {
+        .badge {
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
             font-size: 12px;
-            font-weight: normal;
-            opacity: 0.9;
+            font-weight: bold;
         }
 
-        .btn.hidden {
-            display: none;
+        .filters {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
         }
 
-        
+        .filters select {
+            padding: 10px;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+            font-size: 14px;
+            background: white;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 28px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+
+            .stat-card .number {
+                font-size: 24px;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        <h1>🎄 Secret Santa Analysis 🎅</h1>
+
+        <div class="stats-grid" id="statsGrid"></div>
+
         <div class="section">
-            <h2>Left Set</h2>
-            <div class="grid" id="topGrid"></div>
+            <h2>Gift-Giving Heatmap</h2>
+            <p style="margin-bottom: 15px; color: #666;">Shows how many times each person (row) gave to each person (column)</p>
+            <div class="heatmap">
+                <table id="heatmapTable"></table>
+            </div>
         </div>
-        
+
         <div class="section">
-            <h2>Right Set</h2>
-            <div class="grid" id="bottomGrid"></div>
+            <h2>Mutual Exchanges</h2>
+            <p style="margin-bottom: 15px; color: #666;">Years when two people gave gifts to each other</p>
+            <ul class="list" id="mutualList"></ul>
+        </div>
+
+        <div class="section">
+            <h2>Relationship Patterns</h2>
+            <div class="filters">
+                <select id="relationshipFilter">
+                    <option value="all">All Relationships</option>
+                    <option value="sibling">Sibling to Sibling</option>
+                    <option value="parent-child">Parent to Child</option>
+                    <option value="child-parent">Child to Parent</option>
+                    <option value="spouse">Spouse to Spouse</option>
+                    <option value="grandchild-grandparent">Grandchild to Grandparent</option>
+                </select>
+            </div>
+            <ul class="list" id="relationshipList"></ul>
+        </div>
+
+        <div class="section">
+            <h2>Most Frequent Pairings</h2>
+            <ul class="list" id="frequentList"></ul>
         </div>
     </div>
 
     <script>
-        const names = ['Googie', 'Alison', 'Ron', 'Benjamin', 'Peter', 'Roblyn', 'Katie', 'Jenny', 'John', 'Kate', 'Lily', 'Astro', 'Erica', 'Other'];
-        const buttonStates = {};
-        const buttonAssignments = {};
-        const hiddenButtons = {};
-        let selectedTopButton = null;
+        const historicalData = {
+            2019: { Alison: 'Lily', Benjamin: 'Alison', Googie: 'Peter', Jenny: 'Kate', John: 'Googie', Kate: 'Ron', Katie: 'Jenny', Lily: 'Katie', Peter: 'Benjamin', Roblyn: 'John', Ron: 'Roblyn' },
+            2020: { Alison: 'Roblyn', Astro: 'Alison', Benjamin: 'John', Googie: 'Astro', Jenny: 'Benjamin', John: 'Katie', Kate: 'Peter', Katie: 'Lily', Lily: 'Jenny', Peter: 'Googie', Roblyn: 'Ron', Ron: 'Kate' },
+            2021: { Alison: 'Jenny', Astro: 'Katie', Benjamin: 'Ron', Googie: 'John', Jenny: 'Lily', John: 'Astro', Kate: 'Roblyn', Katie: 'Benjamin', Lily: 'Googie', Peter: 'Kate', Roblyn: 'Alison', Ron: 'Peter' },
+            2022: { Alison: 'Katie', Astro: 'Roblyn', Benjamin: 'Googie', Googie: 'Jenny', Jenny: 'John', John: 'Benjamin', Kate: 'Peter', Katie: 'Ron', Lily: 'Alison', Peter: 'Astro', Roblyn: 'Kate', Ron: 'Lily' },
+            2023: { Alison: 'Ron', Astro: 'Jenny', Benjamin: 'Astro', Googie: 'Lily', Jenny: 'Katie', John: 'Roblyn', Kate: 'John', Katie: 'Kate', Lily: 'Googie', Peter: 'Alison', Roblyn: 'Peter', Ron: 'Benjamin' },
+            2024: { Alison: 'Googie', Astro: 'Benjamin', Benjamin: 'Kate', Googie: 'Roblyn', Jenny: 'Alison', John: 'Jenny', Kate: 'Lily', Katie: 'Peter', Lily: 'John', Peter: 'Ron', Roblyn: 'Astro', Ron: 'Katie' }
+        };
 
-        function initializeButtons() {
-            const topGrid = document.getElementById('topGrid');
-            const bottomGrid = document.getElementById('bottomGrid');
+        const familyData = {
+            Googie: { generation: 'Parent', siblings: [], spouse: null },
+            Alison: { generation: 'Child', siblings: ['Peter', 'John'], spouse: 'Ron' },
+            Ron: { generation: 'Child (by marriage)', siblings: [], spouse: 'Alison' },
+            Benjamin: { generation: 'Grandchild', siblings: [], spouse: 'Erica' },
+            Peter: { generation: 'Child', siblings: ['Alison', 'John'], spouse: 'Roblyn' },
+            Roblyn: { generation: 'Child (by marriage)', siblings: [], spouse: 'Peter' },
+            Katie: { generation: 'Grandchild', siblings: ['Jenny'], spouse: null },
+            Jenny: { generation: 'Grandchild', siblings: ['Katie'], spouse: null },
+            John: { generation: 'Child', siblings: ['Peter', 'Alison'], spouse: 'Kate' },
+            Kate: { generation: 'Child (by marriage)', siblings: [], spouse: 'John' },
+            Lily: { generation: 'Grandchild', siblings: ['Astro'], spouse: null },
+            Astro: { generation: 'Grandchild', siblings: ['Lily'], spouse: null }
+        };
+
+        const names = Object.keys(familyData).sort();
+
+        function getRelationship(giver, receiver) {
+            const giverInfo = familyData[giver];
+            const receiverInfo = familyData[receiver];
+
+            if (giverInfo.spouse === receiver) return 'spouse';
+            if (giverInfo.siblings.includes(receiver)) return 'sibling';
             
-            // Create top set buttons
-            for (let i = 0; i < names.length; i++) {
-                const button = document.createElement('button');
-                button.className = 'btn';
-                button.dataset.id = i;
-                button.dataset.set = 'top';
-                
-                updateButtonText(button, names[i], buttonAssignments[i]);
-                
-                if (buttonStates[i]) {
-                    button.classList.add('clicked');
-                }
-                
-                button.addEventListener('click', function() {
-                    handleTopButtonClick(this);
+            if (giverInfo.generation === 'Parent' && receiverInfo.generation.includes('Child')) return 'parent-child';
+            if (giverInfo.generation.includes('Child') && receiverInfo.generation === 'Parent') return 'child-parent';
+            if (giverInfo.generation === 'Parent' && receiverInfo.generation === 'Grandchild') return 'grandparent-grandchild';
+            if (giverInfo.generation === 'Grandchild' && receiverInfo.generation === 'Parent') return 'grandchild-grandparent';
+            
+            return 'other';
+        }
+
+        function buildHeatmap() {
+            const matrix = {};
+            names.forEach(giver => {
+                matrix[giver] = {};
+                names.forEach(receiver => {
+                    matrix[giver][receiver] = 0;
                 });
-                
-                topGrid.appendChild(button);
-            }
+            });
 
-            // Create bottom set buttons
-            for (let i = 0; i < names.length; i++) {
-                const button = document.createElement('button');
-                button.className = 'btn';
-                button.dataset.id = i;
-                button.dataset.set = 'bottom';
-                button.textContent = names[i];
-                
-                if (hiddenButtons[i]) {
-                    button.classList.add('hidden');
-                }
-                
-                button.addEventListener('click', function() {
-                    handleBottomButtonClick(this);
+            Object.values(historicalData).forEach(yearData => {
+                Object.entries(yearData).forEach(([giver, receiver]) => {
+                    if (matrix[giver] && matrix[giver][receiver] !== undefined) {
+                        matrix[giver][receiver]++;
+                    }
                 });
-                
-                bottomGrid.appendChild(button);
-            }
+            });
+
+            const table = document.getElementById('heatmapTable');
+            let html = '<thead><tr><th></th>';
+            names.forEach(name => {
+                html += `<th>${name}</th>`;
+            });
+            html += '</tr></thead><tbody>';
+
+            names.forEach(giver => {
+                html += `<tr><td class="row-header">${giver}</td>`;
+                names.forEach(receiver => {
+                    const count = matrix[giver][receiver];
+                    const cellClass = count === 0 ? 'cell-0' : `cell-${Math.min(count, 5)}`;
+                    html += `<td class="${cellClass}">${count || ''}</td>`;
+                });
+                html += '</tr>';
+            });
+            html += '</tbody>';
+            table.innerHTML = html;
+
+            return matrix;
         }
 
-        function handleTopButtonClick(button) {
-            // Remove selection from previously selected button
-            if (selectedTopButton) {
-                selectedTopButton.classList.remove('selected');
-            }
+        function findMutuals() {
+            const mutuals = [];
+            const years = Object.keys(historicalData);
+
+            years.forEach(year => {
+                const yearData = historicalData[year];
+                const checked = new Set();
+
+                Object.entries(yearData).forEach(([giver, receiver]) => {
+                    const pair = [giver, receiver].sort().join('-');
+                    if (checked.has(pair)) return;
+                    checked.add(pair);
+
+                    if (yearData[receiver] === giver) {
+                        mutuals.push({ year, person1: giver, person2: receiver });
+                    }
+                });
+            });
+
+            return mutuals;
+        }
+
+        function calculateStats(matrix) {
+            const years = Object.keys(historicalData).length;
+            let totalGifts = 0;
+            const pairings = [];
+
+            names.forEach(giver => {
+                names.forEach(receiver => {
+                    const count = matrix[giver][receiver];
+                    if (count > 0) {
+                        totalGifts += count;
+                        pairings.push({ giver, receiver, count });
+                    }
+                });
+            });
+
+            const mutuals = findMutuals();
             
-            // Select this button
-            selectedTopButton = button;
-            button.classList.add('selected');
+            const relationshipCounts = {};
+            pairings.forEach(p => {
+                const rel = getRelationship(p.giver, p.receiver);
+                relationshipCounts[rel] = (relationshipCounts[rel] || 0) + p.count;
+            });
+
+            return {
+                years,
+                totalGifts,
+                uniquePairings: pairings.length,
+                mutualYears: mutuals.length,
+                siblingGifts: relationshipCounts.sibling || 0,
+                spouseGifts: relationshipCounts.spouse || 0
+            };
         }
 
-        function handleBottomButtonClick(button) {
-            if (!selectedTopButton) {
-                return; // No top button selected, do nothing
-            }
+        function displayStats(stats) {
+            const grid = document.getElementById('statsGrid');
+            grid.innerHTML = `
+                <div class="stat-card">
+                    <div class="number">${stats.years}</div>
+                    <div class="label">Years of Data</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number">${stats.totalGifts}</div>
+                    <div class="label">Total Gifts</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number">${stats.uniquePairings}</div>
+                    <div class="label">Unique Pairings</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number">${stats.mutualYears}</div>
+                    <div class="label">Mutual Exchanges</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number">${stats.siblingGifts}</div>
+                    <div class="label">Sibling Gifts</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number">${stats.spouseGifts}</div>
+                    <div class="label">Spouse Gifts</div>
+                </div>
+            `;
+        }
 
-            const topButtonId = selectedTopButton.dataset.id;
-            const bottomButtonId = button.dataset.id;
-            const assignedName = names[bottomButtonId];
-
-            // Update top button with assigned name
-            buttonAssignments[topButtonId] = assignedName;
-            updateButtonText(selectedTopButton, names[topButtonId], assignedName);
+        function displayMutuals() {
+            const mutuals = findMutuals();
+            const list = document.getElementById('mutualList');
             
-            // Toggle clicked state on top button
-            selectedTopButton.classList.toggle('clicked');
-            buttonStates[topButtonId] = selectedTopButton.classList.contains('clicked');
-
-            // Hide bottom button
-            button.classList.add('hidden');
-            hiddenButtons[bottomButtonId] = true;
-
-            // Deselect top button
-            selectedTopButton.classList.remove('selected');
-            selectedTopButton = null;
-
-            saveState();
-        }
-
-        function updateButtonText(button, originalName, assignedName) {
-            button.innerHTML = originalName;
-            if (assignedName) {
-                button.innerHTML += '<div class="assigned-name">(' + assignedName + ')</div>';
+            if (mutuals.length === 0) {
+                list.innerHTML = '<li>No mutual exchanges found</li>';
+                return;
             }
+
+            list.innerHTML = mutuals.map(m => 
+                `<li>
+                    <span>${m.person1} ↔ ${m.person2}</span>
+                    <span class="badge">${m.year}</span>
+                </li>`
+            ).join('');
         }
 
-        function loadState() {
-            const savedStates = JSON.parse(localStorage.getItem('buttonStates') || '{}');
-            const savedAssignments = JSON.parse(localStorage.getItem('buttonAssignments') || '{}');
-            const savedHidden = JSON.parse(localStorage.getItem('hiddenButtons') || '{}');
-            Object.assign(buttonStates, savedStates);
-            Object.assign(buttonAssignments, savedAssignments);
-            Object.assign(hiddenButtons, savedHidden);
+        function displayFrequentPairings(matrix) {
+            const pairings = [];
+            names.forEach(giver => {
+                names.forEach(receiver => {
+                    if (matrix[giver][receiver] > 0) {
+                        pairings.push({
+                            giver,
+                            receiver,
+                            count: matrix[giver][receiver]
+                        });
+                    }
+                });
+            });
+
+            pairings.sort((a, b) => b.count - a.count);
+            const list = document.getElementById('frequentList');
+            
+            list.innerHTML = pairings.slice(0, 15).map(p => 
+                `<li>
+                    <span>${p.giver} → ${p.receiver}</span>
+                    <span class="badge">${p.count} time${p.count > 1 ? 's' : ''}</span>
+                </li>`
+            ).join('');
         }
 
-        function saveState() {
-            localStorage.setItem('buttonStates', JSON.stringify(buttonStates));
-            localStorage.setItem('buttonAssignments', JSON.stringify(buttonAssignments));
-            localStorage.setItem('hiddenButtons', JSON.stringify(hiddenButtons));
+        function displayRelationships(filter = 'all') {
+            const relationships = [];
+            
+            Object.values(historicalData).forEach(yearData => {
+                Object.entries(yearData).forEach(([giver, receiver]) => {
+                    const rel = getRelationship(giver, receiver);
+                    if (filter === 'all' || rel === filter) {
+                        relationships.push({ giver, receiver, rel });
+                    }
+                });
+            });
+
+            const counts = {};
+            relationships.forEach(r => {
+                const key = `${r.giver}-${r.receiver}`;
+                counts[key] = (counts[key] || 0) + 1;
+            });
+
+            const list = document.getElementById('relationshipList');
+            const sorted = Object.entries(counts)
+                .map(([key, count]) => {
+                    const [giver, receiver] = key.split('-');
+                    return { giver, receiver, count, rel: getRelationship(giver, receiver) };
+                })
+                .sort((a, b) => b.count - a.count);
+
+            if (sorted.length === 0) {
+                list.innerHTML = '<li>No matches for this relationship type</li>';
+                return;
+            }
+
+            list.innerHTML = sorted.map(r => 
+                `<li>
+                    <span>${r.giver} → ${r.receiver} <small style="color: #999;">(${r.rel})</small></span>
+                    <span class="badge">${r.count} time${r.count > 1 ? 's' : ''}</span>
+                </li>`
+            ).join('');
         }
 
-        loadState();
-        initializeButtons();
+        const matrix = buildHeatmap();
+        const stats = calculateStats(matrix);
+        displayStats(stats);
+        displayMutuals();
+        displayFrequentPairings(matrix);
+        displayRelationships();
+
+        document.getElementById('relationshipFilter').addEventListener('change', (e) => {
+            displayRelationships(e.target.value);
+        });
     </script>
 </body>
 </html>
