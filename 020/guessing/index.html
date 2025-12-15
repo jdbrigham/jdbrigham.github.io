@@ -13,7 +13,7 @@
 
         body {
             font-family: Arial, sans-serif;
-            /*background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);*/
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             display: flex;
             justify-content: center;
@@ -22,38 +22,40 @@
         }
 
         .container {
-            max-width: 1000px;
+            max-width: 1200px;
             width: 100%;
+            display: flex;
+            gap: 20px;
         }
 
         .section {
-            margin-bottom: 30px;
+            flex: 1;
         }
 
         .section h2 {
             color: white;
             text-align: center;
             margin-bottom: 15px;
-            font-size: 24px;
+            font-size: 20px;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
         }
 
         .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 15px;
             background: rgba(255, 255, 255, 0.1);
             border-radius: 20px;
             backdrop-filter: blur(10px);
         }
 
         .btn {
-            padding: 5px 5px;
-            font-size: 14px;
+            padding: 20px 10px;
+            font-size: 15px;
             font-weight: bold;
             color: white;
-            /*background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);*/
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border: 2px solid rgba(255, 255, 255, 0.3);
             border-radius: 12px;
             cursor: pointer;
@@ -64,10 +66,6 @@
             align-items: center;
             justify-content: center;
             gap: 5px;
-        }
-        
-        #bottomGrid .btn {
-            background-color: darkmagenta;
         }
 
         .btn:hover {
@@ -90,7 +88,7 @@
         }
 
         .btn .assigned-name {
-            font-size: 14px;
+            font-size: 12px;
             font-weight: normal;
             opacity: 0.9;
         }
@@ -99,33 +97,18 @@
             display: none;
         }
 
-        @media (max-width: 600px) {
-            .grid {
-                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-                gap: 10px;
-                padding: 15px;
-            }
-
-            .btn {
-                padding: 30px 15px;
-                font-size: 16px;
-            }
-
-            .section h2 {
-                font-size: 20px;
-            }
-        }
+        
     </style>
 </head>
 <body>
     <div class="container">
         <div class="section">
-            <h2>Top Set</h2>
+            <h2>Left Set</h2>
             <div class="grid" id="topGrid"></div>
         </div>
         
         <div class="section">
-            <h2>Bottom Set</h2>
+            <h2>Right Set</h2>
             <div class="grid" id="bottomGrid"></div>
         </div>
     </div>
