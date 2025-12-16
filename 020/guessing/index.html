@@ -116,40 +116,40 @@
 }
 
 
-/*
         @media (max-width: 768px) {
+/*
             .columns {
                 flex-direction: column;
             }
+*/
 
             .btn {
                 padding: 15px 8px;
-                font-size: 14px;
+                font-size: 30px;
             }
 
+/*
             .headers h2 {
                 font-size: 18px;
             }
-        }
 */
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="main-area">
-            <!--
             <div class="headers">
                 <h2>Given to</h2>
                 <h2>From</h2>
             </div>
-            -->
             
             <div class="button-container" id="buttonContainer"></div>
         </div>
     </div>
 
     <script>
-        const names = ['Googie', 'Alison', 'Ron', 'Benjamin', 'Peter', 'Roblyn', 'Katie', 'Jenny', 'John', 'Kate', 'Lily', 'Astro', 'Erica'];
+        const names = ['Alison','Astro','Benjamin','Erica','Googie','Jenny','John','Kate', 'Katie','Lily', 'Peter', 'Roblyn','Ron'];
         const assignments = {};
         let selectedLeftButton = null;
 
@@ -201,7 +201,7 @@
             button.className = 'btn assigned';
             button.dataset.id = id;
 //            button.innerHTML = 'To: ' + leftName + '<div class="assigned-name">(' + rightName + ')</div>';
-			button.innerHTML = 'From: ' + leftName + ', To: ' + rightName ;
+			button.innerHTML = leftName + ' gave to  ' + rightName ;
             
             button.addEventListener('click', function() {
                 clearAssignment(id);
