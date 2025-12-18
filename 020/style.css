@@ -330,6 +330,13 @@ div:nth-of-type(6) {
   clip-path: circle();
 }
 
+#tree {
+  width: 50px;
+  position: fixed;
+  top: 50px;
+  right: 50px;
+}
+
 
 
 @keyframes dash {
