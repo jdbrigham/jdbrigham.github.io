@@ -196,12 +196,12 @@
             container.appendChild(columnsDiv);
         }
 
-        function createAssignedButton(id, leftName, "<img src='noun-gift-2502912.png' />" + rightName) {
+        function createAssignedButton(id, leftName, rightName) {
             const button = document.createElement('button');
             button.className = 'btn assigned';
             button.dataset.id = id;
 //            button.innerHTML = 'To: ' + leftName + '<div class="assigned-name">(' + rightName + ')</div>';
-			button.innerHTML = leftName + ' gave to  ' + rightName ;
+			button.innerHTML = "<img src='noun-gift-2502912.png' />" + leftName + ' gave to  ' + rightName + "<img src='noun-gift-2502912.png' />";
             
             button.addEventListener('click', function() {
                 clearAssignment(id);
