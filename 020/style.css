@@ -337,6 +337,14 @@ div:nth-of-type(6) {
   right: 50px;
 }
 
+ @media (max-width: 768px) {
+#tree {
+  width: 50px;
+  position: fixed;
+  top: 95%;
+  right: 50%;
+}
+        }
 
 
 @keyframes dash {
