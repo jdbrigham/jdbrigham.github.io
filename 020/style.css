@@ -344,6 +344,7 @@ div:nth-of-type(6) {
   margin-left: auto; /* Centers the image horizontally */
   margin-right: auto;
   width: 100px; /* Optional: set a specific width */
+  position: fixed;
 }
         }
 
