@@ -331,21 +331,17 @@ div:nth-of-type(6) {
 }
 
 #tree {
-  width: 50px;
   position: fixed;
-  top: 30px;
-  right: 30px;
+    bottom: 0;
+    left: 50%; /* Moves the left edge to the horizontal center */
+    
+    /* Pulls the element back by half of its own width to truly center it */
+    transform: translateX(-50%); 
+    width: 50px;
 }
 
  @media (max-width: 768px) {
-#tree {
 
-  display: block; /* Changes image from inline to block */
-  margin-left: auto; /* Centers the image horizontally */
-  margin-right: auto;
-  width: 100px; /* Optional: set a specific width */
-  position: fixed;
-}
         }
 
 
