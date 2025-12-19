@@ -331,18 +331,19 @@ div:nth-of-type(6) {
 }
 
 #tree {
-display: block; /* Changes image from inline to block */
-  margin-left: auto; /* Centers the image horizontally */
-  margin-right: auto;
-  width: 50%; /* Optional: set a specific width */
+  width: 50px;
+  position: fixed;
+  top: 30px;
+  right: 30px;
 }
 
  @media (max-width: 768px) {
 #tree {
-  /* width: 50px;
-  position: fixed;
-  top: 95%;
-  right: 50%; */
+
+  display: block; /* Changes image from inline to block */
+  margin-left: auto; /* Centers the image horizontally */
+  margin-right: auto;
+  width: 100px; /* Optional: set a specific width */
 }
         }
 
