@@ -13,8 +13,8 @@
 
         body {
             font-family: Arial, sans-serif;
-/*            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);*/
-			background-color: #F6F6EA;
+            /* background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); */
+            background-color: #F6F6EA;
             min-height: 100vh;
             display: flex;
             justify-content: center;
@@ -25,6 +25,13 @@
         .container {
             max-width: 1200px;
             width: 100%;
+        }
+
+        #assignedContainer {
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
 
         .main-area {
@@ -71,8 +78,8 @@
             font-size: 15px;
             font-weight: bold;
             color: white;
-/*            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);*/
-			background-color: #c60f0f;
+            /* background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); */
+            background-color: #c60f0f;
             border: 2px solid rgba(255, 255, 255, 0.3);
             border-radius: 12px;
             cursor: pointer;
@@ -100,18 +107,9 @@
         }
 
         .btn.assigned {
-/*            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);*/
-			background-color: firebrick;
+            /* background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); */
+            background-color: firebrick;
             opacity: 0.9;
-			display: inline-block;
-			background-image: url("noun-gift-2502912.png");
-        }
-
-        .icon {
-            width: 30px;
-            border: 2px solid #fff;
-			display: inline-block;
-			vertical-align: bottom;
         }
 
         .btn .assigned-name {
@@ -119,34 +117,34 @@
             font-weight: normal;
             opacity: 0.9;
         }
-		
-		.columns > div:nth-child(2) .btn {
-  background-color: darkgray;
-}
 
+        .btn .icon {
+            width: 30px;
+            border: 2px solid #fff;
+			display: inline-block;
+			vertical-align: bottom;
+        }
 
         @media (max-width: 768px) {
-/*
-            .columns {
+            /* .columns {
                 flex-direction: column;
-            }
-*/
+            } */
 
             .btn {
                 padding: 15px 8px;
-                font-size: 22px;
+                font-size: 14px;
             }
 
-/*
-            .headers h2 {
+            /* .headers h2 {
                 font-size: 18px;
-            }
-*/
+            } */
         }
     </style>
 </head>
 <body>
     <div class="container">
+        <div id="assignedContainer"></div>
+        
         <div class="main-area">
             <div class="headers">
                 <h2>From</h2>
@@ -163,14 +161,16 @@
         let selectedLeftButton = null;
 
         function initializeButtons() {
+            const assignedContainer = document.getElementById('assignedContainer');
             const container = document.getElementById('buttonContainer');
+            assignedContainer.innerHTML = '';
             container.innerHTML = '';
 
-            // First, add all assigned buttons (spanning full width)
+            // First, add all assigned buttons above headers (spanning full width)
             const assignedIds = Object.keys(assignments).map(Number).sort((a, b) => a - b);
             assignedIds.forEach(id => {
                 const button = createAssignedButton(id, names[id], assignments[id]);
-                container.appendChild(button);
+                assignedContainer.appendChild(button);
             });
 
             // Then, create the two-column layout for unassigned buttons
@@ -209,9 +209,8 @@
             const button = document.createElement('button');
             button.className = 'btn assigned';
             button.dataset.id = id;
-//            button.innerHTML = 'To: ' + leftName + '<div class="assigned-name">(' + rightName + ')</div>';
-			button.innerHTML = "<img class='icon' src='noun-gift-2502912.png' />" + leftName + ' gave to  ' + rightName + "<img class='icon' src='noun-gift-2502912.png' />";
-            
+            // button.innerHTML = "<img class='icon' src='noun-gift-2502912.png' />" + leftName + ' gave to  ' + rightName + "<img class='icon' src='noun-gift-2502912.png' />";
+            button.innerHTML = leftName + ' gave to  ' + rightName;
             button.addEventListener('click', function() {
                 clearAssignment(id);
             });
