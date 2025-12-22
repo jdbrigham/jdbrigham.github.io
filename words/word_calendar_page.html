@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word of the Day</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+<!--
+        <div class="upload-section" id="uploadSection">
+            <h2>Upload CSV File</h2>
+            <p style="margin-bottom: 15px; font-size: 14px; color: #666;">
+                CSV format: word, pronunciation, part_of_speech, definition, example
+            </p>
+            <input type="file" id="csvFile" accept=".csv">
+            <button onclick="loadCSV()">Load Words</button>
+        </div>
+-->
+
+        <div class="navigation" id="navigation">
+            <button onclick="previousEntry()">← Previous</button>
+            <span class="entry-info" id="entryInfo">Entry 1 of 1</span>
+            <button onclick="nextEntry()">Next →</button>
+        </div>
+
+        <div class="calendar-page">
+			
+			<div class='date-info'><div class='left'>
+            <div class="date-number" id="dateNumber">12</div>
+			</div>
+			<div class='right'>
+            <div class="day-of-week" id="dayOfWeek">Wednesday</div>
+            <div class="month" id="month">June</div>
+            <div class="year" id="year">2025</div>
+            </div>
+			</div>
+            <div class="word-section">
+                <div class="word-title" id="wordTitle">Nainsook</div>
+                <div class="pronunciation" id="pronunciation">\ˈneɪnsʊk\</div>
+                <div class="definition">
+                    <span class="part-of-speech" id="partOfSpeech">noun</span><span id="definitionText"> : 1. A fine, soft cotton fabric, originally from South Asia.</span>
+                </div>
+                <div class="example" id="example">
+                    "I bought five yards of soft, white nainsook to make new drapes for the living room."
+                </div>
+            </div>
+        </div>
+    </div>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="js/script.js"></script>
+</body>
+</html>

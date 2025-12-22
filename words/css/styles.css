@@ -1,0 +1,154 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Georgia, 'Times New Roman', serif;
+    background-color: #f5f5f5;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;  /* Re-added padding for mobile */
+}
+
+/* Add a container wrapper to constrain both navigation and calendar */
+.container {
+    width: 100%;
+    max-width: 800px;  /* Match your calendar-page max-width */
+}
+
+.navigation {
+    background: white;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;  /* Added */
+}
+
+button {
+    background-color: #333;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-family: Georgia, serif;
+    font-size: 14px;
+}
+
+button:hover {
+    background-color: #555;
+}
+
+button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.entry-info {
+    font-size: 14px;
+}
+
+.calendar-page {
+    background: white;
+    width: 100%;
+    max-width: 800px;
+    padding: 20px 50px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: 30px solid lightblue;
+}
+
+.date-info {
+    width: 100%;
+    display: flex;
+    border-bottom: 1px solid #ddd;
+}
+
+.left {
+    flex: 1;
+}
+
+.right {
+    flex: 1;
+}
+
+.date-number {
+    font-size: 120px;
+    font-weight: normal;
+    line-height: 1;
+    text-align: center;
+    margin-bottom: 10px;
+    flex: 1;
+}
+
+.day-of-week {
+    font-size: 24px;
+    font-weight: normal;
+    margin-bottom: 5px;
+}
+
+.month {
+    font-size: 24px;
+    font-weight: normal;
+    margin-bottom: 10px;
+}
+
+.year {
+    font-size: 24px;
+    font-weight: normal;
+    margin-bottom: 50px;
+    padding-bottom: 30px;
+    
+}
+
+.word-section {
+    margin-top: 30px;
+}
+
+.word-title {
+    font-size: 36px;
+    font-weight: normal;
+    margin-bottom: 15px;
+}
+
+.pronunciation {
+    font-size: 18px;
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.definition {
+    font-size: 16px;
+    line-height: 1.6;
+    margin-bottom: 20px;
+}
+
+.part-of-speech {
+    font-style: italic;
+}
+
+.example {
+    font-size: 15px;
+    line-height: 1.6;
+    color: #444;
+    font-style: italic;
+    padding-left: 20px;
+    border-left: 3px solid #ddd;
+}
+
+.image {
+    background-color: cadetblue;
+}
+
+img {
+    width: 200px;
+}
+
+.hidden {
+    display: none;
+}
