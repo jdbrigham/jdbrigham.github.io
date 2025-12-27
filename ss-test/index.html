@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Secret Santa Big Board</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      gap: 20px;
+      padding: 20px;
+    }
+
+    #big-board-container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    #big-board {
+      display: grid;
+      grid-template-columns: 100px repeat(13, 80px);
+      grid-auto-rows: 40px;
+      border: 1px solid #333;
+      gap: 2px;
+      padding: 2px;
+      background: #f5f5f5;
+    }
+
+    .cell {
+      border: 1px solid #aaa;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      background: #fff;
+      min-height: 30px;
+    }
+
+    .label-cell {
+      font-weight: bold;
+      background: #ddd;
+    }
+
+    .drop-target {
+      background: #fff;
+    }
+
+    .drop-target.highlight {
+      outline: 2px dashed #00f;
+    }
+
+    #names-container {
+      min-width: 150px;
+    }
+
+    #names {
+      border: 1px solid #333;
+      padding: 8px;
+      min-height: 300px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      background: #fafafa;
+    }
+
+    .name-tile {
+      border: 1px solid #666;
+      padding: 4px 6px;
+      text-align: center;
+      background: #e0e0ff;
+      cursor: grab;
+      font-size: 12px;
+      user-select: none;
+    }
+
+    .name-tile.red {
+      background: #f8a0a0;
+    }
+
+    .name-tile.green {
+      background: #a0f8a0;
+    }
+
+    .slot-name {
+      font-size: 12px;
+      padding: 0 2px;
+      cursor: grab;
+      user-select: none;
+    }
+
+    .giftee-slot.filled {
+      background: #a0f8a0;
+    }
+
+    .round-slot.filled {
+      background: #e8f0ff;
+    }
+
+    #controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 5px;
+    }
+  #current-guess {
+    margin-top: 8px;
+    padding: 6px;
+    border: 1px solid #999;
+    background: #fdfdfd;
+    font-size: 12px;
+  }
+
+  #current-guess-names {
+    margin-top: 4px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .guess-option {
+    border: 1px solid #666;
+    padding: 2px 5px;
+    background: #fffbe0;
+    font-size: 11px;
+  }
+
+  </style>
+</head>
+<body>
+  <!-- Left: Big Board and controls -->
+  <div id="big-board-container">
+    <div id="big-board"></div>
+
+    <div id="controls">
+      <button id="add-round-btn">Add Round</button>
+      <span id="most-guessed-label">Most Guessed: </span>
+    </div>
+	<div id="current-guess">
+  <strong>Current Guess:</strong>
+  <div id="current-guess-names"></div>
+</div>
+
+  </div>
+
+  <!-- Right: Names -->
+  <div id="names-container">
+    <h3>Names</h3>
+    <div id="names"></div>
+  </div>
+
+<script>
+  // ===== CONFIG =====
+  const NAMES = [
+    "Googie", "Alison", "Ron", "Ben", "Erica", "John", "Kate",
+    "Lily", "Astro", "Roblyn", "Katie", "Jenny", "Peter"
+  ];
+
+  const NUM_COLUMNS = 13; // number of slots after first label column
+
+  // Keep state
+  let currentRoundNumber = 1;
+  const guessCounts = {}; // name -> count across all round slots
+  NAMES.forEach(n => guessCounts[n] = 0);
+
+  // ===== DOM REFERENCES =====
+  const bigBoard = document.getElementById("big-board");
+  const namesDiv = document.getElementById("names");
+  const addRoundBtn = document.getElementById("add-round-btn");
+  const mostGuessedLabel = document.getElementById("most-guessed-label");
+	// names that have been correctly guessed for any giftee
+	const correctlyGuessedNames = new Set();
+	const currentGuessNamesDiv = document.getElementById("current-guess-names");
+
+
+  // For drag info
+  let dragData = null; // {type: 'name'|'roundName', name, source, sourceRound?, sourceCol?}
+
+  // ===== INITIAL SETUP =====
+
+  // Build header rows: Giftee, Gifter, Round 1
+  function buildInitialBoard() {
+    // Row 1: Giftee
+    addLabelRow("Giftee", "giftee");
+    // Row 2: Gifter
+    addLabelRow("Gifter", "gifter");
+    // Row 3: Round 1
+    addRoundRow(1);
+  }
+
+  // Add a label row with given rowType id prefix (e.g. giftee, gifter)
+  function addLabelRow(labelText, rowType) {
+    const labelCell = document.createElement("div");
+    labelCell.className = "cell label-cell";
+    labelCell.textContent = labelText;
+    bigBoard.appendChild(labelCell);
+
+    // 13 drop targets
+    for (let col = 1; col <= NUM_COLUMNS; col++) {
+      const cell = document.createElement("div");
+      cell.className = "cell drop-target";
+      cell.dataset.rowType = rowType; // giftee or gifter
+      cell.dataset.col = String(col);
+      if (rowType === "giftee") {
+        setupGifteeDropTarget(cell);
+      } else if (rowType === "gifter") {
+        setupGifterDropTarget(cell);
+      }
+      bigBoard.appendChild(cell);
+    }
+  }
+
+  // Add a round row (Round 1, Round 2...)
+  function addRoundRow(roundNumber) {
+    const labelCell = document.createElement("div");
+    labelCell.className = "cell label-cell";
+    labelCell.textContent = "Round " + roundNumber;
+    bigBoard.appendChild(labelCell);
+
+    for (let col = 1; col <= NUM_COLUMNS; col++) {
+      const cell = document.createElement("div");
+      cell.className = "cell drop-target";
+      cell.dataset.rowType = "round";
+      cell.dataset.round = String(roundNumber);
+      cell.dataset.col = String(col);
+      setupRoundDropTarget(cell);
+      bigBoard.appendChild(cell);
+    }
+  }
+
+  // Build Names panel
+  function buildNames() {
+    NAMES.forEach(name => {
+      const tile = document.createElement("div");
+      tile.className = "name-tile";
+      tile.textContent = name;
+      tile.dataset.name = name;
+      tile.draggable = true;
+      tile.addEventListener("dragstart", onNameDragStart);
+      tile.addEventListener("dragend", onDragEnd);
+      namesDiv.appendChild(tile);
+    });
+  }
+
+  // ===== DRAG HANDLERS (Names -> Round slot / Giftee slot) =====
+
+  function onNameDragStart(ev) {
+    const name = ev.target.dataset.name;
+    dragData = {
+      type: "name",
+      name,
+      source: "names"
+    };
+    ev.dataTransfer.effectAllowed = "copy";
+  }
+
+  function onRoundSlotNameDragStart(ev) {
+    const span = ev.target;
+    const name = span.dataset.name;
+    const round = span.dataset.round;
+    const col = span.dataset.col;
+    dragData = {
+      type: "roundName",
+      name,
+      source: "round",
+      sourceRound: Number(round),
+      sourceCol: Number(col)
+    };
+    ev.dataTransfer.effectAllowed = "copy";
+  }
+
+  function onDragEnd(ev) {
+    dragData = null;
+    clearDropHighlights();
+  }
+
+  // ===== DROP TARGET SETUP =====
+
+  function setupRoundDropTarget(cell) {
+    cell.addEventListener("dragover", ev => {
+      if (!dragData) return;
+      if (dragData.type === "name") {
+        ev.preventDefault();
+        cell.classList.add("highlight");
+      }
+    });
+
+    cell.addEventListener("dragleave", () => {
+      cell.classList.remove("highlight");
+    });
+
+    cell.addEventListener("drop", ev => {
+      if (!dragData || dragData.type !== "name") return;
+      ev.preventDefault();
+      cell.classList.remove("highlight");
+
+      const name = dragData.name;
+      placeNameInRoundSlot(cell, name);
+      incrementGuessCount(name);
+      updateMostGuessed();
+    });
+  }
+
+ function setupGifteeDropTarget(cell) {
+  cell.addEventListener("dragover", ev => {
+    if (!dragData) return;
+    if (dragData.type === "roundName" || dragData.type === "name") {
+      ev.preventDefault();
+      cell.classList.add("highlight");
+    }
+  });
+
+  cell.addEventListener("dragleave", () => {
+    cell.classList.remove("highlight");
+  });
+
+  cell.addEventListener("drop", ev => {
+    if (!dragData) return;
+    ev.preventDefault();
+    cell.classList.remove("highlight");
+
+    const name = dragData.name;
+
+    // Place name in giftee slot (overwriting existing)
+    placeNameInGifteeSlot(cell, name);
+
+    // Only treat as a correct guess if it came from a round guess
+    if (dragData.type === "roundName") {
+      correctlyGuessedNames.add(name);      // <-- NEW
+      markNameRedInNames(name);             // existing
+    }
+
+    cell.classList.add("filled");
+  });
+}
+
+
+  function setupGifterDropTarget(cell) {
+    cell.addEventListener("dragover", ev => {
+      if (!dragData) return;
+      ev.preventDefault();
+      cell.classList.add("highlight");
+    });
+
+    cell.addEventListener("dragleave", () => {
+      cell.classList.remove("highlight");
+    });
+
+    cell.addEventListener("drop", ev => {
+      if (!dragData) return;
+      ev.preventDefault();
+      cell.classList.remove("highlight");
+      const name = dragData.name;
+      placeNameSimple(cell, name);
+    });
+  }
+function updateCurrentGuessOptionsForGifteeColumn(col) {
+  // 1. Find all names already guessed in this column across round rows
+  const selector = `.cell[data-row-type="round"][data-col="${col}"] .slot-name`;
+  const namesInColumn = document.querySelectorAll(selector);
+
+  const alreadyGuessedForThisGiftee = new Set();
+  namesInColumn.forEach(span => {
+    alreadyGuessedForThisGiftee.add(span.dataset.name);
+  });
+
+  // 2. Build candidate list:
+  //    - names not guessed yet for this giftee column
+  //    - and not correctly guessed by anyone
+  const candidates = NAMES.filter(name =>
+    !alreadyGuessedForThisGiftee.has(name) &&
+    !correctlyGuessedNames.has(name)
+  );
+
+  // 3. Render into Current Guess area
+  currentGuessNamesDiv.textContent = ""; // clear
+
+  candidates.forEach(name => {
+    const div = document.createElement("div");
+    div.className = "guess-option";
+    div.textContent = name;
+    currentGuessNamesDiv.appendChild(div);
+  });
+}
+
+  function clearDropHighlights() {
+    document
+      .querySelectorAll(".drop-target.highlight")
+      .forEach(el => el.classList.remove("highlight"));
+  }
+
+  // ===== PLACING NAMES IN CELLS =====
+
+  function placeNameInRoundSlot(cell, name) {
+    cell.textContent = "";
+    cell.classList.add("filled");
+
+    const span = document.createElement("span");
+    span.className = "slot-name";
+    span.textContent = name;
+    span.dataset.name = name;
+    span.dataset.round = cell.dataset.round;
+    span.dataset.col = cell.dataset.col;
+    span.draggable = true;
+
+    span.addEventListener("dragstart", onRoundSlotNameDragStart);
+    span.addEventListener("dragend", onDragEnd);
+
+    cell.appendChild(span);
+  }
+
+  function placeNameInGifteeSlot(cell, name) {
+  cell.textContent = "";
+  const span = document.createElement("span");
+  span.className = "slot-name";
+  span.textContent = name;
+  span.dataset.name = name;
+  span.dataset.col = cell.dataset.col;
+  span.dataset.rowType = "giftee";
+
+  cell.appendChild(span);
+  cell.classList.add("filled");
+
+  span.addEventListener("click", () => {
+    const col = parseInt(cell.dataset.col, 10);
+
+    // Existing behavior: highlight already-guessed names in Names panel
+    highlightGuessedForGifteeColumn(col);
+
+    // NEW behavior: update Current Guess options
+    updateCurrentGuessOptionsForGifteeColumn(col);
+  });
+}
+
+
+  function placeNameSimple(cell, name) {
+    cell.textContent = "";
+    const span = document.createElement("span");
+    span.className = "slot-name";
+    span.textContent = name;
+    cell.appendChild(span);
+    cell.classList.add("filled");
+  }
+
+  // ===== HIGHLIGHTING / NAMES PANEL UPDATES =====
+
+  function markNameRedInNames(name) {
+    const tiles = namesDiv.querySelectorAll(".name-tile");
+    tiles.forEach(tile => {
+      if (tile.dataset.name === name) {
+        tile.classList.add("red");
+      }
+    });
+  }
+
+  function highlightGuessedForGifteeColumn(col) {
+    const selector = `.cell[data-row-type="round"][data-col="${col}"] .slot-name`;
+    const namesInColumn = document.querySelectorAll(selector);
+
+    const guessedNames = new Set();
+    namesInColumn.forEach(span => {
+      guessedNames.add(span.dataset.name);
+    });
+
+    const tiles = namesDiv.querySelectorAll(".name-tile");
+    tiles.forEach(tile => {
+      if (guessedNames.has(tile.dataset.name)) {
+        tile.classList.add("red");
+      }
+    });
+  }
+
+  // ===== GUESS COUNT AND MOST GUESSED =====
+
+  function incrementGuessCount(name) {
+    if (guessCounts[name] == null) guessCounts[name] = 0;
+    guessCounts[name]++;
+  }
+
+  function updateMostGuessed() {
+    let maxCount = 0;
+    let leaders = [];
+
+    for (const [name, count] of Object.entries(guessCounts)) {
+      if (count > maxCount) {
+        maxCount = count;
+        leaders = [name];
+      } else if (count === maxCount && count > 0) {
+        leaders.push(name);
+      }
+    }
+
+    if (maxCount === 0) {
+      mostGuessedLabel.textContent = "Most Guessed: ";
+    } else {
+      mostGuessedLabel.textContent =
+        "Most Guessed: " + leaders.join(", ");
+    }
+  }
+
+  // ===== CONTROLS =====
+
+  addRoundBtn.addEventListener("click", () => {
+    currentRoundNumber++;
+    addRoundRow(currentRoundNumber);
+  });
+
+  // ===== INIT =====
+  buildInitialBoard();
+  buildNames();
+  updateMostGuessed();
+</script>
+
+</body>
+</html>
