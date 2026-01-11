@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang='en'>
+<head>
+<meta charset='utf-8' />
+<meta name='viewport' content='width=device-width, initial-scale=1' />
+<title>Vertical View – Camera FOV Simulator</title>
+<style>
+  :root { --bg:#fff; --fg:#111; --muted:#6b7280; --accent:#ef4444; --grid:#e5e7eb; }
+  body { margin:2rem; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color:var(--fg); }
+  h1 { font-size:1.3rem; margin-bottom:.5rem; }
+  .panel { border:1px solid var(--grid); border-radius:12px; padding:1rem; }
+  .svgbox { display:flex; align-items:center; justify-content:center; min-height:320px; }
+  svg { width:100%; max-width:520px; height:auto; }
+  .controls { display:grid; grid-template-columns:repeat(2, minmax(180px, 1fr)); gap:.8rem; margin-top:1rem; }
+  label { color:var(--muted); font-size:.9rem; }
+  input[type=range] { width:100%; }
+  .labels { fill: var(--muted); font-size: 12px; text-anchor: middle; dominant-baseline: middle; }
+  .wedge-main { fill: rgba(239,68,68,0.20); stroke: var(--accent); stroke-width:2; }
+  .wedge-overflow { fill: rgba(239,68,68,0.10); stroke: var(--accent); stroke-width:1; stroke-dasharray:4; }
+  .axis { stroke: var(--grid); stroke-width:2; }
+  .tree { fill:#228B22; }
+  .cloud { fill:#bbb; }
+  .pivot { fill:#ef4444; opacity:0.7; }
+</style>
+</head>
+<body>
+<h1>Vertical View – Camera FOV Simulator</h1>
+<div class='panel'>
+  <div class='svgbox'>
+    <svg id='pitchview' viewBox='0 0 300 300'>
+      <line x1='40' y1='260' x2='260' y2='260' class='axis' />
+      <line x1='40' y1='260' x2='40' y2='40' class='axis' />
+      <path d='M40,40 A220,220 0 0 1 260,260' fill='none' stroke='var(--grid)' stroke-width='2' />
+      <path id='wedge-main' class='wedge-main' d='' />
+      <path id='wedge-overflow' class='wedge-overflow' d='' />
+      <circle id='pitch-dot' cx='40' cy='260' r='3' fill='var(--accent)' />
+      <text class='labels' x='150' y='280'>Ground (0°)</text>
+      <text class='labels' x='30' y='50' text-anchor='start'>Sky (+90°)</text>
+      
+      <rect
+          style="fill:none;stroke:#e20000;stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round;paint-order:stroke markers fill"
+          id="body"
+          width="6"
+          height="40"
+          x="36"
+          y="220" />
+      <g id='arm-group'>
+        <path
+            style="fill:none;stroke:#e20000;stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round;paint-order:stroke markers fill"
+            d="M 39.749291,229.28554 L 48.959493,236.07201 L 57.927321,228.31605 V 228.31605"
+            id="arm" />
+        <circle class='pivot' cx='39.749291' cy='229.28554' r='2' />
+      </g>
+      
+      <g transform='translate(240,260) scale(1.2)'>
+        <rect class='tree' x='-5' y='-20' width='10' height='20' />
+        <circle class='tree' cx='0' cy='-30' r='15' />
+      </g>
+      <g transform='translate(240,60) scale(1.2)'>
+        <ellipse class='cloud' cx='0' cy='0' rx='20' ry='12' />
+        <ellipse class='cloud' cx='-15' cy='0' rx='15' ry='10' />
+        <ellipse class='cloud' cx='15' cy='0' rx='15' ry='10' />
+      </g>
+    </svg>
+  </div>
+  <div class='controls'>
+    <div>
+      <label>Pitch (°): <span id='pitch-val'>0</span></label>
+      <input id='pitch' type='range' min='-45' max='90' value='0' />
+    </div>
+    <div>
+      <label>Vertical FOV (°): <span id='vfov-val'>45</span></label>
+      <input id='vfov' type='range' min='10' max='90' value='45' />
+    </div>
+  </div>
+</div>
+
+<script>
+const deg2rad = d => d * Math.PI / 180;
+function clamp(a, min, max) { return Math.min(max, Math.max(min, a)); }
+function polarCorner(cx, cy, r, deg) {
+  const t = deg2rad(deg);
+  return { x: cx + r * Math.cos(t), y: cy - r * Math.sin(t) };
+}
+function sectorPath(cx, cy, r, startDeg, endDeg) {
+  const p0 = polarCorner(cx, cy, r, startDeg);
+  const p1 = polarCorner(cx, cy, r, endDeg);
+  const sweep = endDeg - startDeg;
+  const largeArc = sweep > 180 ? 1 : 0;
+  return `M ${cx} ${cy} L ${p0.x} ${p0.y} A ${r} ${r} 0 ${largeArc} 0 ${p1.x} ${p1.y} Z`;
+}
+
+function getCameraPosition(pitch) {
+  // Shoulder position (pivot point)
+  const shoulderX = 39.749291;
+  const shoulderY = 229.28554;
+  
+  // Original arm endpoint from the path
+  const origArmEndX = 57.927321;
+  const origArmEndY = 228.31605;
+  
+  // Calculate arm length and base angle
+  const armLength = Math.sqrt(
+    Math.pow(origArmEndX - shoulderX, 2) + 
+    Math.pow(origArmEndY - shoulderY, 2)
+  );
+  
+  const baseAngle = Math.atan2(
+    shoulderY - origArmEndY,
+    origArmEndX - shoulderX
+  ) * 180 / Math.PI;
+  
+  // New arm angle based on pitch
+  const newAngle = baseAngle + pitch;
+  const rad = deg2rad(newAngle);
+  
+  // Calculate camera position at end of arm
+  const camX = shoulderX + armLength * Math.cos(rad);
+  const camY = shoulderY - armLength * Math.sin(rad);
+  
+  return { x: camX, y: camY, angle: pitch };
+}
+
+function update() {
+  const pitch = parseFloat(document.getElementById('pitch').value);
+  const vfov = parseFloat(document.getElementById('vfov').value);
+  
+  document.getElementById('pitch-val').textContent = pitch;
+  document.getElementById('vfov-val').textContent = vfov;
+  
+  // Rotate the arm only
+  const shoulderX = 39.749291;
+  const shoulderY = 229.28554;
+  const armGroup = document.getElementById('arm-group');
+  armGroup.setAttribute('transform', 
+    `rotate(${-pitch} ${shoulderX} ${shoulderY})`
+  );
+  
+  // Get camera position for FOV wedge
+  const camPos = getCameraPosition(pitch);
+  const cx = camPos.x;
+  const cy = camPos.y;
+  const r = 220;
+  
+  // Calculate FOV bounds
+  // The wedge is centered on the pitch angle (focal point)
+  const half = vfov / 2;
+  const wedgeStart = pitch - half;
+  const wedgeEnd = pitch + half;
+  
+  // Check if line of sight intersects ground within visible bounds (x <= 260)
+  // Line of sight goes from camera (cx, cy) through focal point
+  const focalPoint = polarCorner(cx, cy, r, pitch);
+  
+  // Calculate where line of sight intersects y=260 (ground line)
+  let lineOfSightHitsGround = false;
+  
+  if (Math.abs(focalPoint.y - cy) > 0.001) {
+    const slope = (focalPoint.x - cx) / (focalPoint.y - cy);
+    const groundIntersectX = cx + slope * (260 - cy);
+    
+    if (groundIntersectX >= 40 && groundIntersectX <= 260 && focalPoint.y > cy) {
+      lineOfSightHitsGround = true;
+    }
+  }
+  
+  let mainPath = '';
+  let overflowPath = '';
+  
+  if (lineOfSightHitsGround) {
+    // Line of sight hits ground - split wedge at the PITCH angle (line of sight)
+    // Solid portion: from max(wedgeStart, pitch) to min(wedgeEnd, 90)
+    // This is everything above the line of sight
+    const solidStart = Math.max(wedgeStart, pitch);
+    const solidEnd = Math.min(wedgeEnd, 90);
+    
+    if (solidStart < solidEnd) {
+      mainPath = sectorPath(cx, cy, r, solidStart, solidEnd);
+    }
+    
+    // Dashed portions
+    const overflowPaths = [];
+    
+    // Below line of sight (from wedgeStart to pitch)
+    if (wedgeStart < pitch) {
+      overflowPaths.push(sectorPath(cx, cy, r, wedgeStart, Math.min(wedgeEnd, pitch)));
+    }
+    
+    // Above 90° (above sky)
+    if (wedgeEnd > 90) {
+      overflowPaths.push(sectorPath(cx, cy, r, Math.max(wedgeStart, 90), wedgeEnd));
+    }
+    
+    if (overflowPaths.length > 0) {
+      overflowPath = overflowPaths.join(' ');
+    }
+    
+  } else {
+    // Line of sight doesn't hit ground - show full wedge as solid, except above 90°
+    // Solid portion: from wedgeStart to min(wedgeEnd, 90)
+    const solidEnd = Math.min(wedgeEnd, 90);
+    
+    if (wedgeStart < solidEnd) {
+      mainPath = sectorPath(cx, cy, r, wedgeStart, solidEnd);
+    }
+    
+    // Only above 90° is dashed
+    if (wedgeEnd > 90) {
+      overflowPath = sectorPath(cx, cy, r, Math.max(wedgeStart, 90), wedgeEnd);
+    }
+  }
+  
+  document.getElementById('wedge-main').setAttribute('d', mainPath);
+  document.getElementById('wedge-overflow').setAttribute('d', overflowPath);
+  
+  // Update pitch dot position - should follow pitch exactly, not clamped
+  const pCenter = polarCorner(cx, cy, r, pitch);
+  document.getElementById('pitch-dot').setAttribute('cx', pCenter.x);
+  document.getElementById('pitch-dot').setAttribute('cy', pCenter.y);
+}
+
+['pitch', 'vfov'].forEach(id => {
+  document.getElementById(id).addEventListener('input', update);
+});
+
+update();
+</script>
+</body>
+</html>

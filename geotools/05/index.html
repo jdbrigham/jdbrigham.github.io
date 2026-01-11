@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sunrise Overlay — Updated Full Version</title>
+  <style>
+    body { font-family: sans-serif; margin: 0; padding: 1rem; background: #f7f7f7; }
+    #dropZone {
+      border: 3px dashed #999;
+      padding: 2rem;
+      text-align: center;
+      border-radius: 1rem;
+      background: white;
+      cursor: pointer;
+      margin-bottom: 1.5rem;
+    }
+    #photoCanvas { max-width: 100%; display: block; margin: auto; }
+    #timeline, #headingInput { width: 100%; margin-top: 1rem; }
+    #log, #debug { white-space: pre-wrap; background: #eee; padding: 0.5rem; border-radius: 0.5rem; margin-top:1rem; }
+  </style>
+</head>
+<body>
+  <h1>Sunrise Overlay — Full Updated Version</h1>
+
+  <div id="dropZone">Drop a photo here or click to choose</div>
+  <input type="file" id="fileInput" accept="image/*" style="display:none" />
+
+  <canvas id="photoCanvas"></canvas>
+
+  <h3>Select Date for Sunrise Calculation</h3>
+  <input id="timeline" type="range" min="0" max="365" value="0" />
+  <div id="dateLabel"></div>
+
+  <h3>Heading Override</h3>
+  <input id="headingInput" type="range" min="0" max="359" value="0" />
+  <span id="headingLabel">0°</span>
+
+  <h3>Parsed EXIF Metadata</h3>
+  <div id="debug"></div>
+
+  <h3>Log Output</h3>
+  <div id="log"></div>
+
+<script>
+// ==========================================================
+//  Minimal EXIF Parser (GPS Only) + Full Logging
+// ==========================================================
+let lastExifDump = {};
+
+function parseExifGPS(arrayBuffer) {
+  const data = new DataView(arrayBuffer);
+  let offset = 2;
+  if (data.getUint16(0) !== 0xFFD8) return {}; // Not JPEG
+
+  while (offset < data.byteLength) {
+    const marker = data.getUint16(offset);
+    const size = data.getUint16(offset + 2);
+
+    if (marker === 0xFFE1) { // EXIF block
+      return extractGPS(data, offset + 4, size);
+    }
+    offset += 2 + size;
+  }
+  return {};
+}
+
+function extractGPS(data, start, length) {
+  const tiff = start + 6;
+  const little = data.getUint16(tiff) === 0x4949;
+  const get16 = (o) => {
+      const off = tiff + o;
+      if (off + 2 > data.byteLength) {
+        console.warn("Bounds check failed (uint16 @", off, ")");
+        return 0;
+      }
+      return data.getUint16(off, little);
+    };
+
+    const get32 = (o) => {
+      const off = tiff + o;
+      if (off + 4 > data.byteLength) {
+        console.warn("Bounds check failed (uint32 @", off, ")");
+        return 0;
+      }
+      return data.getUint32(off, little);
+    };
+
+    const ifd0 = get32(4); = get32(4);
+  const entries = get16(ifd0);
+
+  let gpsOffset = null;
+  for (let i = 0; i < entries; i++) {
+    const base = ifd0 + 2 + i * 12;
+    const tag = get16(base);
+    if (tag === 0x8825) gpsOffset = get32(base + 8);
+  }
+  if (!gpsOffset) return {};
+
+  const gpsBase = gpsOffset;
+  const gpsCount = get16(gpsBase);
+
+  let tags = {};
+
+  for (let i = 0; i < gpsCount; i++) {
+    const base = gpsBase + 2 + i * 12;
+    const tag = get16(base);
+    const type = get16(base + 2);
+    const count = get32(base + 4);
+    const valueOffset = get32(base + 8);
+
+    // GPS Latitude Ref
+    if (tag === 1) tags.latRef = String.fromCharCode(// safe read
+          if (offset >= data.byteLength) { console.warn('Bounds check failed (uint8)'); break; }
+          data.getUint8(tiff + valueOffset));
+
+    // GPS Longitude Ref
+    if (tag === 3) tags.lonRef = String.fromCharCode(// safe read
+          if (offset >= data.byteLength) { console.warn('Bounds check failed (uint8)'); break; }
+          data.getUint8(tiff + valueOffset));
+
+    // GPS Latitude or Longitude (3 rational numbers)
+    if (tag === 2 || tag === 4) {
+      let vals = [];
+      for (let n = 0; n < 3; n++) {
+        const num = // safe read
+          if (offset + 4 > data.byteLength) { console.warn('Bounds check failed (uint32)'); break; }
+          data.getUint32(tiff + valueOffset + n * 8, little);
+        const den = // safe read
+          if (offset + 4 > data.byteLength) { console.warn('Bounds check failed (uint32)'); break; }
+          data.getUint32(tiff + valueOffset + n * 8 + 4, little);
+        vals.push(num / den);
+      }
+      if (tag === 2) tags.lat = vals;
+      if (tag === 4) tags.lon = vals;
+    }
+
+    // GPSImgDirection (tag 0x0011)
+    if (tag === 17) {
+      const offset = tiff + valueOffset;
+      const num = // safe read
+          if (offset + 4 > data.byteLength) { console.warn('Bounds check failed (uint32)'); break; }
+          data.getUint32(offset, little);
+      const den = // safe read
+          if (offset + 4 > data.byteLength) { console.warn('Bounds check failed (uint32)'); break; }
+          data.getUint32(offset + 4, little);
+      tags.imgDir = num / den;
+    }
+  }
+
+  lastExifDump = tags;
+
+  // Convert to decimal
+  function dmsToDec([d, m, s], ref) {
+    let dec = d + m / 60 + s / 3600;
+    if (ref === 'S' || ref === 'W') dec *= -1;
+    return dec;
+  }
+
+  const out = {
+    latitude: tags.lat ? dmsToDec(tags.lat, tags.latRef) : null,
+    longitude: tags.lon ? dmsToDec(tags.lon, tags.lonRef) : null,
+    imgDir: tags.imgDir || null
+  };
+
+  return out;
+}
+
+// ==========================================================
+//  Main App Logic
+// ==========================================================
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+const canvas = document.getElementById('photoCanvas');
+const ctx = canvas.getContext('2d');
+const timeline = document.getElementById('timeline');
+const dateLabel = document.getElementById('dateLabel');
+const logDiv = document.getElementById('log');
+const debugDiv = document.getElementById('debug');
+const headingInput = document.getElementById('headingInput');
+const headingLabel = document.getElementById('headingLabel');
+
+let baseImage = null;
+let photoLat = null;
+let photoLon = null;
+let heading = 0;
+let fov = 60;
+let photoDate = null;
+
+// Drag-and-drop handlers
+dropZone.onclick = () => fileInput.click();
+dropZone.ondragover = e => { e.preventDefault(); dropZone.style.borderColor = '#333'; };
+dropZone.ondragleave = () => dropZone.style.borderColor = '#999';
+dropZone.ondrop = e => {
+  e.preventDefault();
+  dropZone.style.borderColor = '#999';
+  loadFile(e.dataTransfer.files[0]);
+};
+fileInput.onchange = e => loadFile(e.target.files[0]);
+
+// Load & parse the image
+async function loadFile(file) {
+  photoDate = new Date(file.lastModified);
+
+  const abuf = await file.arrayBuffer();
+  const tags = parseExifGPS(abuf);
+
+  if (tags.imgDir != null) heading = tags.imgDir;
+
+  const img = new Image();
+  img.onload = () => {
+    baseImage = img;
+    canvas.width = img.width;
+    canvas.height = img.height;
+    ctx.drawImage(baseImage, 0, 0);
+
+    photoLat = tags.latitude;
+    photoLon = tags.longitude;
+
+    // Update debug block
+    debugDiv.textContent = JSON.stringify(lastExifDump, null, 2);
+
+    updateLog();
+    drawOverlay();
+  };
+  img.src = URL.createObjectURL(file);
+}
+
+// Manual heading adjustment
+headingInput.oninput = () => {
+  heading = Number(headingInput.value);
+  headingLabel.textContent = heading + '°';
+  drawOverlay();
+};
+
+// Date slider
+timeline.oninput = () => drawOverlay();
+
+function updateLog() {
+  logDiv.textContent = `Photo Date: ${photoDate?.toDateString() || 'N/A'}
+` +
+                       `GPSImgDirection (raw): ${heading || 'N/A'}
+` +
+                       `Latitude: ${photoLat || 'N/A'}
+Longitude: ${photoLon || 'N/A'}`;
+}
+
+function drawOverlay() {
+  if (!baseImage) return;
+  ctx.drawImage(baseImage, 0, 0);
+  if (photoLat == null || photoLon == null) return;
+
+  const dayOfYear = Number(timeline.value);
+  const baseDate = new Date(new Date().getFullYear(), 0, 1);
+  const date = new Date(baseDate.getTime() + dayOfYear * 86400000);
+  dateLabel.textContent = date.toDateString();
+
+  const sunriseAz = calcSunriseAzimuth(photoLat, photoLon, date);
+
+  const rel = sunriseAz - heading;
+  const xCenter = canvas.width / 2;
+  const x = xCenter + (rel / fov) * canvas.width;
+
+  ctx.strokeStyle = 'red';
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(x, 0);
+  ctx.lineTo(x, canvas.height);
+  ctx.stroke();
+
+  updateLog();
+  logDiv.textContent += `
+Sunrise Azimuth: ${sunriseAz.toFixed(2)}°`;
+}
+
+function calcSunriseAzimuth(lat, lon, date) {
+  const n = Math.floor((date - new Date(date.getFullYear(),0,0)) / 86400000);
+  const decl = 23.44 * Math.sin(((360/365) * (n - 81)) * Math.PI/180);
+  const latRad = lat * Math.PI/180;
+  const decRad = decl * Math.PI/180;
+  const az = Math.acos(-Math.sin(latRad) * Math.sin(decRad) / (Math.cos(latRad) * Math.cos(decRad)));
+  return az * 180/Math.PI;
+}
+</script>
+</body>
+</html>
