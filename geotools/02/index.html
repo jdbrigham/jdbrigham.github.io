@@ -1,229 +1,279 @@
-<!doctype html>
-<html lang='en'>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<meta charset='utf-8' />
-<meta name='viewport' content='width=device-width, initial-scale=1' />
-<title>Vertical View – Camera FOV Simulator</title>
-<style>
-  :root { --bg:#fff; --fg:#111; --muted:#6b7280; --accent:#ef4444; --grid:#e5e7eb; }
-  body { margin:2rem; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color:var(--fg); }
-  h1 { font-size:1.3rem; margin-bottom:.5rem; }
-  .panel { border:1px solid var(--grid); border-radius:12px; padding:1rem; }
-  .svgbox { display:flex; align-items:center; justify-content:center; min-height:320px; }
-  svg { width:100%; max-width:520px; height:auto; }
-  .controls { display:grid; grid-template-columns:repeat(2, minmax(180px, 1fr)); gap:.8rem; margin-top:1rem; }
-  label { color:var(--muted); font-size:.9rem; }
-  input[type=range] { width:100%; }
-  .labels { fill: var(--muted); font-size: 12px; text-anchor: middle; dominant-baseline: middle; }
-  .wedge-main { fill: rgba(239,68,68,0.20); stroke: var(--accent); stroke-width:2; }
-  .wedge-overflow { fill: rgba(239,68,68,0.10); stroke: var(--accent); stroke-width:1; stroke-dasharray:4; }
-  .axis { stroke: var(--grid); stroke-width:2; }
-  .tree { fill:#228B22; }
-  .cloud { fill:#bbb; }
-  .pivot { fill:#ef4444; opacity:0.7; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photo Metadata Reader</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .upload-area:hover {
+            border-color: #007AFF;
+            background: #f8f9ff;
+        }
+        .upload-area.dragover {
+            border-color: #007AFF;
+            background: #f0f4ff;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        .preview {
+            max-width: 100%;
+            max-height: 400px;
+            margin: 20px 0;
+            border-radius: 8px;
+            display: none;
+        }
+        .metadata {
+            display: none;
+            margin-top: 20px;
+        }
+        .metadata-item {
+            padding: 12px;
+            margin: 10px 0;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border-left: 4px solid #007AFF;
+        }
+        .metadata-label {
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 4px;
+        }
+        .metadata-value {
+            color: #333;
+            font-size: 14px;
+        }
+        .error {
+            color: #dc3545;
+            padding: 12px;
+            background: #f8d7da;
+            border-radius: 6px;
+            display: none;
+            margin-top: 20px;
+        }
+    </style>
 </head>
 <body>
-<h1>Vertical View – Camera FOV Simulator</h1>
-<div class='panel'>
-  <div class='svgbox'>
-    <svg id='pitchview' viewBox='0 0 300 300'>
-      <line x1='40' y1='260' x2='260' y2='260' class='axis' />
-      <line x1='40' y1='260' x2='40' y2='40' class='axis' />
-      <path d='M40,40 A220,220 0 0 1 260,260' fill='none' stroke='var(--grid)' stroke-width='2' />
-      <path id='wedge-main' class='wedge-main' d='' />
-      <path id='wedge-overflow' class='wedge-overflow' d='' />
-      <circle id='pitch-dot' cx='40' cy='260' r='3' fill='var(--accent)' />
-      <text class='labels' x='150' y='280'>Ground (0°)</text>
-      <text class='labels' x='30' y='50' text-anchor='start'>Sky (+90°)</text>
-      
-      <rect
-          style="fill:none;stroke:#e20000;stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round;paint-order:stroke markers fill"
-          id="body"
-          width="6"
-          height="40"
-          x="36"
-          y="220" />
-      <g id='arm-group'>
-        <path
-            style="fill:none;stroke:#e20000;stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round;paint-order:stroke markers fill"
-            d="M 39.749291,229.28554 L 48.959493,236.07201 L 57.927321,228.31605 V 228.31605"
-            id="arm" />
-        <circle class='pivot' cx='39.749291' cy='229.28554' r='2' />
-      </g>
-      
-      <g transform='translate(240,260) scale(1.2)'>
-        <rect class='tree' x='-5' y='-20' width='10' height='20' />
-        <circle class='tree' cx='0' cy='-30' r='15' />
-      </g>
-      <g transform='translate(240,60) scale(1.2)'>
-        <ellipse class='cloud' cx='0' cy='0' rx='20' ry='12' />
-        <ellipse class='cloud' cx='-15' cy='0' rx='15' ry='10' />
-        <ellipse class='cloud' cx='15' cy='0' rx='15' ry='10' />
-      </g>
-    </svg>
-  </div>
-  <div class='controls'>
-    <div>
-      <label>Pitch (°): <span id='pitch-val'>0</span></label>
-      <input id='pitch' type='range' min='-45' max='90' value='0' />
+    <div class="container">
+        <h1>📸 Photo Metadata Reader</h1>
+        
+        <div class="upload-area" id="uploadArea">
+            <p style="margin: 0; color: #666;">Click to upload or drag and drop a photo</p>
+            <p style="margin: 10px 0 0 0; color: #999; font-size: 14px;">Works best with iPhone photos</p>
+        </div>
+        
+        <input type="file" id="fileInput" accept="image/*">
+        
+        <img id="preview" class="preview" alt="Preview">
+        
+        <div id="metadata" class="metadata">
+            <h2 style="color: #333; margin-bottom: 15px;">Metadata</h2>
+            <div class="metadata-item">
+                <div class="metadata-label">Capture Date & Time</div>
+                <div class="metadata-value" id="datetime">-</div>
+            </div>
+            <div class="metadata-item">
+                <div class="metadata-label">Field of View / Focal Length</div>
+                <div class="metadata-value" id="fov">-</div>
+            </div>
+            <div class="metadata-item">
+                <div class="metadata-label">Angle of View</div>
+                <div class="metadata-value" id="aov">-</div>
+            </div>
+            <div class="metadata-item">
+                <div class="metadata-label">Compass Direction</div>
+                <div class="metadata-value" id="direction">-</div>
+            </div>
+            <div class="metadata-item">
+                <div class="metadata-label">GPS Coordinates</div>
+                <div class="metadata-value" id="gps">-</div>
+            </div>
+        </div>
+        
+        <div id="error" class="error"></div>
     </div>
-    <div>
-      <label>Vertical FOV (°): <span id='vfov-val'>45</span></label>
-      <input id='vfov' type='range' min='10' max='90' value='45' />
-    </div>
-  </div>
-</div>
 
-<script>
-const deg2rad = d => d * Math.PI / 180;
-function clamp(a, min, max) { return Math.min(max, Math.max(min, a)); }
-function polarCorner(cx, cy, r, deg) {
-  const t = deg2rad(deg);
-  return { x: cx + r * Math.cos(t), y: cy - r * Math.sin(t) };
-}
-function sectorPath(cx, cy, r, startDeg, endDeg) {
-  const p0 = polarCorner(cx, cy, r, startDeg);
-  const p1 = polarCorner(cx, cy, r, endDeg);
-  const sweep = endDeg - startDeg;
-  const largeArc = sweep > 180 ? 1 : 0;
-  return `M ${cx} ${cy} L ${p0.x} ${p0.y} A ${r} ${r} 0 ${largeArc} 0 ${p1.x} ${p1.y} Z`;
-}
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const preview = document.getElementById('preview');
+        const metadataDiv = document.getElementById('metadata');
+        const errorDiv = document.getElementById('error');
 
-function getCameraPosition(pitch) {
-  // Shoulder position (pivot point)
-  const shoulderX = 39.749291;
-  const shoulderY = 229.28554;
-  
-  // Original arm endpoint from the path
-  const origArmEndX = 57.927321;
-  const origArmEndY = 228.31605;
-  
-  // Calculate arm length and base angle
-  const armLength = Math.sqrt(
-    Math.pow(origArmEndX - shoulderX, 2) + 
-    Math.pow(origArmEndY - shoulderY, 2)
-  );
-  
-  const baseAngle = Math.atan2(
-    shoulderY - origArmEndY,
-    origArmEndX - shoulderX
-  ) * 180 / Math.PI;
-  
-  // New arm angle based on pitch
-  const newAngle = baseAngle + pitch;
-  const rad = deg2rad(newAngle);
-  
-  // Calculate camera position at end of arm
-  const camX = shoulderX + armLength * Math.cos(rad);
-  const camY = shoulderY - armLength * Math.sin(rad);
-  
-  return { x: camX, y: camY, angle: pitch };
-}
+        uploadArea.addEventListener('click', () => fileInput.click());
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            if (e.dataTransfer.files.length) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+        
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) {
+                handleFile(e.target.files[0]);
+            }
+        });
 
-function update() {
-  const pitch = parseFloat(document.getElementById('pitch').value);
-  const vfov = parseFloat(document.getElementById('vfov').value);
-  
-  document.getElementById('pitch-val').textContent = pitch;
-  document.getElementById('vfov-val').textContent = vfov;
-  
-  // Rotate the arm only
-  const shoulderX = 39.749291;
-  const shoulderY = 229.28554;
-  const armGroup = document.getElementById('arm-group');
-  armGroup.setAttribute('transform', 
-    `rotate(${-pitch} ${shoulderX} ${shoulderY})`
-  );
-  
-  // Get camera position for FOV wedge
-  const camPos = getCameraPosition(pitch);
-  const cx = camPos.x;
-  const cy = camPos.y;
-  const r = 220;
-  
-  // Calculate FOV bounds
-  // The wedge is centered on the pitch angle (focal point)
-  const half = vfov / 2;
-  const wedgeStart = pitch - half;
-  const wedgeEnd = pitch + half;
-  
-  // Check if line of sight intersects ground within visible bounds (x <= 260)
-  // Line of sight goes from camera (cx, cy) through focal point
-  const focalPoint = polarCorner(cx, cy, r, pitch);
-  
-  // Calculate where line of sight intersects y=260 (ground line)
-  let lineOfSightHitsGround = false;
-  
-  if (Math.abs(focalPoint.y - cy) > 0.001) {
-    const slope = (focalPoint.x - cx) / (focalPoint.y - cy);
-    const groundIntersectX = cx + slope * (260 - cy);
-    
-    if (groundIntersectX >= 40 && groundIntersectX <= 260 && focalPoint.y > cy) {
-      lineOfSightHitsGround = true;
-    }
-  }
-  
-  let mainPath = '';
-  let overflowPath = '';
-  
-  if (lineOfSightHitsGround) {
-    // Line of sight hits ground - split wedge at the PITCH angle (line of sight)
-    // Solid portion: from max(wedgeStart, pitch) to min(wedgeEnd, 90)
-    // This is everything above the line of sight
-    const solidStart = Math.max(wedgeStart, pitch);
-    const solidEnd = Math.min(wedgeEnd, 90);
-    
-    if (solidStart < solidEnd) {
-      mainPath = sectorPath(cx, cy, r, solidStart, solidEnd);
-    }
-    
-    // Dashed portions
-    const overflowPaths = [];
-    
-    // Below line of sight (from wedgeStart to pitch)
-    if (wedgeStart < pitch) {
-      overflowPaths.push(sectorPath(cx, cy, r, wedgeStart, Math.min(wedgeEnd, pitch)));
-    }
-    
-    // Above 90° (above sky)
-    if (wedgeEnd > 90) {
-      overflowPaths.push(sectorPath(cx, cy, r, Math.max(wedgeStart, 90), wedgeEnd));
-    }
-    
-    if (overflowPaths.length > 0) {
-      overflowPath = overflowPaths.join(' ');
-    }
-    
-  } else {
-    // Line of sight doesn't hit ground - show full wedge as solid, except above 90°
-    // Solid portion: from wedgeStart to min(wedgeEnd, 90)
-    const solidEnd = Math.min(wedgeEnd, 90);
-    
-    if (wedgeStart < solidEnd) {
-      mainPath = sectorPath(cx, cy, r, wedgeStart, solidEnd);
-    }
-    
-    // Only above 90° is dashed
-    if (wedgeEnd > 90) {
-      overflowPath = sectorPath(cx, cy, r, Math.max(wedgeStart, 90), wedgeEnd);
-    }
-  }
-  
-  document.getElementById('wedge-main').setAttribute('d', mainPath);
-  document.getElementById('wedge-overflow').setAttribute('d', overflowPath);
-  
-  // Update pitch dot position - should follow pitch exactly, not clamped
-  const pCenter = polarCorner(cx, cy, r, pitch);
-  document.getElementById('pitch-dot').setAttribute('cx', pCenter.x);
-  document.getElementById('pitch-dot').setAttribute('cy', pCenter.y);
-}
+        function handleFile(file) {
+            if (!file.type.startsWith('image/')) {
+                showError('Please select an image file');
+                return;
+            }
 
-['pitch', 'vfov'].forEach(id => {
-  document.getElementById(id).addEventListener('input', update);
-});
+            errorDiv.style.display = 'none';
+            const reader = new FileReader();
+            
+            reader.onload = (e) => {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+                extractMetadata(e.target.result);
+            };
+            
+            reader.readAsDataURL(file);
+        }
 
-update();
-</script>
+        function extractMetadata(imageData) {
+            const img = new Image();
+            img.src = imageData;
+            
+            img.onload = () => {
+                EXIF.getData(img, function() {
+                    const allData = EXIF.getAllTags(this);
+                    
+                    // Capture Date & Time
+                    const datetime = EXIF.getTag(this, 'DateTimeOriginal') || EXIF.getTag(this, 'DateTime') || 'Not available';
+                    document.getElementById('datetime').textContent = datetime;
+                    
+                    // Field of View / Focal Length
+                    const focalLength = EXIF.getTag(this, 'FocalLength');
+                    const focalLength35 = EXIF.getTag(this, 'FocalLengthIn35mmFilm');
+                    let fovText = 'Not available';
+                    if (focalLength) {
+                        fovText = `${focalLength}mm`;
+                        if (focalLength35) {
+                            fovText += ` (${focalLength35}mm equivalent)`;
+                        }
+                    }
+                    document.getElementById('fov').textContent = fovText;
+                    
+                    // Angle of View
+                    let aovText = 'Not available';
+                    if (focalLength35) {
+                        // Calculate horizontal angle of view using 35mm film dimensions (36mm x 24mm)
+                        // Formula: AOV = 2 * arctan(sensor_width / (2 * focal_length))
+                        const sensorWidth = 36; // 35mm film width in mm
+                        const horizontalAOV = 2 * Math.atan(sensorWidth / (2 * focalLength35)) * (180 / Math.PI);
+                        
+                        // Also calculate vertical and diagonal
+                        const sensorHeight = 24;
+                        const verticalAOV = 2 * Math.atan(sensorHeight / (2 * focalLength35)) * (180 / Math.PI);
+                        const sensorDiagonal = Math.sqrt(sensorWidth * sensorWidth + sensorHeight * sensorHeight);
+                        const diagonalAOV = 2 * Math.atan(sensorDiagonal / (2 * focalLength35)) * (180 / Math.PI);
+                        
+                        aovText = `${horizontalAOV.toFixed(1)}° horizontal`;
+                        aovText += `\n${verticalAOV.toFixed(1)}° vertical, ${diagonalAOV.toFixed(1)}° diagonal`;
+                    }
+                    document.getElementById('aov').textContent = aovText;
+                    
+                    // Compass Direction
+                    const imgDirection = EXIF.getTag(this, 'GPSImgDirection');
+                    const imgDirectionRef = EXIF.getTag(this, 'GPSImgDirectionRef');
+                    let directionText = 'Not available';
+                    if (imgDirection !== undefined) {
+                        const degrees = Math.round(imgDirection);
+                        const cardinal = getCardinalDirection(degrees);
+                        directionText = `${degrees}° ${cardinal}`;
+                        if (imgDirectionRef) {
+                            directionText += ` (${imgDirectionRef})`;
+                        }
+                    }
+                    document.getElementById('direction').textContent = directionText;
+                    
+                    // GPS Coordinates
+                    const lat = EXIF.getTag(this, 'GPSLatitude');
+                    const latRef = EXIF.getTag(this, 'GPSLatitudeRef');
+                    const lon = EXIF.getTag(this, 'GPSLongitude');
+                    const lonRef = EXIF.getTag(this, 'GPSLongitudeRef');
+                    
+                    let gpsText = 'Not available';
+                    if (lat && lon) {
+                        const latDecimal = convertDMSToDD(lat, latRef);
+                        const lonDecimal = convertDMSToDD(lon, lonRef);
+                        gpsText = `${latDecimal.toFixed(6)}°, ${lonDecimal.toFixed(6)}°`;
+                        gpsText += `\n(${latRef} ${formatDMS(lat)}, ${lonRef} ${formatDMS(lon)})`;
+                    }
+                    document.getElementById('gps').textContent = gpsText;
+                    
+                    metadataDiv.style.display = 'block';
+                });
+            };
+        }
+
+        function convertDMSToDD(dms, ref) {
+            const degrees = dms[0];
+            const minutes = dms[1];
+            const seconds = dms[2];
+            let dd = degrees + minutes / 60 + seconds / 3600;
+            if (ref === 'S' || ref === 'W') {
+                dd = dd * -1;
+            }
+            return dd;
+        }
+
+        function formatDMS(dms) {
+            return `${dms[0]}° ${dms[1]}' ${dms[2].toFixed(2)}"`;
+        }
+
+        function getCardinalDirection(degrees) {
+            const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+            const index = Math.round(degrees / 45) % 8;
+            return directions[index];
+        }
+
+        function showError(message) {
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            preview.style.display = 'none';
+            metadataDiv.style.display = 'none';
+        }
+    </script>
 </body>
 </html>

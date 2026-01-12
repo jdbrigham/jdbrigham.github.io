@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Minimal Compass (Static Face, Linked Camera)</title>
+<style>
+  :root {
+    --bg: #0e0f12;
+    --ring: #444a57;
+    --ticks: #77819b;
+    --text: #cfd3dc;
+    --accent: #3aa0ff;
+    --fov-alpha: 0.22;
+  }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    margin: 0;
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+    min-height: 100vh;
+  }
+
+  /* Main area where you can place a reference photo later */
+  .content {
+    padding: 24px;
+  }
+  
+.photo-container {
+  width: min(600px, 90vw);      /* max width but responsive */
+  aspect-ratio: 16 / 9;         /* keeps a nice ratio for photos */
+  background-color: #1a1d24;    /* subtle dark background */
+  border-radius: 12px;
+  overflow: hidden;             /* crop overflow if image is larger */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin-left: 15%;
+  margin-top: 5%;
+  border: 10px solid #fff;
+}
+
+/* Placeholder text or image styling */
+.photo-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;            /* ensures image fills container without distortion */
+}
+
+.photo-placeholder-text {
+  color: #95a0b2;
+  font-size: 14px;
+  text-align: center;
+}
+
+
+.photo-info {
+  margin-top: 12px;
+  font-size: 22px;
+  color: #cfd3dc;
+  text-align: center;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+.photo-info span {
+  color: #3aa0ff; /* accent color for values */
+  font-weight: 600;
+}
+
+
+  /* Compass anchored in the upper-right */
+  .compass-wrap {
+    position: fixed;      /* sticks to viewport */
+    top: 16px;
+    right: 16px;
+    width: 360px;         /* adjust size as needed */
+    z-index: 10;
+    pointer-events: none; /* let future photo UI receive interactions if overlapping */
+  }
+
+  svg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+</style>
+</head>
+<body>
+
+<!-- Upper-right compass -->
+<div class="compass-wrap">
+  <svg id="compass" viewBox="0 0 200 200" aria-label="Compass">
+    <!-- Static face (ring, ticks, labels) -->
+    <circle cx="100" cy="100" r="80" fill="none" stroke="var(--ring)" stroke-width="2" />
+
+    <!-- Major/minor ticks (static) -->
+    <g id="ticks"></g>
+
+    <!-- Cardinal labels (static) -->
+    <g id="labels"></g>
+
+    <!-- Linked camera (static) -->
+    <g id="camera"></g>
+
+    <!-- Dynamic FOV wedge & facing arrow -->
+    <path id="fov" fill="rgba(58,160,255, var(--fov-alpha))" stroke="none" />
+    <g id="arrow"></g>
+  </svg>
+</div>
+
+<!-- Main content area (room for a reference photo) -->
+<div class="content">
+  
+<div class="photo-container">
+  <!-- If you have an image -->
+  <img src="IMG_0452.png" />
+  <!-- <div class="photo-placeholder-text">
+    Reference photo area (drop your image here later)
+  </div> -->
+</div>
+
+<!-- Dynamic info text -->
+<div class="photo-info">
+  Facing Direction: <span id="dirValue"></span>° &nbsp;|&nbsp; FOV: <span id="fovValue"></span>°
+</div>
+
+
+</div>
+
+<script>
+/* ============================================================================
+   CONFIG: Set your facing direction and angle of view (FOV) here.
+   - 0° = North (up), degrees increase clockwise (East=90°, South=180°, West=270°)
+   - Keep camera artwork drawn pointing UP by default; we rotate it to match.
+   ========================================================================== */
+const DIRECTION_DEG = 73.7;            // <-- facing direction (arrow/camera)
+const FOV_DEG       = 135;            // <-- angle of view (convex pie wedge)
+const FOV_MODE      = 'centered';    // 'centered' or 'start' (start sweeps clockwise)
+const CAMERA_URL    = 'camera.svg';  // <-- linked SVG icon (same-origin or CORS-enabled)
+const CAMERA_SIZE   = 20;            // pixel size inside the 200x200 viewBox
+const CAMERA_OPACITY= 1.0;           // 0..1
+
+/* ============================================================================
+   Static geometry & helpers
+   ========================================================================== */
+const svg = document.getElementById('compass');
+const ticksG = document.getElementById('ticks');
+const labelsG = document.getElementById('labels');
+const cameraG = document.getElementById('camera');
+const fovPath = document.getElementById('fov');
+const arrowG  = document.getElementById('arrow');
+
+const cx = 100, cy = 100;
+const R  = 80;
+const tickMajorLen = 8;
+const tickMinorLen = 4;
+const minorTickStep = 10;
+const majorTickStep = 30;
+const svgNS = 'http://www.w3.org/2000/svg';
+
+function normalizeDeg(d) {
+  return ((Number(d) % 360) + 360) % 360;
+}
+/** Convert compass degrees to radians with 0° at North and clockwise positive. */
+function degToRadClockwise(d) {
+  return (Math.PI / 180) * (90 - d);
+}
+/** Point on circle given compass degrees and radius. */
+function polarPoint(deg, radius = R) {
+  const a = degToRadClockwise(deg);
+  const x = cx + radius * Math.cos(a);
+  const y = cy - radius * Math.sin(a); // SVG y increases downward; invert sin
+  return [x, y];
+}
+
+/* ============================================================================
+   Build STATIC face once (ring already present in markup)
+   ========================================================================== */
+function buildTicksStatic() {
+  ticksG.innerHTML = '';
+  for (let d = 0; d < 360; d += minorTickStep) {
+    const isMajor = d % majorTickStep === 0;
+    const len = isMajor ? tickMajorLen : tickMinorLen;
+    const [x1, y1] = polarPoint(d, R);
+    const [x2, y2] = polarPoint(d, R - len);
+
+    const line = document.createElementNS(svgNS, 'line');
+    line.setAttribute('x1', x1);
+    line.setAttribute('y1', y1);
+    line.setAttribute('x2', x2);
+    line.setAttribute('y2', y2);
+    line.setAttribute('stroke', getComputedStyle(document.documentElement).getPropertyValue('--ticks').trim());
+    line.setAttribute('stroke-width', isMajor ? 2 : 1);
+    if (!isMajor) line.setAttribute('opacity', 0.65);
+
+    ticksG.appendChild(line);
+  }
+}
+
+function buildLabelsStatic() {
+  labelsG.innerHTML = '';
+  [
+    { txt: 'N', deg: 0 },
+    { txt: 'E', deg: 90 },
+    { txt: 'S', deg: 180 },
+    { txt: 'W', deg: 270 },
+  ].forEach(({ txt, deg }) => {
+    const [x, y] = polarPoint(deg, R + 14);
+    const t = document.createElementNS(svgNS, 'text');
+    t.setAttribute('x', x);
+    t.setAttribute('y', y);
+    t.setAttribute('fill', getComputedStyle(document.documentElement).getPropertyValue('--text').trim());
+    t.setAttribute('font-size', 12);
+    t.setAttribute('font-weight', 600);
+    t.setAttribute('font-family', "system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif");
+    t.setAttribute('text-anchor', 'middle');
+    t.setAttribute('dominant-baseline', 'middle');
+    t.textContent = txt;
+    labelsG.appendChild(t);
+  });
+}
+
+function buildCameraStatic(url, size) {
+  cameraG.innerHTML = '';
+  if (!url) return;
+
+  // Centered placement
+  const x = cx - size / 2;
+  const y = cy - size / 2;
+
+  const img = document.createElementNS(svgNS, 'image');
+  img.setAttribute('href', url);
+  img.setAttribute('x', x);
+  img.setAttribute('y', y);
+  img.setAttribute('width', size);
+  img.setAttribute('height', size);
+  img.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+  img.setAttribute('opacity', CAMERA_OPACITY);
+  cameraG.appendChild(img);
+}
+
+/* ============================================================================
+   Dynamic overlays (only FOV wedge and facing arrow)
+   ========================================================================== */
+function drawFOV(directionDeg, fovDeg, mode = 'centered') {
+  const dir = normalizeDeg(directionDeg);
+  const fov = Math.max(0, Number(fovDeg) || 0);
+
+  if (fov <= 0) {
+    fovPath.setAttribute('d', '');
+    return;
+  }
+
+  let startDeg, endDeg;
+  if (mode === 'start') {
+    startDeg = normalizeDeg(dir);
+    endDeg   = normalizeDeg(dir + fov);
+  } else { // 'centered'
+    const half = fov / 2;
+    startDeg = normalizeDeg(dir - half);
+    endDeg   = normalizeDeg(dir + half);
+  }
+
+  const deltaCW = (endDeg - startDeg + 360) % 360;
+  const [sx, sy] = polarPoint(startDeg, R);
+  const [ex, ey] = polarPoint(endDeg, R);
+
+  const sweepFlag = 1;                 // clockwise
+  const largeArc  = deltaCW > 180 ? 1 : 0;
+
+  const d = [
+    `M ${cx} ${cy}`,
+    `L ${sx} ${sy}`,                           // radial out
+    `A ${R} ${R} 0 ${largeArc} ${sweepFlag} ${ex} ${ey}`, // outer arc on ring
+    `Z`
+  ].join(' ');
+
+  fovPath.setAttribute('d', d);
+  fovPath.setAttribute('fill', `rgba(58,160,255, ${getComputedStyle(document.documentElement).getPropertyValue('--fov-alpha').trim() || 0.22})`);
+  fovPath.setAttribute('stroke', 'none');
+}
+
+function drawArrow(directionDeg) {
+  arrowG.innerHTML = '';
+
+  const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+  const dir = normalizeDeg(directionDeg);
+  const innerR = R - 16;
+  const tipR   = R + 4;
+
+  const [x1, y1] = polarPoint(dir, innerR);
+  const [x2, y2] = polarPoint(dir, tipR);
+
+  // Shaft
+  const shaft = document.createElementNS(svgNS, 'line');
+  shaft.setAttribute('x1', x1);
+  shaft.setAttribute('y1', y1);
+  shaft.setAttribute('x2', x2);
+  shaft.setAttribute('y2', y2);
+  shaft.setAttribute('stroke', accent);
+  shaft.setAttribute('stroke-width', 3);
+  shaft.setAttribute('stroke-linecap', 'round');
+  arrowG.appendChild(shaft);
+
+  // Arrowhead
+  const headSize = 6;
+  const a = degToRadClockwise(dir);
+  const leftAngle  = a + (3 * Math.PI) / 4;
+  const rightAngle = a - (3 * Math.PI) / 4;
+
+  const left  = [x2 + headSize * Math.cos(leftAngle),  y2 - headSize * Math.sin(leftAngle)];
+  const right = [x2 + headSize * Math.cos(rightAngle), y2 - headSize * Math.sin(rightAngle)];
+
+  const head = document.createElementNS(svgNS, 'path');
+  head.setAttribute('d', `M ${x2} ${y2} L ${left[0]} ${left[1]} L ${right[0]} ${right[1]} Z`);
+  head.setAttribute('fill', accent);
+  arrowG.appendChild(head);
+}
+
+/* ============================================================================
+   Initialization: build static face once, then draw dynamic parts from CONFIG
+   ========================================================================== */
+buildTicksStatic();
+buildLabelsStatic();
+buildCameraStatic(CAMERA_URL, CAMERA_SIZE);
+
+// Rotate the camera group so its lens points in the facing direction.
+// Assumes the camera artwork is drawn pointing UP by default.
+cameraG.setAttribute('transform', `rotate(${normalizeDeg(DIRECTION_DEG)} ${cx} ${cy})`);
+
+// Draw dynamic overlays
+drawFOV(DIRECTION_DEG, FOV_DEG, FOV_MODE);
+drawArrow(DIRECTION_DEG);
+
+/* ============================================================================
+   Optional API for future programmatic updates (no UI elements on page)
+   - You can call window.setFacingDirection(…) or window.setFov(…) later
+   ========================================================================== */
+window.setFacingDirection = function(newDeg) {
+  const d = normalizeDeg(newDeg);
+  cameraG.setAttribute('transform', `rotate(${d} ${cx} ${cy})`);
+  drawFOV(d, FOV_DEG, FOV_MODE);
+  drawArrow(d);
+};
+window.setFov = function(newFov) {
+  drawFOV(DIRECTION_DEG, newFov, FOV_MODE);
+};
+
+
+// Update info text based on current config
+const dirSpan = document.getElementById('dirValue');
+const fovSpan = document.getElementById('fovValue');
+
+function updateInfo(direction, fov) {
+  dirSpan.textContent = normalizeDeg(direction);
+  fovSpan.textContent = fov;
+}
+
+// Initial update
+updateInfo(DIRECTION_DEG, FOV_DEG);
+
+// If you use the optional API for updates:
+window.setFacingDirection = function(newDeg) {
+  const d = normalizeDeg(newDeg);
+  cameraG.setAttribute('transform', `rotate(${d} ${cx} ${cy})`);
+  drawFOV(d, FOV_DEG, FOV_MODE);
+  drawArrow(d);
+  updateInfo(d, FOV_DEG);
+};
+
+window.setFov = function(newFov) {
+  drawFOV(DIRECTION_DEG, newFov, FOV_MODE);
+  updateInfo(DIRECTION_DEG, newFov);
+};
+
+</script>
+</body>
+</html>
