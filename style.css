@@ -62,16 +62,16 @@ body {
     align-items: center;           /* vertical centering */
     justify-content: center;       /* horizontal centering */
     padding: 12px 24px;            /* adjust size */
-    border: 3px solid white;       /* white rectangular outline */
+    border: 1px solid white;       /* white rectangular outline */
     color: white;                  /* text color */
     text-decoration: none;         /* remove underline */
-    font-weight: bold;             /* bold text */
+    font-weight: normal;             /* bold text */
     font-family: sans-serif;
     letter-spacing: 1px;           /* optional: spaced-out text */
 
     background: transparent;       /* transparent fill */
     transition: background 0.2s, color 0.2s;
-    margin-top: 22px;
+    margin: 22px;
 }
 
 .box-button:hover {
