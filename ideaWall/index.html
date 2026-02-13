@@ -138,12 +138,21 @@ body.connect-mode #card-count{opacity:0}
 .btn-ghost:hover{border-color:var(--ink-faint);color:var(--ink)}
 #toast{position:fixed;bottom:5rem;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--linen);font-size:.75rem;letter-spacing:.06em;padding:.5rem 1.2rem;border-radius:2rem;z-index:9999;opacity:0;pointer-events:none;transition:opacity .2s;font-family:'Courier Prime',monospace;white-space:nowrap}
 #toast.show{opacity:1}
+#sync-status{font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-ghost);display:flex;align-items:center;gap:.35rem;transition:opacity .3s}
+#sync-status.hidden{opacity:0}
+.sync-dot{width:5px;height:5px;border-radius:50%;background:var(--ink-ghost);flex-shrink:0;transition:background .3s}
+#sync-status.syncing .sync-dot{background:#c8931a;animation:pulse .8s ease-in-out infinite}
+#sync-status.synced .sync-dot{background:#4a9e6b}
+#sync-status.error .sync-dot{background:var(--accent)}
+#sync-status.error{color:var(--accent)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
 </style>
 </head>
 <body>
 <div id="topbar">
   <div class="wordmark"><em>idea</em> wall</div>
   <div id="card-count"></div>
+  <div id="sync-status" class="hidden"><div class="sync-dot"></div><span id="sync-label">–</span></div>
   <div class="topbar-right">
     <button class="btn-icon" id="btn-tags" title="Manage tags (T)">
       <svg viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
@@ -235,18 +244,100 @@ let cards=[],connectors=[],tags=[];
 let zoomIndex=2,panX=0,panY=0,isPanning=false,panSX=0,panSY=0,panOX=0,panOY=0;
 let connectMode=false,connectFirst=null,popoverCardId=null;
 
-// Storage
-function loadData(){
-  try{const v=localStorage.getItem('iw-cards');if(v)cards=JSON.parse(v);}catch(e){}
-  try{const v=localStorage.getItem('iw-connectors');if(v)connectors=JSON.parse(v);}catch(e){}
-  try{const v=localStorage.getItem('iw-tags');if(v)tags=JSON.parse(v);}catch(e){}
+// ═══════════════════════════════════════
+// GIST SYNC CONFIG — fill these in
+// ═══════════════════════════════════════
+const GIST_ID    = '43d2720fd200d3dae176b95ceff7a81a';
+const GIST_TOKEN = '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';
+const GIST_FILE  = 'idea-wall-data.json';
+const CONFIGURED = GIST_ID !== '43d2720fd200d3dae176b95ceff7a81a' && GIST_TOKEN !== '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';
+
+// Sync status UI
+const syncEl    = document.getElementById('sync-status');
+const syncLabel = document.getElementById('sync-label');
+function setSyncStatus(state, text){
+  syncEl.className = state === 'hidden' ? 'hidden' : '';
+  if(state !== 'hidden') syncEl.classList.add(state);
+  syncLabel.textContent = text;
+}
+
+// Debounce for saves — wait 1.2s after last change before writing to Gist
+let saveTimer = null;
+function save(){
+  // Always write to localStorage as immediate local backup
+  try{localStorage.setItem('iw-cards',      JSON.stringify(cards));     }catch(e){}
+  try{localStorage.setItem('iw-connectors', JSON.stringify(connectors));}catch(e){}
+  try{localStorage.setItem('iw-tags',       JSON.stringify(tags));      }catch(e){}
+  if(!CONFIGURED) return;
+  clearTimeout(saveTimer);
+  setSyncStatus('syncing','saving…');
+  saveTimer = setTimeout(pushToGist, 1200);
+}
+
+async function pushToGist(){
+  const data = {cards, connectors, tags};
+  try{
+    const res = await fetch('https://api.github.com/gists/'+GIST_ID, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': 'token '+GIST_TOKEN,
+        'Content-Type':  'application/json'
+      },
+      body: JSON.stringify({
+        files: { [GIST_FILE]: { content: JSON.stringify(data, null, 2) } }
+      })
+    });
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    setSyncStatus('synced','saved');
+    setTimeout(()=>setSyncStatus('hidden',''), 2500);
+  }catch(err){
+    console.error('Gist save failed:',err);
+    setSyncStatus('error','sync failed');
+  }
+}
+
+async function loadData(){
+  // Load from localStorage first for instant render
+  try{const v=localStorage.getItem('iw-cards');      if(v)cards      =JSON.parse(v);}catch(e){}
+  try{const v=localStorage.getItem('iw-connectors'); if(v)connectors =JSON.parse(v);}catch(e){}
+  try{const v=localStorage.getItem('iw-tags');       if(v)tags        =JSON.parse(v);}catch(e){}
   cards.forEach(c=>{if(!c.tags)c.tags=[];});
   renderAll();
-}
-function save(){
-  try{localStorage.setItem('iw-cards',JSON.stringify(cards));}catch(e){}
-  try{localStorage.setItem('iw-connectors',JSON.stringify(connectors));}catch(e){}
-  try{localStorage.setItem('iw-tags',JSON.stringify(tags));}catch(e){}
+
+  // Then fetch from Gist and merge (Gist is source of truth)
+  if(!CONFIGURED){
+    setSyncStatus('error','add gist id + token');
+    setTimeout(()=>setSyncStatus('hidden',''), 4000);
+    return;
+  }
+  setSyncStatus('syncing','loading…');
+  try{
+    const res = await fetch('https://api.github.com/gists/'+GIST_ID, {
+      headers: {'Authorization': 'token '+GIST_TOKEN}
+    });
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const gist = await res.json();
+    const raw  = gist.files[GIST_FILE]?.content;
+    if(raw && raw.trim() !== '{}'){
+      const data = JSON.parse(raw);
+      // Gist is source of truth — overwrite local state
+      cards      = (data.cards      || []);
+      connectors = (data.connectors || []);
+      tags       = (data.tags       || []);
+      cards.forEach(c=>{if(!c.tags)c.tags=[];});
+      // Persist locally too
+      try{localStorage.setItem('iw-cards',      JSON.stringify(cards));     }catch(e){}
+      try{localStorage.setItem('iw-connectors', JSON.stringify(connectors));}catch(e){}
+      try{localStorage.setItem('iw-tags',       JSON.stringify(tags));      }catch(e){}
+      renderAll();
+    }
+    setSyncStatus('synced','in sync');
+    setTimeout(()=>setSyncStatus('hidden',''), 2000);
+  }catch(err){
+    console.error('Gist load failed:',err);
+    setSyncStatus('error','sync failed — using local data');
+    setTimeout(()=>setSyncStatus('hidden',''), 4000);
+  }
 }
 
 // Zoom & Pan
@@ -636,8 +727,7 @@ function showToast(msg){
 }
 
 // Init
-loadData();
-checkHash();
+loadData().then(checkHash);
 </script>
 </body>
 </html>
