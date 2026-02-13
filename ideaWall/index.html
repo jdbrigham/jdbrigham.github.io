@@ -146,6 +146,30 @@ body.connect-mode #card-count{opacity:0}
 #sync-status.error .sync-dot{background:var(--accent)}
 #sync-status.error{color:var(--accent)}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+/* Setup modal */
+#setup-modal{position:fixed;inset:0;z-index:9000;background:var(--linen);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;opacity:0;pointer-events:none;transition:opacity .3s}
+#setup-modal.open{opacity:1;pointer-events:all}
+.setup-box{width:100%;max-width:420px}
+.setup-header{margin-bottom:2rem}
+.setup-header h1{font-family:'Playfair Display',serif;font-size:1.6rem;color:var(--ink)}
+.setup-header h1 em{color:var(--accent);font-style:italic}
+.setup-header p{font-size:.78rem;color:var(--ink-ghost);margin-top:.4rem;line-height:1.6;letter-spacing:.02em}
+.setup-header a{color:var(--accent);text-decoration:none}
+.setup-header a:hover{text-decoration:underline}
+.setup-form{display:flex;flex-direction:column;gap:.9rem}
+.setup-field{display:flex;flex-direction:column;gap:.35rem}
+.setup-field label{font-size:.65rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-ghost)}
+.setup-field input{font-family:'Courier Prime',monospace;font-size:.88rem;color:var(--ink);background:#fff;border:1.5px solid var(--linen-dark);border-radius:3px;padding:.65rem .85rem;outline:none;transition:border-color .15s;letter-spacing:.03em}
+.setup-field input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(200,75,47,.08)}
+.setup-field .hint{font-size:.65rem;color:var(--ink-ghost);margin-top:.2rem;letter-spacing:.02em}
+.setup-actions{display:flex;gap:.75rem;margin-top:.5rem}
+.setup-save{flex:1;padding:.8rem;background:var(--ink);color:var(--linen);border:none;border-radius:3px;font-family:'Courier Prime',monospace;font-size:.85rem;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:all .15s}
+.setup-save:hover{background:var(--accent)}
+.setup-skip{padding:.8rem 1.2rem;background:none;color:var(--ink-ghost);border:1.5px solid var(--linen-dark);border-radius:3px;font-family:'Courier Prime',monospace;font-size:.85rem;cursor:pointer;transition:all .15s}
+.setup-skip:hover{border-color:var(--ink-faint);color:var(--ink)}
+.setup-error{font-size:.72rem;color:var(--accent);margin-top:.15rem;display:none}
+.setup-error.show{display:block}
 </style>
 </head>
 <body>
@@ -153,6 +177,9 @@ body.connect-mode #card-count{opacity:0}
   <div class="wordmark"><em>idea</em> wall</div>
   <div id="card-count"></div>
   <div id="sync-status" class="hidden"><div class="sync-dot"></div><span id="sync-label">–</span></div>
+  <button class="btn-icon" id="btn-setup" title="Gist sync settings" style="width:28px;height:28px;opacity:.55">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+  </button>
   <div class="topbar-right">
     <button class="btn-icon" id="btn-tags" title="Manage tags (T)">
       <svg viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
@@ -235,6 +262,33 @@ body.connect-mode #card-count{opacity:0}
   </div>
 </div>
 <div id="toast"></div>
+<!-- Setup modal -->
+<div id="setup-modal">
+  <div class="setup-box">
+    <div class="setup-header">
+      <h1>connect to <em>gist</em></h1>
+      <p>Enter your GitHub credentials to sync cards across devices. These are stored only in your browser — never in the file itself.<br><br>
+      Need help? <a href="https://gist.github.com" target="_blank">Create a secret gist</a> with a file named <code>idea-wall-data.json</code> containing <code>{}</code>, then <a href="https://github.com/settings/tokens" target="_blank">generate a token</a> with only the <strong>gist</strong> scope.</p>
+    </div>
+    <div class="setup-form">
+      <div class="setup-field">
+        <label>Gist ID</label>
+        <input type="text" id="setup-gist-id" placeholder="e.g. a1b2c3d4e5f6…" autocomplete="off" spellcheck="false">
+        <div class="hint">The long hash in your Gist URL — not the filename</div>
+      </div>
+      <div class="setup-field">
+        <label>GitHub Token</label>
+        <input type="password" id="setup-gist-token" placeholder="ghp_…" autocomplete="off" spellcheck="false">
+        <div class="hint">Personal access token with <strong>gist</strong> scope only</div>
+      </div>
+      <div class="setup-error" id="setup-error">Please enter both a Gist ID and a token.</div>
+      <div class="setup-actions">
+        <button class="setup-skip" id="setup-skip">skip for now</button>
+        <button class="setup-save" id="setup-save">save &amp; connect →</button>
+      </div>
+    </div>
+  </div>
+</div>
 <script>
 const ZOOM_LEVELS=[0.35,0.6,1.0,1.45,2.0];
 const ZOOM_LABELS=['35%','60%','100%','145%','200%'];
@@ -247,10 +301,9 @@ let connectMode=false,connectFirst=null,popoverCardId=null;
 // ═══════════════════════════════════════
 // GIST SYNC CONFIG — fill these in
 // ═══════════════════════════════════════
-const GIST_ID    = '43d2720fd200d3dae176b95ceff7a81a';
-const GIST_TOKEN = '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';
-const GIST_FILE  = 'idea-wall-data.json';
-const CONFIGURED = GIST_ID !== '43d2720fd200d3dae176b95ceff7a81a' && GIST_TOKEN !== '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';
+const GIST_FILE = 'idea-wall-data.json';
+function getConfig(){ return {id:localStorage.getItem('iw-gist-id')||'', token:localStorage.getItem('iw-gist-token')||''}; }
+function isConfigured(){ const c=getConfig(); return c.id.length>10&&c.token.length>10; }
 
 // Sync status UI
 const syncEl    = document.getElementById('sync-status');
@@ -268,7 +321,7 @@ function save(){
   try{localStorage.setItem('iw-cards',      JSON.stringify(cards));     }catch(e){}
   try{localStorage.setItem('iw-connectors', JSON.stringify(connectors));}catch(e){}
   try{localStorage.setItem('iw-tags',       JSON.stringify(tags));      }catch(e){}
-  if(!CONFIGURED) return;
+  if(!isConfigured()) return;
   clearTimeout(saveTimer);
   setSyncStatus('syncing','saving…');
   saveTimer = setTimeout(pushToGist, 1200);
@@ -277,10 +330,10 @@ function save(){
 async function pushToGist(){
   const data = {cards, connectors, tags};
   try{
-    const res = await fetch('https://api.github.com/gists/'+GIST_ID, {
+    const res = await fetch('https://api.github.com/gists/'+getConfig().id, {
       method: 'PATCH',
       headers: {
-        'Authorization': 'token '+GIST_TOKEN,
+        'Authorization': 'token '+getConfig().token,
         'Content-Type':  'application/json'
       },
       body: JSON.stringify({
@@ -305,15 +358,14 @@ async function loadData(){
   renderAll();
 
   // Then fetch from Gist and merge (Gist is source of truth)
-  if(!CONFIGURED){
-    setSyncStatus('error','add gist id + token');
-    setTimeout(()=>setSyncStatus('hidden',''), 4000);
+  if(!isConfigured()){
+    openSetup();
     return;
   }
   setSyncStatus('syncing','loading…');
   try{
-    const res = await fetch('https://api.github.com/gists/'+GIST_ID, {
-      headers: {'Authorization': 'token '+GIST_TOKEN}
+    const res = await fetch('https://api.github.com/gists/'+getConfig().id, {
+      headers: {'Authorization': 'token '+getConfig().token}
     });
     if(!res.ok) throw new Error('HTTP '+res.status);
     const gist = await res.json();
@@ -726,8 +778,46 @@ function showToast(msg){
   clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2200);
 }
 
+
+
+// Setup modal
+function openSetup(){
+  // Pre-fill if already set (e.g. editing)
+  const c = getConfig();
+  document.getElementById('setup-gist-id').value    = c.id;
+  document.getElementById('setup-gist-token').value = c.token;
+  document.getElementById('setup-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('setup-gist-id').focus(), 80);
+}
+function closeSetup(){
+  document.getElementById('setup-modal').classList.remove('open');
+}
+document.getElementById('setup-save').onclick = function(){
+  const id    = document.getElementById('setup-gist-id').value.trim();
+  const token = document.getElementById('setup-gist-token').value.trim();
+  const errEl = document.getElementById('setup-error');
+  if(!id || !token){ errEl.classList.add('show'); return; }
+  errEl.classList.remove('show');
+  localStorage.setItem('iw-gist-id',    id);
+  localStorage.setItem('iw-gist-token', token);
+  closeSetup();
+  // Trigger a fresh load from Gist now that we have credentials
+  loadData();
+};
+document.getElementById('setup-skip').onclick = closeSetup;
+document.getElementById('btn-setup').onclick = openSetup;
+// Close on backdrop click
+document.getElementById('setup-modal').addEventListener('click', function(e){
+  if(e.target === this) closeSetup();
+});
+// Allow Enter key in token field to save
+document.getElementById('setup-gist-token').addEventListener('keydown', e=>{
+  if(e.key==='Enter') document.getElementById('setup-save').click();
+});
+
 // Init
 loadData().then(checkHash);
 </script>
+
 </body>
 </html>
