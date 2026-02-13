@@ -170,6 +170,44 @@ body.connect-mode #card-count{opacity:0}
 .setup-skip:hover{border-color:var(--ink-faint);color:var(--ink)}
 .setup-error{font-size:.72rem;color:var(--accent);margin-top:.15rem;display:none}
 .setup-error.show{display:block}
+
+.capture-feedback{font-family:'Courier Prime',monospace;font-size:.82rem;letter-spacing:.04em;
+  text-align:center;padding:.6rem;border-radius:4px;margin-top:.5rem;
+  opacity:0;transform:translateY(-4px);transition:opacity .25s ease,transform .25s ease;pointer-events:none}
+.capture-feedback.show{opacity:1;transform:none}
+.capture-feedback.success{color:#3a7a57;background:rgba(58,122,87,.08)}
+.capture-feedback.error{color:var(--accent);background:rgba(200,75,47,.07)}
+
+/* Checklist on note cards */
+.card-checklist{display:flex;flex-direction:column;gap:.28rem;margin-top:.1rem}
+.checklist-item{display:flex;align-items:flex-start;gap:.45rem;cursor:default}
+.checklist-item input[type=checkbox]{
+  width:12px;height:12px;margin-top:.18em;flex-shrink:0;cursor:pointer;
+  accent-color:var(--accent);border-radius:2px}
+.checklist-item-text{
+  font-size:.73rem;color:var(--ink-faint);line-height:1.45;
+  font-family:'Courier Prime',monospace;flex:1;
+  outline:none;border:none;background:none;resize:none;cursor:text;
+  min-width:0;padding:0}
+.checklist-item-text:focus{background:rgba(30,20,10,.02);border-radius:2px}
+.checklist-item.done .checklist-item-text{text-decoration:line-through;opacity:.5}
+.checklist-item input[type=checkbox]{pointer-events:all}
+body.connect-mode .checklist-item input[type=checkbox]{pointer-events:none}
+.checklist-add-row{display:flex;align-items:center;gap:.4rem;margin-top:.1rem}
+.checklist-add-btn{
+  font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink-ghost);background:none;border:none;cursor:pointer;
+  padding:.1rem 0;font-family:'Courier Prime',monospace;
+  opacity:0;transition:opacity .15s}
+.card-note:hover .checklist-add-btn{opacity:1}
+.checklist-add-btn:hover{color:var(--accent)}
+.checklist-toggle-btn{
+  font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink-ghost);background:none;border:none;cursor:pointer;
+  padding:.1rem 0;font-family:'Courier Prime',monospace;
+  opacity:0;transition:opacity .15s;margin-left:auto}
+.card-note:hover .checklist-toggle-btn{opacity:.7}
+.checklist-toggle-btn:hover{color:var(--ink-faint);opacity:1!important}
 </style>
 </head>
 <body>
@@ -258,6 +296,7 @@ body.connect-mode #card-count{opacity:0}
         <button class="btn-ghost" id="btn-cancel-capture">← wall</button>
         <button class="btn-primary" id="btn-submit-capture">add to wall →</button>
       </div>
+      <div class="capture-feedback" id="capture-feedback"></div>
     </div>
   </div>
 </div>
@@ -354,7 +393,7 @@ async function loadData(){
   try{const v=localStorage.getItem('iw-cards');      if(v)cards      =JSON.parse(v);}catch(e){}
   try{const v=localStorage.getItem('iw-connectors'); if(v)connectors =JSON.parse(v);}catch(e){}
   try{const v=localStorage.getItem('iw-tags');       if(v)tags        =JSON.parse(v);}catch(e){}
-  cards.forEach(c=>{if(!c.tags)c.tags=[];});
+  cards.forEach(c=>{if(!c.tags)c.tags=[];if(!c.checklist)c.checklist=[];});
   renderAll();
 
   // Then fetch from Gist and merge (Gist is source of truth)
@@ -376,7 +415,7 @@ async function loadData(){
       cards      = (data.cards      || []);
       connectors = (data.connectors || []);
       tags       = (data.tags       || []);
-      cards.forEach(c=>{if(!c.tags)c.tags=[];});
+      cards.forEach(c=>{if(!c.tags)c.tags=[];if(!c.checklist)c.checklist=[];});
       // Persist locally too
       try{localStorage.setItem('iw-cards',      JSON.stringify(cards));     }catch(e){}
       try{localStorage.setItem('iw-connectors', JSON.stringify(connectors));}catch(e){}
@@ -436,7 +475,7 @@ function addCard(type,title,body){
     y:CY-70+(Math.random()*sc-sc/2),
     rotation:rnd(ROTATIONS),
     date:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'}),
-    zIndex:cards.length+10,tags:[]
+    zIndex:cards.length+10,tags:[],checklist:[]
   };
   cards.push(card);save();updateMeta();
   return createCardEl(card);
@@ -452,6 +491,7 @@ function createCardEl(card){
     '<textarea class="card-title" placeholder="title…" spellcheck="false">'+esc(card.title)+'</textarea>'+
     '<textarea class="card-body" placeholder="expand…" spellcheck="false">'+esc(card.body)+'</textarea>'+
     '<div class="card-tags"></div>'+
+    '<div class="card-checklist" id="cl-'+card.id+'"></div>'+
     '<div class="card-footer">'+
       '<span class="card-date">'+card.date+'</span>'+
       '<div class="card-actions">'+
@@ -471,6 +511,7 @@ function createCardEl(card){
   el.addEventListener('click',e=>cardClick(e,card,el));
   renderTagPills(card,el);
   canvas.appendChild(el);
+  if(card.type==='note') renderChecklist(card,el);
   return el;
 }
 
@@ -525,6 +566,96 @@ function makeDraggable(el,card){
     el.classList.remove('dragging');canvasWrap.classList.remove('card-dragging');
     el.style.transform='rotate('+card.rotation+'deg)';save();
   });
+}
+
+
+// Checklist (note cards only)
+function renderChecklist(card,el){
+  const container=el.querySelector('.card-checklist');
+  if(!container)return;
+  container.innerHTML='';
+  (card.checklist||[]).forEach((item,idx)=>{
+    container.appendChild(makeChecklistItemEl(card,idx));
+  });
+  // Add-item row
+  const addRow=document.createElement('div');
+  addRow.className='checklist-add-row';
+  const addBtn=document.createElement('button');
+  addBtn.className='checklist-add-btn';
+  addBtn.textContent='+ add item';
+  addBtn.addEventListener('mousedown',e=>e.stopPropagation());
+  addBtn.addEventListener('click',e=>{
+    e.stopPropagation();
+    if(!card.checklist)card.checklist=[];
+    card.checklist.push({text:'',done:false});
+    save();
+    renderChecklist(card,el);
+    // focus the new item
+    const items=container.querySelectorAll('.checklist-item-text');
+    if(items.length) items[items.length-1].focus();
+  });
+  addRow.appendChild(addBtn);
+  container.appendChild(addRow);
+}
+
+function makeChecklistItemEl(card,idx){
+  const item=card.checklist[idx];
+  const row=document.createElement('div');
+  row.className='checklist-item'+(item.done?' done':'');
+  
+  const cb=document.createElement('input');
+  cb.type='checkbox';
+  cb.checked=item.done;
+  cb.addEventListener('mousedown',e=>e.stopPropagation());
+  cb.addEventListener('change',()=>{
+    item.done=cb.checked;
+    row.classList.toggle('done',item.done);
+    save();
+  });
+
+  const txt=document.createElement('textarea');
+  txt.className='checklist-item-text';
+  txt.value=item.text;
+  txt.rows=1;
+  txt.placeholder='item…';
+  txt.spellcheck=false;
+  autoH(txt);
+  txt.addEventListener('mousedown',e=>e.stopPropagation());
+  txt.addEventListener('input',()=>{
+    autoH(txt);
+    item.text=txt.value;
+    save();
+  });
+  txt.addEventListener('keydown',e=>{
+    if(e.key==='Enter'&&!e.shiftKey){
+      e.preventDefault();
+      // insert new item after this one
+      card.checklist.splice(idx+1,0,{text:'',done:false});
+      save();
+      const cardEl=canvas.querySelector('.idea-card[data-id="'+card.id+'"]');
+      if(cardEl){
+        renderChecklist(card,cardEl);
+        const items=cardEl.querySelectorAll('.checklist-item-text');
+        if(items[idx+1]) items[idx+1].focus();
+      }
+    }
+    if(e.key==='Backspace'&&txt.value===''){
+      e.preventDefault();
+      card.checklist.splice(idx,1);
+      save();
+      const cardEl=canvas.querySelector('.idea-card[data-id="'+card.id+'"]');
+      if(cardEl){
+        renderChecklist(card,cardEl);
+        const items=cardEl.querySelectorAll('.checklist-item-text');
+        const focusIdx=Math.max(0,idx-1);
+        if(items[focusIdx]) items[focusIdx].focus();
+      }
+    }
+  });
+
+  row.appendChild(cb);
+  row.appendChild(txt);
+  return row;
 }
 
 // Tag Manager
@@ -760,12 +891,21 @@ document.getElementById('btn-cancel-capture').onclick=goWall;
 document.getElementById('btn-submit-capture').onclick=()=>{
   const title=document.getElementById('cap-title').value.trim();
   const body=document.getElementById('cap-body').value.trim();
-  if(!title&&!body){showToast('add a title or note first');return;}
+  if(!title&&!body){showCaptureFeedback('add a title or note first','error');return;}
   addCard('idea',title,body);
   document.getElementById('cap-title').value='';
   document.getElementById('cap-body').value='';
-  goWall();showToast('idea added to wall ✦');
+  showCaptureFeedback('idea added to wall ✦','success');
+  setTimeout(()=>document.getElementById('cap-title').focus(),300);
 };
+
+function showCaptureFeedback(msg, type){
+  const fb=document.getElementById('capture-feedback');
+  fb.textContent=msg;
+  fb.className='capture-feedback show '+(type||'');
+  clearTimeout(fb._t);
+  fb._t=setTimeout(()=>fb.classList.remove('show'),2800);
+}
 document.getElementById('cap-title').addEventListener('keydown',e=>{
   if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();document.getElementById('cap-body').focus();}
 });
