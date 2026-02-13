@@ -188,7 +188,8 @@ body.connect-mode #card-count{opacity:0}
   font-size:.73rem;color:var(--ink-faint);line-height:1.45;
   font-family:'Courier Prime',monospace;flex:1;
   outline:none;border:none;background:none;resize:none;cursor:text;
-  min-width:0;padding:0}
+  min-width:0;padding:0;min-height:1.45em;height:auto;
+  display:block;width:100%}
 .checklist-item-text:focus{background:rgba(30,20,10,.02);border-radius:2px}
 .checklist-item.done .checklist-item-text{text-decoration:line-through;opacity:.5}
 .checklist-item input[type=checkbox]{pointer-events:all}
@@ -619,8 +620,10 @@ function makeChecklistItemEl(card,idx){
   txt.rows=1;
   txt.placeholder='item…';
   txt.spellcheck=false;
-  autoH(txt);
+  txt.style.height='1.45em';  // safe default before DOM insertion
   txt.addEventListener('mousedown',e=>e.stopPropagation());
+  // re-measure once it's actually in the DOM
+  requestAnimationFrame(()=>autoH(txt));
   txt.addEventListener('input',()=>{
     autoH(txt);
     item.text=txt.value;
