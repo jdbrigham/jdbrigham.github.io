@@ -300,6 +300,80 @@ body.connect-mode .checklist-item input[type=checkbox]{pointer-events:none}
   font-size:.72rem;letter-spacing:.06em;cursor:pointer;transition:all .15s;
 }
 .lp-add:hover{background:var(--accent)}
+
+/* ── Groups ── */
+.group-box{
+  position:absolute;border-radius:4px;
+  border:2.5px dashed rgba(30,20,10,.32);
+  background:rgba(30,20,10,.03);
+  cursor:move; z-index:1;
+  box-sizing:border-box;
+  min-width:120px;min-height:80px;
+}
+.group-box:hover{ border-color:rgba(30,20,10,.55); }
+.group-box.selected{ border-color:var(--accent); border-style:solid; }
+.group-label{
+  position:absolute;top:8px;left:10px;
+  font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--ink-ghost);font-family:'Courier Prime',monospace;
+  background:none;border:none;outline:none;cursor:text;
+  max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  pointer-events:all;
+}
+.group-label:focus{
+  color:var(--ink-faint);
+  background:rgba(245,240,232,.9);padding:0 3px;border-radius:2px;
+}
+/* resize handle — bottom-right corner */
+.group-resize{
+  position:absolute;bottom:0;right:0;
+  width:16px;height:16px;cursor:se-resize;
+  display:flex;align-items:flex-end;justify-content:flex-end;
+  padding:3px;opacity:0;transition:opacity .15s;
+}
+.group-box:hover .group-resize{ opacity:1; }
+.group-resize svg{
+  width:8px;height:8px;stroke:var(--ink-ghost);fill:none;
+  stroke-width:1.8;stroke-linecap:round;
+}
+/* delete group button */
+.group-del{
+  position:absolute;top:5px;right:6px;
+  width:16px;height:16px;border:none;background:none;
+  cursor:pointer;color:var(--ink-ghost);border-radius:2px;
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;transition:opacity .15s;padding:0;
+}
+.group-box:hover .group-del{ opacity:.7; }
+.group-del:hover{ opacity:1!important;color:var(--accent); }
+.group-del svg{width:9px;height:9px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;}
+
+/* ── Minimap ── */
+#minimap{
+  position:fixed;bottom:5.5rem;right:1.25rem;z-index:200;
+  width:168px;height:112px;
+  background:rgba(245,240,232,.95);
+  border:1.5px solid var(--linen-dark);border-radius:5px;
+  box-shadow:0 4px 18px rgba(30,20,10,.12);
+  overflow:hidden;cursor:pointer;
+  transition:opacity .2s;
+}
+#minimap:hover{ border-color:var(--ink-ghost); }
+#minimap-canvas{ width:100%;height:100%;display:block; }
+#minimap-toggle{
+  position:fixed;bottom:5.5rem;right:1.25rem;z-index:201;
+  width:28px;height:28px;border-radius:50%;
+  border:1.5px solid var(--linen-dark);
+  background:rgba(245,240,232,.9);color:var(--ink-ghost);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:all .15s;backdrop-filter:blur(4px);
+  font-size:.55rem;letter-spacing:.06em;text-transform:uppercase;
+  font-family:'Courier Prime',monospace;
+}
+#minimap-toggle:hover{background:var(--ink);color:var(--linen);border-color:var(--ink);}
+body.minimap-hidden #minimap{ display:none; }
+body.minimap-hidden #minimap-toggle{ display:flex; }
+body:not(.minimap-hidden) #minimap-toggle{ display:none; }
 </style>
 </head>
 <body>
@@ -313,6 +387,9 @@ body.connect-mode .checklist-item input[type=checkbox]{pointer-events:none}
   <div class="topbar-right">
     <button class="btn-icon" id="btn-tags" title="Manage tags (T)">
       <svg viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+    </button>
+    <button class="btn-icon" id="btn-add-group" title="Add group">
+      <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="18" rx="2"/><line x1="2" y1="8" x2="22" y2="8"/><line x1="6" y1="5.5" x2="6" y2="5.6"/></svg>
     </button>
     <div class="btn-sep"></div>
     <button class="btn-icon" id="btn-connect" title="Connect cards (C)">
@@ -446,12 +523,15 @@ body.connect-mode .checklist-item input[type=checkbox]{pointer-events:none}
     <button class="lp-add">add card →</button>
   </div>
 </div>
+<!-- Minimap -->
+<div id="minimap"><canvas id="minimap-canvas"></canvas></div>
+<button id="minimap-toggle" title="Show minimap">map</button>
 <script>
 const ZOOM_LEVELS=[0.35,0.6,1.0,1.45,2.0];
 const ZOOM_LABELS=['35%','60%','100%','145%','200%'];
 const ROTATIONS=[-2.5,-1.5,-0.8,0,0.8,1.5,2.5];
 const CX=2000,CY=1500;
-let cards=[],connectors=[],tags=[];
+let cards=[],connectors=[],tags=[],groups=[];
 let zoomIndex=2,panX=0,panY=0,isPanning=false,panSX=0,panSY=0,panOX=0,panOY=0;
 let connectMode=false,connectFirst=null,popoverCardId=null;
 
@@ -485,7 +565,7 @@ function save(){
 }
 
 async function pushToGist(){
-  const data = {cards, connectors, tags};
+  const data = {cards, connectors, tags, groups};
   try{
     const res = await fetch('https://api.github.com/gists/'+getConfig().id, {
       method: 'PATCH',
@@ -511,6 +591,7 @@ async function loadData(){
   try{const v=localStorage.getItem('iw-cards');      if(v)cards      =JSON.parse(v);}catch(e){}
   try{const v=localStorage.getItem('iw-connectors'); if(v)connectors =JSON.parse(v);}catch(e){}
   try{const v=localStorage.getItem('iw-tags');       if(v)tags        =JSON.parse(v);}catch(e){}
+  try{const v=localStorage.getItem('iw-groups');    if(v)groups      =JSON.parse(v);}catch(e){}
   cards.forEach(c=>{if(!c.tags)c.tags=[];if(!c.checklist)c.checklist=[];});
   renderAll();
 
@@ -533,6 +614,7 @@ async function loadData(){
       cards      = (data.cards      || []);
       connectors = (data.connectors || []);
       tags       = (data.tags       || []);
+      groups     = (data.groups     || []);
       cards.forEach(c=>{if(!c.tags)c.tags=[];if(!c.checklist)c.checklist=[];});
       // Persist locally too
       try{localStorage.setItem('iw-cards',      JSON.stringify(cards));     }catch(e){}
@@ -557,6 +639,7 @@ function applyTransform(){
   canvas.style.transform=`translate(calc(-50% + ${panX}px), calc(-50% + ${panY}px)) scale(${z})`;
   document.getElementById('zoom-label').textContent=ZOOM_LABELS[zoomIndex];
   document.querySelectorAll('.zoom-pip').forEach((p,i)=>p.classList.toggle('active',i===zoomIndex));
+  drawMinimap();
 }
 document.getElementById('btn-zoom-in').onclick=()=>{if(zoomIndex<4){zoomIndex++;applyTransform();}};
 document.getElementById('btn-zoom-out').onclick=()=>{if(zoomIndex>0){zoomIndex--;applyTransform();}};
@@ -575,7 +658,7 @@ canvasWrap.addEventListener('mousedown',e=>{
 window.addEventListener('mousemove',e=>{
   if(!isPanning)return;
   panX=panOX+(e.clientX-panSX);panY=panOY+(e.clientY-panSY);
-  applyTransform();
+  applyTransform(); drawMinimap();
 });
 window.addEventListener('mouseup',()=>{isPanning=false;canvasWrap.classList.remove('panning');});
 
@@ -584,16 +667,28 @@ const rnd=arr=>arr[Math.floor(Math.random()*arr.length)];
 const esc=s=>(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const autoH=ta=>{ta.style.height='auto';ta.style.height=ta.scrollHeight+'px';};
 
-function addCard(type,title,body){
+function addCard(type,title,body,fromMobile){
   type=type||'idea';title=title||'';body=body||'';
   const sc=200;
+  // Mobile-captured cards use grid layout; desktop drops freely
+  let cardX, cardY;
+  if(fromMobile){
+    const GRID_ORIGIN_X=60, GRID_ORIGIN_Y=40;
+    const CELL_W=250, CELL_H=200, COLS=4;
+    const mobileCards = cards.filter(c=>c.fromMobile);
+    const idx = mobileCards.length;
+    cardX = GRID_ORIGIN_X + (idx % COLS) * CELL_W;
+    cardY = GRID_ORIGIN_Y + Math.floor(idx / COLS) * CELL_H;
+  } else {
+    cardX = CX-110+(Math.random()*sc-sc/2);
+    cardY = CY-70+(Math.random()*sc-sc/2);
+  }
   const card={
     id:Date.now()+Math.random(),type,title,body,
-    x:CX-110+(Math.random()*sc-sc/2),
-    y:CY-70+(Math.random()*sc-sc/2),
+    x:cardX, y:cardY,
     rotation:rnd(ROTATIONS),
     date:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'}),
-    zIndex:cards.length+10,tags:[],checklist:[]
+    zIndex:cards.length+10,tags:[],checklist:[],fromMobile:!!fromMobile
   };
   cards.push(card);save();updateMeta();
   return createCardEl(card);
@@ -1110,13 +1205,213 @@ function drawConnectors(){
   });
 }
 
+
+// ═══════════════════════════════════════
+// GROUPS
+// ═══════════════════════════════════════
+const DFLT_GW = 320, DFLT_GH = 260;
+
+document.getElementById('btn-add-group').addEventListener('click', ()=>{
+  if(connectMode) exitConnect();
+  // Place in current viewport center
+  const z = ZOOM_LEVELS[zoomIndex];
+  const vw = window.innerWidth, vh = window.innerHeight;
+  const cx = -panX/z + 2000 - DFLT_GW/2;
+  const cy = -panY/z + 1500 - DFLT_GH/2;
+  const g = {
+    id: Date.now()+Math.random(),
+    x: cx, y: cy, w: DFLT_GW, h: DFLT_GH,
+    label: 'group'
+  };
+  groups.push(g); save();
+  const el = createGroupEl(g);
+  // Focus label for immediate rename
+  setTimeout(()=>el.querySelector('.group-label').focus(), 80);
+});
+
+function createGroupEl(g){
+  const el = document.createElement('div');
+  el.className = 'group-box';
+  el.dataset.id = g.id;
+  el.style.cssText = 'left:'+g.x+'px;top:'+g.y+'px;width:'+g.w+'px;height:'+g.h+'px';
+
+  // Label
+  const label = document.createElement('input');
+  label.type = 'text'; label.className = 'group-label';
+  label.value = g.label; label.maxLength = 32;
+  label.spellcheck = false;
+  label.addEventListener('mousedown', e=>e.stopPropagation());
+  label.addEventListener('input', ()=>{ g.label=label.value; save(); });
+  label.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key==='Escape') label.blur(); });
+
+  // Delete button
+  const del = document.createElement('button');
+  del.className = 'group-del'; del.title = 'Delete group';
+  del.innerHTML = '<svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  del.addEventListener('mousedown', e=>e.stopPropagation());
+  del.addEventListener('click', e=>{ e.stopPropagation(); deleteGroup(g.id, el); });
+
+  // Resize handle
+  const rsz = document.createElement('div');
+  rsz.className = 'group-resize';
+  rsz.innerHTML = '<svg viewBox="0 0 10 10"><line x1="9" y1="1" x2="1" y2="9"/><line x1="9" y1="5" x2="5" y2="9"/></svg>';
+
+  el.appendChild(label); el.appendChild(del); el.appendChild(rsz);
+
+  // Drag to move
+  makeGroupDraggable(el, g);
+
+  // Resize
+  let rOn=false, rSX, rSY, rOW, rOH;
+  rsz.addEventListener('mousedown', e=>{
+    e.preventDefault(); e.stopPropagation();
+    rOn=true; rSX=e.clientX; rSY=e.clientY; rOW=g.w; rOH=g.h;
+  });
+  window.addEventListener('mousemove', e=>{
+    if(!rOn) return;
+    const z=ZOOM_LEVELS[zoomIndex];
+    g.w = Math.max(120, rOW+(e.clientX-rSX)/z);
+    g.h = Math.max(80,  rOH+(e.clientY-rSY)/z);
+    el.style.width=g.w+'px'; el.style.height=g.h+'px';
+    drawMinimap();
+  });
+  window.addEventListener('mouseup', ()=>{ if(rOn){rOn=false;save();} });
+
+  // Insert behind cards (at start of canvas)
+  canvas.insertBefore(el, canvas.firstChild);
+  return el;
+}
+
+function makeGroupDraggable(el, g){
+  let on=false, sx, sy, ox, oy;
+  el.addEventListener('mousedown', e=>{
+    if(e.target.classList.contains('group-label')) return;
+    if(e.target.classList.contains('group-del')) return;
+    if(e.target.closest('.group-resize')) return;
+    e.preventDefault();
+    on=true; sx=e.clientX; sy=e.clientY; ox=g.x; oy=g.y;
+    canvasWrap.classList.add('card-dragging');
+  });
+  window.addEventListener('mousemove', e=>{
+    if(!on) return;
+    const z=ZOOM_LEVELS[zoomIndex];
+    g.x=ox+(e.clientX-sx)/z; g.y=oy+(e.clientY-sy)/z;
+    el.style.left=g.x+'px'; el.style.top=g.y+'px';
+    drawMinimap();
+  });
+  window.addEventListener('mouseup', ()=>{ if(on){on=false;canvasWrap.classList.remove('card-dragging');save();} });
+}
+
+function deleteGroup(id, el){
+  groups = groups.filter(g=>g.id!=id);
+  el.style.transition='all .2s ease'; el.style.opacity='0';
+  setTimeout(()=>el.remove(), 200);
+  save(); drawMinimap();
+}
+
+function renderGroups(){
+  canvas.querySelectorAll('.group-box').forEach(e=>e.remove());
+  groups.forEach(g=>createGroupEl(g));
+}
+
+// ═══════════════════════════════════════
+// MINIMAP
+// ═══════════════════════════════════════
+const CMAP_W=4000, CMAP_H=3000;
+const mmEl = document.getElementById('minimap');
+const mmCanvas = document.getElementById('minimap-canvas');
+const mmCtx = mmCanvas.getContext('2d');
+let mmDragging=false;
+
+// Retina-sharp canvas
+function initMinimap(){
+  const dpr = window.devicePixelRatio||1;
+  mmCanvas.width  = 168*dpr; mmCanvas.height = 112*dpr;
+  mmCanvas.style.width='168px'; mmCanvas.style.height='112px';
+  mmCtx.scale(dpr,dpr);
+}
+
+function drawMinimap(){
+  const W=168, H=112;
+  const scaleX=W/CMAP_W, scaleY=H/CMAP_H;
+  mmCtx.clearRect(0,0,W,H);
+
+  // Background
+  mmCtx.fillStyle='rgba(245,240,232,0.0)';
+  mmCtx.fillRect(0,0,W,H);
+
+  // Groups
+  groups.forEach(g=>{
+    mmCtx.fillStyle='rgba(30,20,10,.04)';
+    mmCtx.strokeStyle='rgba(30,20,10,.2)';
+    mmCtx.lineWidth=0.5;
+    mmCtx.beginPath();
+    mmCtx.rect(g.x*scaleX, g.y*scaleY, g.w*scaleX, g.h*scaleY);
+    mmCtx.fill(); mmCtx.stroke();
+  });
+
+  // Cards — dots
+  cards.forEach(c=>{
+    const cx=(c.x+110)*scaleX, cy=(c.y+70)*scaleY;
+    mmCtx.fillStyle = c.type==='note' ? 'rgba(70,100,200,.5)' :
+                      c.type==='link' ? 'rgba(200,75,47,.5)' :
+                      'rgba(30,20,10,.4)';
+    mmCtx.beginPath();
+    mmCtx.arc(cx,cy,2.5,0,Math.PI*2);
+    mmCtx.fill();
+  });
+
+  // Viewport rectangle
+  const z = ZOOM_LEVELS[zoomIndex];
+  const vw=window.innerWidth, vh=window.innerHeight;
+  // canvas origin in canvas-space coords
+  const vpX = (CMAP_W/2) - vw/(2*z) - panX/z;
+  const vpY = (CMAP_H/2) - vh/(2*z) - panY/z;
+  const vpW = vw/z, vpH = vh/z;
+  mmCtx.strokeStyle='rgba(200,75,47,.7)';
+  mmCtx.lineWidth=1;
+  mmCtx.strokeRect(vpX*scaleX, vpY*scaleY, vpW*scaleX, vpH*scaleY);
+}
+
+// Click/drag minimap to navigate
+function mmEventToCanvas(e){
+  const rect=mmEl.getBoundingClientRect();
+  const mx=(e.clientX-rect.left)/168*CMAP_W;
+  const my=(e.clientY-rect.top)/112*CMAP_H;
+  return{mx,my};
+}
+function jumpToMinimap(e){
+  const{mx,my}=mmEventToCanvas(e);
+  const z=ZOOM_LEVELS[zoomIndex];
+  const vw=window.innerWidth,vh=window.innerHeight;
+  panX = (CMAP_W/2 - mx)*z + vw/2 - vw/2;
+  panY = (CMAP_H/2 - my)*z + vh/2 - vh/2;
+  // simpler: center viewport on clicked point
+  panX = -(mx - CMAP_W/2)*z;
+  panY = -(my - CMAP_H/2)*z;
+  applyTransform(); drawMinimap();
+}
+mmEl.addEventListener('mousedown', e=>{ mmDragging=true; jumpToMinimap(e); e.stopPropagation(); });
+window.addEventListener('mousemove', e=>{ if(mmDragging) jumpToMinimap(e); });
+window.addEventListener('mouseup', ()=>{ mmDragging=false; });
+
+// Minimap toggle
+document.getElementById('minimap-toggle').addEventListener('click', ()=>{
+  document.body.classList.remove('minimap-hidden');
+  drawMinimap();
+});
+mmEl.addEventListener('dblclick', ()=>{ document.body.classList.add('minimap-hidden'); });
+
+// Redraw minimap on pan/zoom
+const _origApply = applyTransform;
+
 // Render
 function renderAll(){
   canvas.querySelectorAll('.idea-card').forEach(e=>e.remove());
   cards.forEach(c=>{ if(c.type==='link') createLinkCardEl(c); else createCardEl(c); });
   const idSet=new Set(cards.map(c=>c.id));
   connectors=connectors.filter(cn=>idSet.has(cn.from)&&idSet.has(cn.to));
-  drawConnectors();updateMeta();applyTransform();
+  drawConnectors(); renderGroups(); updateMeta(); applyTransform();
 }
 function updateMeta(){
   document.getElementById('empty-state').classList.toggle('hidden',cards.length>0);
@@ -1153,7 +1448,7 @@ document.getElementById('btn-submit-capture').onclick=()=>{
   const title=document.getElementById('cap-title').value.trim();
   const body=document.getElementById('cap-body').value.trim();
   if(!title&&!body){showCaptureFeedback('add a title or note first','error');return;}
-  addCard('idea',title,body);
+  addCard('idea',title,body,true);
   document.getElementById('cap-title').value='';
   document.getElementById('cap-body').value='';
   showCaptureFeedback('idea added to wall ✦','success');
@@ -1217,7 +1512,7 @@ document.getElementById('setup-gist-token').addEventListener('keydown', e=>{
 });
 
 // Init
-loadData().then(checkHash);
+initMinimap(); loadData().then(checkHash);
 </script>
 
 </body>
