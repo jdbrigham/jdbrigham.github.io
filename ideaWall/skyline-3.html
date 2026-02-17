@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Procedural Skyline</title>
+<style>
+  body {
+    margin:0;
+    background:#0f172a;
+    color:#e5e7eb;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  }
+  .wrap {
+    max-width: 1000px;
+    margin: 30px auto;
+    padding: 0 20px;
+  }
+  .panel {
+    background:#111827;
+    padding:16px;
+    border-radius:12px;
+    box-shadow:0 10px 30px rgba(0,0,0,.35);
+  }
+  .controls {
+    display:flex;
+    gap:12px;
+    align-items:center;
+    margin-bottom:12px;
+    flex-wrap:wrap;
+  }
+  input[type="number"] {
+    width:90px;
+    padding:6px;
+    border-radius:6px;
+    border:1px solid #333;
+    background:#0b1220;
+    color:#e5e7eb;
+  }
+  button {
+    padding:7px 14px;
+    border-radius:8px;
+    border:1px solid #374151;
+    background:#101827;
+    color:#e5e7eb;
+    cursor:pointer;
+  }
+  button.primary {
+    background:#22c55e;
+    border:none;
+    color:#052e12;
+    font-weight:600;
+  }
+  svg {
+    width:100%;
+    height:auto;
+    display:block;
+    background:#0b1220;
+    border:1px solid #293548;
+    border-radius:10px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="panel">
+
+    <div class="controls">
+      <label>Max Width:
+        <input id="maxWidth" type="number" value="220" min="60" max="800">
+      </label>
+      <label>Max Height:
+        <input id="maxHeight" type="number" value="260" min="60" max="600">
+      </label>
+      <label>Min Gap:
+        <input id="minGap" type="number" value="20" min="-100" max="200">
+      </label>
+      <button id="regen" class="primary">Regenerate</button>
+      <button id="exportBtn">Export SVG</button>
+    </div>
+
+    <svg id="scene" viewBox="0 0 1000 420">
+      <g id="drawing">
+        <path id="baseline" stroke="#22c55e" stroke-width="3" fill="none"/>
+        <g id="buildings"></g>
+      </g>
+    </svg>
+
+  </div>
+</div>
+
+<script>
+function rand(min, max) {
+  return Math.random() * (max - min) + min;
+}
+
+/* ---------- Building generator ---------- */
+function generateBuilding(baseX, sceneH, maxW, maxH) {
+  const groundY = sceneH * 0.82;
+
+  const bWidth  = rand(maxW * 0.35, maxW);
+  const bHeight = rand(maxH * 0.35, maxH);
+
+  const leftX = baseX;
+  const rightX = baseX + bWidth;
+
+  const baseTopY = groundY - bHeight;
+
+  let leftRoofY = baseTopY;
+  let rightRoofY = baseTopY;
+
+  let extraPaths = ""; // roofs + windows
+
+  const roofRoll = Math.random();
+
+  /* --- Flat roof --- */
+  if (roofRoll < 0.45) {
+    // no change
+  }
+
+  /* --- Angled roof --- */
+  else if (roofRoll < 0.75) {
+    const slopeHeight = rand(10, bHeight * 0.35);
+
+    if (Math.random() < 0.5) {
+      rightRoofY = baseTopY - slopeHeight; // upward slope
+    } else {
+      rightRoofY = baseTopY + slopeHeight * 0.4; // downward slope
+    }
+  }
+
+  /* --- Stacked flat roof --- */
+  else {
+    let stackTop = baseTopY;
+
+    let stackLeft = leftX + bWidth * 0.15;
+    let stackRight = rightX - bWidth * 0.15;
+
+    const stackCount = Math.floor(rand(1,4));
+
+    for (let i=0; i<stackCount; i++) {
+      const stackHeight = rand(12,25);
+      const newTop = stackTop - stackHeight;
+
+      extraPaths += ` M ${stackLeft} ${stackTop}`;
+      extraPaths += ` L ${stackLeft} ${newTop}`;
+      extraPaths += ` L ${stackRight} ${newTop}`;
+      extraPaths += ` L ${stackRight} ${stackTop}`;
+
+      stackTop = newTop;
+      stackLeft += rand(8,15);
+      stackRight -= rand(8,15);
+
+      if (stackRight - stackLeft < bWidth * 0.08) break;
+    }
+
+    if (Math.random() < 0.4) {
+      const antennaX = (stackLeft + stackRight)/2;
+      const antennaTop = stackTop - rand(15,40);
+      extraPaths += ` M ${antennaX} ${stackTop}`;
+      extraPaths += ` L ${antennaX} ${antennaTop}`;
+    }
+
+    leftRoofY = baseTopY;
+    rightRoofY = baseTopY;
+  }
+
+  /* ----- MAIN OUTLINE ----- */
+
+  let d = "";
+  d += `M ${leftX} ${groundY}`;
+  d += ` L ${leftX} ${leftRoofY}`;
+  d += ` L ${rightX} ${rightRoofY}`;
+  d += ` L ${rightX} ${groundY}`;
+
+  /* ----- WINDOWS + DOOR ----- */
+
+  // Door
+  const doorWidth = bWidth * 0.18;
+  const doorHeight = bHeight * 0.18;
+  const doorLeft = leftX + (bWidth - doorWidth)/2;
+  const doorTop = groundY - doorHeight;
+
+  extraPaths += ` M ${doorLeft} ${groundY}`;
+  extraPaths += ` L ${doorLeft} ${doorTop}`;
+  extraPaths += ` L ${doorLeft + doorWidth} ${doorTop}`;
+  extraPaths += ` L ${doorLeft + doorWidth} ${groundY}`;
+
+// Window grid
+const roofY = Math.min(leftRoofY, rightRoofY);
+const usableHeight = doorTop - roofY;
+const usableWidth = bWidth * 0.92;
+
+if (usableWidth > 60 && usableHeight > 80) {
+
+  const cols = Math.floor(usableWidth / 15);
+  const rows = Math.floor(usableHeight / 32);
+
+  const windowW = (usableWidth / (cols + 1)) * 0.2;
+  const windowH = (usableHeight / (rows + 1)) * 0.2;
+
+  const startX = leftX + (bWidth - (cols * windowW * 1.4)) / 2;
+  const startY = roofY + windowH; // start near roof
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+
+      const wx = startX + c * windowW * 1.4;
+      const wy = startY + r * windowH * 1.6;
+
+      extraPaths += ` M ${wx} ${wy}`;
+      extraPaths += ` L ${wx} ${wy + windowH}`;
+      extraPaths += ` L ${wx + windowW} ${wy + windowH}`;
+      extraPaths += ` L ${wx + windowW} ${wy}`;
+      extraPaths += ` L ${wx} ${wy}`;
+    }
+  }
+}
+
+  d += extraPaths;
+
+  return { d, width: bWidth, groundY };
+}
+
+/* ---------- Sequential animation ---------- */
+function animateSequential(paths, duration=1.3) {
+  let index = 0;
+
+  function animateNext() {
+    if (index >= paths.length) return;
+
+    const path = paths[index];
+    const length = path.getTotalLength();
+
+    path.style.transition = "none";
+    path.style.strokeDasharray = length;
+    path.style.strokeDashoffset = length;
+    path.getBoundingClientRect();
+
+    path.style.transition = `stroke-dashoffset ${duration}s ease-in-out`;
+    path.style.strokeDashoffset = 0;
+
+    index++;
+    setTimeout(animateNext, duration * 1000 + 60);
+  }
+
+  animateNext();
+}
+
+/* ---------- Render ---------- */
+function render() {
+  const svg = document.getElementById("scene");
+  const baseline = document.getElementById("baseline");
+  const buildingGroup = document.getElementById("buildings");
+
+  const maxW = +document.getElementById("maxWidth").value;
+  const maxH = +document.getElementById("maxHeight").value;
+  const minGap = +document.getElementById("minGap").value;
+
+  const viewBox = svg.viewBox.baseVal;
+  const W = viewBox.width;
+  const H = viewBox.height;
+
+  // Clear everything before drawing
+  buildingGroup.innerHTML = "";
+
+  const padding = 40;
+  let xCursor = padding;
+  let groundY;
+  let paths = [];
+
+  while (xCursor < W - padding) {
+    const b = generateBuilding(xCursor, H, maxW, maxH);
+    groundY = b.groundY;
+
+    if (xCursor + b.width > W - padding) break;
+
+    const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    p.setAttribute("d", b.d);
+    p.setAttribute("stroke", "#22c55e");
+    p.setAttribute("stroke-width", "3");
+    p.setAttribute("fill", "none");
+    p.setAttribute("stroke-linejoin", "miter");
+    p.setAttribute("stroke-linecap", "square");
+
+    // Hide path initially so no pre-flash
+    p.style.strokeDasharray = 1000;
+    p.style.strokeDashoffset = 1000;
+
+    buildingGroup.appendChild(p);
+    paths.push(p);
+
+    const gap = minGap + rand(0, minGap * 0.8);
+    xCursor += b.width + gap;
+    if (xCursor < padding) xCursor = padding + rand(10,40);
+  }
+
+  baseline.setAttribute("d", `M 0 ${groundY} L ${W} ${groundY}`);
+
+  // Run sequential animation
+  animateSequential(paths);
+}
+
+/* ---------- Export ---------- */
+function exportSVG() {
+  const svg = document.getElementById("scene");
+  const serializer = new XMLSerializer();
+  const src = serializer.serializeToString(svg);
+  const blob = new Blob([src], {type:"image/svg+xml;charset=utf-8"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "procedural-skyline.svg";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ---------- Events ---------- */
+document.getElementById("regen").addEventListener("click", render);
+document.getElementById("exportBtn").addEventListener("click", exportSVG);
+window.addEventListener("load", render);
+</script>
+</body>
+</html>
