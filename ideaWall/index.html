@@ -301,6 +301,7 @@ body.connect-mode .checklist-item input[type=checkbox]{pointer-events:none}
 }
 .lp-add:hover{background:var(--accent)}
 
+/* GROUPS DISABLED - uncomment to restore:
 /* ── Groups ── */
 .group-box{
   position:absolute;border-radius:4px;
@@ -348,6 +349,7 @@ body.connect-mode .checklist-item input[type=checkbox]{pointer-events:none}
 .group-del:hover{ opacity:1!important;color:var(--accent); }
 .group-del svg{width:9px;height:9px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;}
 
+*/
 /* ── Minimap ── */
 #minimap{
   position:fixed;bottom:5.5rem;right:1.25rem;z-index:200;
@@ -357,6 +359,9 @@ body.connect-mode .checklist-item input[type=checkbox]{pointer-events:none}
   box-shadow:0 4px 18px rgba(30,20,10,.12);
   overflow:hidden;cursor:pointer;
   transition:opacity .2s;
+}
+@media (max-width: 768px) {
+  #minimap, #minimap-toggle { display:none !important; }
 }
 #minimap:hover{ border-color:var(--ink-ghost); }
 #minimap-canvas{ width:100%;height:100%;display:block; }
@@ -388,9 +393,11 @@ body:not(.minimap-hidden) #minimap-toggle{ display:none; }
     <button class="btn-icon" id="btn-tags" title="Manage tags (T)">
       <svg viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
     </button>
+    <!-- GROUPS DISABLED - uncomment to restore:
     <button class="btn-icon" id="btn-add-group" title="Add group">
       <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="18" rx="2"/><line x1="2" y1="8" x2="22" y2="8"/><line x1="6" y1="5.5" x2="6" y2="5.6"/></svg>
     </button>
+    -->
     <div class="btn-sep"></div>
     <button class="btn-icon" id="btn-connect" title="Connect cards (C)">
       <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2.2" stroke-width="1.8"/><circle cx="19" cy="12" r="2.2" stroke-width="1.8"/><line x1="7.2" y1="12" x2="16.8" y2="12"/></svg>
@@ -673,7 +680,7 @@ function addCard(type,title,body,fromMobile){
   // Mobile-captured cards use grid layout; desktop drops freely
   let cardX, cardY;
   if(fromMobile){
-    const GRID_ORIGIN_X=1500, GRID_ORIGIN_Y=1200;
+    const GRID_ORIGIN_X=600, GRID_ORIGIN_Y=400;
     const CELL_W=250, CELL_H=200, COLS=4;
     const mobileCards = cards.filter(c=>c.fromMobile);
     const idx = mobileCards.length;
@@ -1206,6 +1213,7 @@ function drawConnectors(){
 }
 
 
+/*
 // ═══════════════════════════════════════
 // GROUPS
 // ═══════════════════════════════════════
@@ -1314,6 +1322,7 @@ function renderGroups(){
   groups.forEach(g=>createGroupEl(g));
 }
 
+*/
 // ═══════════════════════════════════════
 // MINIMAP
 // ═══════════════════════════════════════
@@ -1411,7 +1420,7 @@ function renderAll(){
   cards.forEach(c=>{ if(c.type==='link') createLinkCardEl(c); else createCardEl(c); });
   const idSet=new Set(cards.map(c=>c.id));
   connectors=connectors.filter(cn=>idSet.has(cn.from)&&idSet.has(cn.to));
-  drawConnectors(); renderGroups(); updateMeta(); applyTransform();
+  drawConnectors(); updateMeta(); applyTransform();
 }
 function updateMeta(){
   document.getElementById('empty-state').classList.toggle('hidden',cards.length>0);
