@@ -692,10 +692,30 @@ function addCard(type,title,body,fromMobile){
   // Mobile-captured cards use grid layout; desktop drops freely
   let cardX, cardY;
   if(fromMobile){
-    const GRID_ORIGIN_X=1400, GRID_ORIGIN_Y=1200;
+    const GRID_ORIGIN_X=600, GRID_ORIGIN_Y=400;
     const CELL_W=250, CELL_H=200, COLS=4;
-    const mobileCards = cards.filter(c=>c.fromMobile);
-    const idx = mobileCards.length;
+    const GRID_TOLERANCE=100; // Cards within this distance are considered "in grid"
+    
+    // Find which grid slots are occupied by checking card positions
+    const occupiedSlots = new Set();
+    cards.forEach(c=>{
+      // Check if card is near any grid position
+      for(let row=0; row<20; row++){ // Check up to 20 rows
+        for(let col=0; col<COLS; col++){
+          const gx = GRID_ORIGIN_X + col * CELL_W;
+          const gy = GRID_ORIGIN_Y + row * CELL_H;
+          const dist = Math.sqrt((c.x-gx)**2 + (c.y-gy)**2);
+          if(dist < GRID_TOLERANCE){
+            occupiedSlots.add(row * COLS + col);
+          }
+        }
+      }
+    });
+    
+    // Find first empty slot
+    let idx = 0;
+    while(occupiedSlots.has(idx)) idx++;
+    
     cardX = GRID_ORIGIN_X + (idx % COLS) * CELL_W;
     cardY = GRID_ORIGIN_Y + Math.floor(idx / COLS) * CELL_H;
   } else {
