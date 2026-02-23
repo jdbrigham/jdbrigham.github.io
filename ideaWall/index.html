@@ -353,6 +353,34 @@ body:not(.minimap-hidden) #minimap-toggle{ display:none; }
 .free-line-g:hover .free-line{opacity:.8;stroke:var(--accent)}
 body.draw-mode #canvas-wrap{cursor:crosshair}
 
+
+/* Canvas text */
+.canvas-text{
+  position:absolute;
+  font-family:'Playfair Display',serif;
+  font-size:3rem;
+  font-weight:600;
+  color:var(--ink-faint);
+  opacity:.5;
+  cursor:text;
+  outline:none;
+  border:none;
+  background:none;
+  padding:.2rem .4rem;
+  white-space:nowrap;
+  user-select:text;
+  z-index:2;
+  transition:opacity .15s;
+}
+.canvas-text:hover{opacity:.8}
+.canvas-text:focus{
+  opacity:1;
+  background:rgba(245,240,232,.85);
+  border-radius:3px;
+}
+.canvas-text::placeholder{color:var(--ink-ghost);opacity:.4}
+body.text-mode #canvas-wrap{cursor:text}
+
 </style>
 </head>
 <body>
@@ -378,6 +406,9 @@ body.draw-mode #canvas-wrap{cursor:crosshair}
     </button>
     <button class="btn-icon" id="btn-draw" title="Draw lines (D)">
       <svg viewBox="0 0 24 24"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>
+    </button>
+    <button class="btn-icon" id="btn-text" title="Add text (X)">
+      <svg viewBox="0 0 24 24"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
     </button>
     <div class="btn-sep"></div>
     <button class="btn-icon" id="btn-add-note" title="Add note card">
@@ -515,7 +546,7 @@ const ZOOM_LEVELS=[0.35,0.6,1.0,1.45,2.0];
 const ZOOM_LABELS=['35%','60%','100%','145%','200%'];
 const ROTATIONS=[-2.5,-1.5,-0.8,0,0.8,1.5,2.5];
 const CX=2000,CY=1500;
-let cards=[],connectors=[],tags=[],groups=[],freeLines=[];
+let cards=[],connectors=[],tags=[],groups=[],freeLines=[],canvasTexts=[];
 let zoomIndex=2,panX=0,panY=0,isPanning=false,panSX=0,panSY=0,panOX=0,panOY=0;
 let connectMode=false,connectFirst=null,popoverCardId=null;
 
@@ -549,7 +580,7 @@ function save(){
 }
 
 async function pushToGist(){
-  const data = {cards, connectors, tags, groups, freeLines};
+  const data = {cards, connectors, tags, groups, freeLines, canvasTexts};
   try{
     const res = await fetch('https://api.github.com/gists/'+getConfig().id, {
       method: 'PATCH',
@@ -577,6 +608,7 @@ async function loadData(){
   try{const v=localStorage.getItem('iw-tags');       if(v)tags        =JSON.parse(v);}catch(e){}
   try{const v=localStorage.getItem('iw-groups');    if(v)groups      =JSON.parse(v);}catch(e){}
   try{const v=localStorage.getItem('iw-freeLines'); if(v)freeLines   =JSON.parse(v);}catch(e){}
+  try{const v=localStorage.getItem('iw-canvasTexts');if(v)canvasTexts =JSON.parse(v);}catch(e){}
   cards.forEach(c=>{if(!c.tags)c.tags=[];if(!c.checklist)c.checklist=[];});
   renderAll();
 
@@ -601,6 +633,7 @@ async function loadData(){
       tags       = (data.tags       || []);
       groups     = (data.groups     || []);
       freeLines  = (data.freeLines  || []);
+      canvasTexts= (data.canvasTexts|| []);
       cards.forEach(c=>{if(!c.tags)c.tags=[];if(!c.checklist)c.checklist=[];});
       // Persist locally too
       try{localStorage.setItem('iw-cards',      JSON.stringify(cards));     }catch(e){}
@@ -1136,6 +1169,137 @@ document.addEventListener('keydown', e=>{
 });
 
 
+
+// ═══════════════════════════════════════
+// TEXT MODE (canvas labels)
+// ═══════════════════════════════════════
+let textMode = false;
+
+const btnText = document.getElementById('btn-text');
+btnText.addEventListener('click', toggleText);
+
+function toggleText(){ textMode ? exitText() : enterText(); }
+
+function enterText(){
+  if(connectMode) exitConnect();
+  if(drawMode) exitDraw();
+  textMode = true;
+  document.body.classList.add('text-mode');
+  btnText.classList.add('active');
+  document.getElementById('connect-hint').textContent = 'click to place text · click text to edit · backspace on empty text deletes · esc to exit';
+  closeTagPopover();
+}
+
+function exitText(){
+  textMode = false;
+  document.body.classList.remove('text-mode');
+  btnText.classList.remove('active');
+}
+
+// Canvas click to place text
+canvasWrap.addEventListener('click', e=>{
+  if(!textMode) return;
+  if(e.target.closest('.idea-card, .card-link-type, .canvas-text')) return;
+  
+  const rect = canvas.getBoundingClientRect();
+  const z = ZOOM_LEVELS[zoomIndex];
+  const x = (e.clientX - rect.left) / z;
+  const y = (e.clientY - rect.top) / z;
+  
+  const txt = {
+    id: Date.now() + Math.random(),
+    x: x,
+    y: y,
+    text: ''
+  };
+  canvasTexts.push(txt);
+  save();
+  const el = createCanvasTextEl(txt);
+  exitText(); // Auto-exit after placing
+  setTimeout(()=>el.focus(), 50);
+});
+
+// Escape to exit
+document.addEventListener('keydown', e=>{
+  if(e.key === 'Escape' && textMode){
+    exitText();
+  }
+  if((e.key === 'x' || e.key === 'X') && !e.target.matches('textarea,input')){
+    if(!document.body.classList.contains('capture-mode') && 
+       !document.getElementById('tag-manager').classList.contains('open')){
+      toggleText();
+    }
+  }
+});
+
+function createCanvasTextEl(txt){
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'canvas-text';
+  input.dataset.id = txt.id;
+  input.value = txt.text;
+  input.placeholder = 'label…';
+  input.maxLength = 40;
+  input.spellcheck = false;
+  input.style.cssText = 'left:'+txt.x+'px;top:'+txt.y+'px';
+  
+  input.addEventListener('mousedown', e=>e.stopPropagation());
+  input.addEventListener('input', ()=>{
+    txt.text = input.value;
+    save();
+  });
+  
+  // Delete on backspace when empty
+  input.addEventListener('keydown', e=>{
+    if(e.key === 'Backspace' && input.value === ''){
+      e.preventDefault();
+      canvasTexts = canvasTexts.filter(t=>t.id !== txt.id);
+      input.remove();
+      save();
+    }
+    if(e.key === 'Enter'){
+      input.blur();
+    }
+  });
+  
+  // Make draggable
+  let dragging = false, startX, startY, origX, origY;
+  input.addEventListener('mousedown', e=>{
+    if(input === document.activeElement) return; // Don't drag while editing
+    dragging = true;
+    startX = e.clientX;
+    startY = e.clientY;
+    origX = txt.x;
+    origY = txt.y;
+    canvasWrap.classList.add('card-dragging');
+  });
+  
+  window.addEventListener('mousemove', e=>{
+    if(!dragging) return;
+    const z = ZOOM_LEVELS[zoomIndex];
+    txt.x = origX + (e.clientX - startX) / z;
+    txt.y = origY + (e.clientY - startY) / z;
+    input.style.left = txt.x + 'px';
+    input.style.top = txt.y + 'px';
+  });
+  
+  window.addEventListener('mouseup', ()=>{
+    if(dragging){
+      dragging = false;
+      canvasWrap.classList.remove('card-dragging');
+      save();
+    }
+  });
+  
+  canvas.appendChild(input);
+  return input;
+}
+
+function renderCanvasTexts(){
+  canvas.querySelectorAll('.canvas-text').forEach(el=>el.remove());
+  canvasTexts.forEach(txt=>createCanvasTextEl(txt));
+}
+
 // ═══════════════════════════════════════
 // DRAW MODE (freeform lines)
 // ═══════════════════════════════════════
@@ -1194,12 +1358,22 @@ canvasWrap.addEventListener('mousedown', e=>{
     document.getElementById('connector-svg').appendChild(drawPreviewLine);
   } else {
     // Second click - finish line
+    // Constrain to vertical or horizontal
+    const dx = Math.abs(x - drawStart.x);
+    const dy = Math.abs(y - drawStart.y);
+    let x2 = x, y2 = y;
+    if(dx > dy){
+      y2 = drawStart.y; // Horizontal
+    } else {
+      x2 = drawStart.x; // Vertical
+    }
+    
     const line = {
       id: Date.now() + Math.random(),
       x1: drawStart.x,
       y1: drawStart.y,
-      x2: x,
-      y2: y
+      x2: x2,
+      y2: y2
     };
     freeLines.push(line);
     save();
@@ -1209,6 +1383,7 @@ canvasWrap.addEventListener('mousedown', e=>{
       drawPreviewLine.remove();
       drawPreviewLine = null;
     }
+    exitDraw(); // Auto-exit after drawing
   }
 });
 
@@ -1218,8 +1393,19 @@ canvasWrap.addEventListener('mousemove', e=>{
   
   const rect = canvas.getBoundingClientRect();
   const z = ZOOM_LEVELS[zoomIndex];
-  const x = (e.clientX - rect.left) / z;
-  const y = (e.clientY - rect.top) / z;
+  let x = (e.clientX - rect.left) / z;
+  let y = (e.clientY - rect.top) / z;
+  
+  // Constrain to vertical or horizontal
+  const dx = Math.abs(x - drawStart.x);
+  const dy = Math.abs(y - drawStart.y);
+  if(dx > dy){
+    // Horizontal
+    y = drawStart.y;
+  } else {
+    // Vertical
+    x = drawStart.x;
+  }
   
   drawPreviewLine.setAttribute('x2', x);
   drawPreviewLine.setAttribute('y2', y);
