@@ -692,7 +692,7 @@ function addCard(type,title,body,fromMobile){
   // Mobile-captured cards use grid layout; desktop drops freely
   let cardX, cardY;
   if(fromMobile){
-    const GRID_ORIGIN_X=900, GRID_ORIGIN_Y=600;
+    const GRID_ORIGIN_X=1400, GRID_ORIGIN_Y=1200;
     const CELL_W=250, CELL_H=200, COLS=4;
     const mobileCards = cards.filter(c=>c.fromMobile);
     const idx = mobileCards.length;
