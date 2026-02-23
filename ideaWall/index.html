@@ -345,6 +345,14 @@ body.connect-mode .checklist-item input[type=checkbox]{pointer-events:none}
 body.minimap-hidden #minimap{ display:none; }
 body.minimap-hidden #minimap-toggle{ display:flex; }
 body:not(.minimap-hidden) #minimap-toggle{ display:none; }
+
+/* Free lines */
+.free-line{stroke:var(--ink-faint);stroke-width:2.5;opacity:.4;pointer-events:none}
+.free-line-hit{stroke:transparent;stroke-width:16;fill:none;cursor:pointer;pointer-events:stroke}
+.free-line-g{pointer-events:all}
+.free-line-g:hover .free-line{opacity:.8;stroke:var(--accent)}
+body.draw-mode #canvas-wrap{cursor:crosshair}
+
 </style>
 </head>
 <body>
@@ -368,6 +376,9 @@ body:not(.minimap-hidden) #minimap-toggle{ display:none; }
     <button class="btn-icon" id="btn-connect" title="Connect cards (C)">
       <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2.2" stroke-width="1.8"/><circle cx="19" cy="12" r="2.2" stroke-width="1.8"/><line x1="7.2" y1="12" x2="16.8" y2="12"/></svg>
     </button>
+    <button class="btn-icon" id="btn-draw" title="Draw lines (D)">
+      <svg viewBox="0 0 24 24"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>
+    </button>
     <div class="btn-sep"></div>
     <button class="btn-icon" id="btn-add-note" title="Add note card">
       <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/></svg>
@@ -381,7 +392,7 @@ body:not(.minimap-hidden) #minimap-toggle{ display:none; }
     </button>
   </div>
 </div>
-<div id="connect-hint">click two cards to connect · click a line to remove · esc to exit</div>
+<div id="connect-hint" class="mode-hint"></div>
 <div id="wall-view">
   <div id="canvas-wrap">
     <div id="canvas">
@@ -504,7 +515,7 @@ const ZOOM_LEVELS=[0.35,0.6,1.0,1.45,2.0];
 const ZOOM_LABELS=['35%','60%','100%','145%','200%'];
 const ROTATIONS=[-2.5,-1.5,-0.8,0,0.8,1.5,2.5];
 const CX=2000,CY=1500;
-let cards=[],connectors=[],tags=[],groups=[];
+let cards=[],connectors=[],tags=[],groups=[],freeLines=[];
 let zoomIndex=2,panX=0,panY=0,isPanning=false,panSX=0,panSY=0,panOX=0,panOY=0;
 let connectMode=false,connectFirst=null,popoverCardId=null;
 
@@ -538,7 +549,7 @@ function save(){
 }
 
 async function pushToGist(){
-  const data = {cards, connectors, tags, groups};
+  const data = {cards, connectors, tags, groups, freeLines};
   try{
     const res = await fetch('https://api.github.com/gists/'+getConfig().id, {
       method: 'PATCH',
@@ -565,6 +576,7 @@ async function loadData(){
   try{const v=localStorage.getItem('iw-connectors'); if(v)connectors =JSON.parse(v);}catch(e){}
   try{const v=localStorage.getItem('iw-tags');       if(v)tags        =JSON.parse(v);}catch(e){}
   try{const v=localStorage.getItem('iw-groups');    if(v)groups      =JSON.parse(v);}catch(e){}
+  try{const v=localStorage.getItem('iw-freeLines'); if(v)freeLines   =JSON.parse(v);}catch(e){}
   cards.forEach(c=>{if(!c.tags)c.tags=[];if(!c.checklist)c.checklist=[];});
   renderAll();
 
@@ -588,6 +600,7 @@ async function loadData(){
       connectors = (data.connectors || []);
       tags       = (data.tags       || []);
       groups     = (data.groups     || []);
+      freeLines  = (data.freeLines  || []);
       cards.forEach(c=>{if(!c.tags)c.tags=[];if(!c.checklist)c.checklist=[];});
       // Persist locally too
       try{localStorage.setItem('iw-cards',      JSON.stringify(cards));     }catch(e){}
@@ -1122,6 +1135,146 @@ document.addEventListener('keydown', e=>{
   }
 });
 
+
+// ═══════════════════════════════════════
+// DRAW MODE (freeform lines)
+// ═══════════════════════════════════════
+let drawMode = false;
+let drawStart = null;
+let drawPreviewLine = null;
+
+const btnDraw = document.getElementById('btn-draw');
+btnDraw.addEventListener('click', toggleDraw);
+
+function toggleDraw(){ drawMode ? exitDraw() : enterDraw(); }
+
+function enterDraw(){
+  if(connectMode) exitConnect();
+  drawMode = true;
+  document.body.classList.add('draw-mode');
+  btnDraw.classList.add('active');
+  document.getElementById('connect-hint').textContent = 'click to start line · click to finish · click a line to remove · esc to exit';
+  closeTagPopover();
+}
+
+function exitDraw(){
+  drawMode = false;
+  drawStart = null;
+  document.body.classList.remove('draw-mode');
+  btnDraw.classList.remove('active');
+  if(drawPreviewLine){
+    drawPreviewLine.remove();
+    drawPreviewLine = null;
+  }
+}
+
+// Canvas click to start/end line
+canvasWrap.addEventListener('mousedown', e=>{
+  if(!drawMode) return;
+  if(e.target.closest('.idea-card, .card-link-type')) return; // Don't draw on cards
+  
+  const rect = canvas.getBoundingClientRect();
+  const z = ZOOM_LEVELS[zoomIndex];
+  const x = (e.clientX - rect.left) / z;
+  const y = (e.clientY - rect.top) / z;
+  
+  if(!drawStart){
+    // First click - start line
+    drawStart = {x, y};
+    // Create preview line
+    drawPreviewLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    drawPreviewLine.setAttribute('stroke', 'var(--accent)');
+    drawPreviewLine.setAttribute('stroke-width', '2.5');
+    drawPreviewLine.setAttribute('stroke-dasharray', '5 4');
+    drawPreviewLine.setAttribute('opacity', '0.6');
+    drawPreviewLine.setAttribute('x1', drawStart.x);
+    drawPreviewLine.setAttribute('y1', drawStart.y);
+    drawPreviewLine.setAttribute('x2', drawStart.x);
+    drawPreviewLine.setAttribute('y2', drawStart.y);
+    document.getElementById('connector-svg').appendChild(drawPreviewLine);
+  } else {
+    // Second click - finish line
+    const line = {
+      id: Date.now() + Math.random(),
+      x1: drawStart.x,
+      y1: drawStart.y,
+      x2: x,
+      y2: y
+    };
+    freeLines.push(line);
+    save();
+    drawFreeLines();
+    drawStart = null;
+    if(drawPreviewLine){
+      drawPreviewLine.remove();
+      drawPreviewLine = null;
+    }
+  }
+});
+
+// Update preview line on mouse move
+canvasWrap.addEventListener('mousemove', e=>{
+  if(!drawMode || !drawStart || !drawPreviewLine) return;
+  
+  const rect = canvas.getBoundingClientRect();
+  const z = ZOOM_LEVELS[zoomIndex];
+  const x = (e.clientX - rect.left) / z;
+  const y = (e.clientY - rect.top) / z;
+  
+  drawPreviewLine.setAttribute('x2', x);
+  drawPreviewLine.setAttribute('y2', y);
+});
+
+// Escape to cancel
+document.addEventListener('keydown', e=>{
+  if(e.key === 'Escape' && drawMode){
+    exitDraw();
+  }
+  if((e.key === 'd' || e.key === 'D') && !e.target.matches('textarea,input')){
+    if(!document.body.classList.contains('capture-mode') && 
+       !document.getElementById('tag-manager').classList.contains('open')){
+      toggleDraw();
+    }
+  }
+});
+
+function drawFreeLines(){
+  // Remove existing free line elements
+  document.querySelectorAll('.free-line-g').forEach(el=>el.remove());
+  
+  const svg = document.getElementById('connector-svg');
+  
+  freeLines.forEach(fl=>{
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.classList.add('free-line-g');
+    
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.classList.add('free-line');
+    line.setAttribute('x1', fl.x1);
+    line.setAttribute('y1', fl.y1);
+    line.setAttribute('x2', fl.x2);
+    line.setAttribute('y2', fl.y2);
+    
+    const hit = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    hit.classList.add('free-line-hit');
+    hit.setAttribute('x1', fl.x1);
+    hit.setAttribute('y1', fl.y1);
+    hit.setAttribute('x2', fl.x2);
+    hit.setAttribute('y2', fl.y2);
+    hit.addEventListener('click', e=>{
+      e.stopPropagation();
+      freeLines = freeLines.filter(l=>l.id !== fl.id);
+      save();
+      drawFreeLines();
+      showToast('line removed');
+    });
+    
+    g.appendChild(line);
+    g.appendChild(hit);
+    svg.appendChild(g);
+  });
+}
+
 // Connect Mode
 const btnConnect=document.getElementById('btn-connect');
 btnConnect.addEventListener('click',toggleConnect);
@@ -1142,6 +1295,7 @@ function toggleConnect(){connectMode?exitConnect():enterConnect();}
 function enterConnect(){
   connectMode=true;connectFirst=null;
   document.body.classList.add('connect-mode');btnConnect.classList.add('active');
+  document.getElementById('connect-hint').textContent = 'click two cards to connect · click a line to remove · esc to exit';
   closeTagPopover();
 }
 function exitConnect(){
