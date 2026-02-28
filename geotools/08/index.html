@@ -938,9 +938,9 @@
             }
 
             // Fetch token from secret gist — paste your raw gist URL below
-            const GIST_URL = 'https://gist.githubusercontent.com/jdbrigham/mapbox-config.json';
+            const GIST_URL = 'https://gist.githubusercontent.com/jdbrigham/bf6dad70ca495a6193770d6558f04efb/raw/848dc317a2653234c800a3e6f61a99c6e3d93d8a/mapbox-config.json';
             try {
-                const resp = await fetch(GIST_URL);
+                const resp = await fetch(GIST_URL + '?t=' + Date.now());
                 const config = await resp.json();
                 mapboxgl.accessToken = config.token;
             } catch (e) {
