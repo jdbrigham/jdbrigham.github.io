@@ -1,0 +1,1738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photo Metadata Reader</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.9.0/suncalc.min.js"></script>
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.css" rel="stylesheet" />
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            max-width: 1000px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .upload-btn {
+            background: #007AFF;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .upload-btn:hover {
+            background: #0056b3;
+        }
+        .upload-area {
+            display: none;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        .preview {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: 8px;
+            display: none;
+            transition: max-height 0.3s ease;
+        }
+        .preview.compact {
+            max-height: 150px;
+        }
+        .preview-container {
+            text-align: center;
+            position: relative;
+            display: inline-block;
+            margin: 20px auto;
+        }
+        
+        .tabs {
+            display: none;
+            border-bottom: 2px solid #e0e0e0;
+            margin: 30px 0 20px 0;
+        }
+        .tab {
+            display: inline-block;
+            padding: 12px 24px;
+            cursor: pointer;
+            color: #666;
+            font-weight: 500;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.3s;
+        }
+        .tab:hover {
+            color: #007AFF;
+        }
+        .tab.active {
+            color: #007AFF;
+            border-bottom-color: #007AFF;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 20px 0;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        
+        .metadata-item {
+            padding: 12px;
+            margin: 10px 0;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border-left: 4px solid #007AFF;
+        }
+        .metadata-label {
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 4px;
+        }
+        .metadata-value {
+            color: #333;
+            font-size: 14px;
+            white-space: pre-line;
+        }
+        
+        .placeholder {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+            background: #fafafa;
+            border-radius: 8px;
+        }
+        
+        .error {
+            color: #dc3545;
+            padding: 12px;
+            background: #f8d7da;
+            border-radius: 6px;
+            display: none;
+            margin-top: 20px;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #e8eaed;
+            border-radius: 8px;
+            padding: 40px;
+            min-height: 500px;
+        }
+
+        .sunmoon-photo {
+            position: absolute;
+            max-width: 90%;
+            max-height: 400px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        #overlayCanvas {
+            position: relative;
+            width: 100%;
+            height: 500px;
+            pointer-events: none;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group label {
+            display: block;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 8px;
+        }
+
+        input[type="date"], input[type="range"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+
+        input[type="range"] {
+            height: 8px;
+            padding: 0;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .info-item {
+            padding: 12px;
+            background: white;
+            border-radius: 6px;
+            border-left: 4px solid #007AFF;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #555;
+            font-size: 12px;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .info-value {
+            color: #333;
+            font-size: 16px;
+        }
+
+        .legend {
+            margin-top: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 6px;
+        }
+
+        .legend-item {
+            display: inline-flex;
+            align-items: center;
+            margin-right: 20px;
+            margin-bottom: 10px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        /* Compass View styles */
+        .compass-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .compass-svg {
+            width: 100%;
+            max-width: 420px;
+            height: auto;
+            display: block;
+            margin: 20px auto;
+        }
+
+        .compass-ring { 
+            fill: none; 
+            stroke: #111; 
+            stroke-width: 3; 
+        }
+
+        .compass-tick { 
+            stroke: #222; 
+            stroke-width: 2; 
+        }
+
+        .compass-label { 
+            font-size: 12px; 
+            font-weight: 600; 
+            fill: #111; 
+            text-anchor: middle; 
+            dominant-baseline: middle; 
+        }
+
+        .compass-shade1 { 
+            fill: hsla(30, 90%, 50%, 0.28); 
+        }
+
+        .compass-shade2 { 
+            fill: hsla(210, 90%, 50%, 0.24); 
+        }
+
+        .compass-arrow-line { 
+            stroke: #e63946; 
+            stroke-width: 4; 
+            stroke-linecap: round; 
+        }
+
+        .compass-arrow-head { 
+            fill: #e63946; 
+        }
+
+        .compass-bg { 
+            fill: #eef3f8; 
+        }
+
+        .compass-controls {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .compass-control-group {
+            margin-bottom: 16px;
+        }
+
+        .compass-control-group label {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 8px;
+        }
+
+        .compass-control-value {
+            font-variant-numeric: tabular-nums;
+            color: #007AFF;
+        }
+
+        input[type="range"].compass-slider {
+            width: 100%;
+            height: 6px;
+        }
+
+        /* Field of View styles */
+        .fov-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .fov-svg {
+            width: 100%;
+            max-width: 520px;
+            height: auto;
+            display: block;
+            margin: 20px auto;
+        }
+
+        .fov-labels { 
+            fill: #6b7280; 
+            font-size: 12px; 
+            text-anchor: middle; 
+            dominant-baseline: middle; 
+        }
+
+        .fov-wedge-main { 
+            fill: rgba(239,68,68,0.20); 
+            stroke: #ef4444; 
+            stroke-width: 2; 
+        }
+
+        .fov-wedge-overflow { 
+            fill: rgba(239,68,68,0.10); 
+            stroke: #ef4444; 
+            stroke-width: 1; 
+            stroke-dasharray: 4; 
+        }
+
+        .fov-axis { 
+            stroke: #e5e7eb; 
+            stroke-width: 2; 
+        }
+
+        .fov-tree { 
+            fill: #228B22; 
+        }
+
+        .fov-cloud { 
+            fill: #bbb; 
+        }
+
+        .fov-pivot { 
+            fill: #ef4444; 
+            opacity: 0.7; 
+        }
+
+        .fov-controls {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .fov-control-group {
+            margin-bottom: 16px;
+        }
+
+        .fov-control-group label {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 8px;
+        }
+
+        .fov-control-value {
+            font-variant-numeric: tabular-nums;
+            color: #007AFF;
+        }
+
+        input[type="range"].fov-slider {
+            width: 100%;
+            height: 6px;
+        }
+
+        #sunmoonOverlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            display: none;
+            overflow: visible;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>
+            <span>📸 Photo Analysis Dashboard</span>
+            <button class="upload-btn" id="uploadBtn">Upload Photo</button>
+        </h1>
+        
+        <div class="upload-area" id="uploadArea">
+            <p style="margin: 0; color: #666;">Click to upload or drag and drop a photo</p>
+            <p style="margin: 10px 0 0 0; color: #999; font-size: 14px;">Works best with iPhone photos</p>
+        </div>
+        
+        <input type="file" id="fileInput" accept="image/*">
+
+       <div style="text-align: center;"> <!-- or some centering wrapper -->
+            <div class="preview-container">
+                <img id="preview" class="preview" alt="Preview">
+                <canvas id="sunmoonOverlay"></canvas>
+            </div>
+      </div>
+        
+        <div class="tabs" id="tabs">
+            <div class="tab active" id="tab-metadata">Metadata</div>
+            <div class="tab" id="tab-sunmoon">Sun/Moon Path</div>
+            <div class="tab" id="tab-compass">Compass View</div>
+            <div class="tab" id="tab-fov">Field of View</div>
+        </div>
+        
+        <div class="tab-content active" id="content-metadata">
+            <div id="metadata-empty" class="placeholder">
+                <p>📋</p>
+                <p>Metadata will appear here after uploading a photo</p>
+            </div>
+            <div id="metadata-data" style="display: none;">
+                <h2 style="color: #333; margin-bottom: 15px;">Metadata</h2>
+                <div class="metadata-item">
+                    <div class="metadata-label">Capture Date & Time</div>
+                    <div class="metadata-value" id="datetime">-</div>
+                </div>
+                <div class="metadata-item">
+                    <div class="metadata-label">Field of View / Focal Length</div>
+                    <div class="metadata-value" id="fov">-</div>
+                </div>
+                <div class="metadata-item">
+                    <div class="metadata-label">Angle of View</div>
+                    <div class="metadata-value" id="aov">-</div>
+                </div>
+                <div class="metadata-item">
+                    <div class="metadata-label">Compass Direction</div>
+                    <div class="metadata-value" id="direction">-</div>
+                </div>
+                <div class="metadata-item">
+                    <div class="metadata-label">GPS Coordinates</div>
+                    <div class="metadata-value" id="gps">-</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="tab-content" id="content-sunmoon">
+        <h2 style="color: #333; margin-bottom: 15px;">Sun/Moon Path</h2>
+        
+       <!-- <div id="sunmoonMessage" style="text-align: center; padding: 40px; background: #f0f4ff; border-radius: 8px; margin-bottom: 20px;">
+            <p style="color: #666;">Sun and moon paths are overlaid on the photo above</p>
+       </div> -->
+        
+        <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+            <div class="control-group">
+                <label for="dateInput">Select Date (time remains: <span id="captureTime">--:--</span>)</label>
+                <input type="date" id="dateInput">
+            </div>
+            
+            <div class="control-group">
+                <label for="dateSlider">
+                    Adjust Date: <span id="sliderDate">--</span>
+                    <span style="font-weight: normal; font-size: 14px; color: #888;">
+                        (<span id="dayOffset">0</span> days from selected)
+                    </span>
+                </label>
+                <input type="range" id="dateSlider" min="-180" max="180" value="0">
+            </div>
+            
+            <div class="control-group">
+                <label for="fovOverride">
+                    Horizontal Field of View Override: <span id="fovValue">--</span>°
+                    <span style="font-weight: normal; font-size: 14px; color: #888;">
+                        (adjust if needed for alignment)
+                    </span>
+                </label>
+                <input type="range" id="fovOverride" min="10" max="120" value="0">
+            </div>
+            
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">Sun Azimuth</div>
+                    <div class="info-value" id="sunAzimuth">-</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Sun Altitude</div>
+                    <div class="info-value" id="sunAltitude">-</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Sunrise</div>
+                    <div class="info-value" id="sunrise">-</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Sunset</div>
+                    <div class="info-value" id="sunset">-</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Moon Azimuth</div>
+                    <div class="info-value" id="moonAzimuth">-</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Moon Altitude</div>
+                    <div class="info-value" id="moonAltitude">-</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Moon Phase</div>
+                    <div class="info-value" id="moonPhase">-</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Camera Direction</div>
+                    <div class="info-value" id="cameraDir">-</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Horizontal FOV</div>
+                    <div class="info-value" id="fovDisplay">-</div>
+                </div>
+            </div>
+            
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #FFD700;"></div>
+                    <span>Sun position</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: rgba(255, 165, 0, 0.8);"></div>
+                    <span>Sun's daily path</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #E0E0E0;"></div>
+                    <span>Moon position</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: rgba(200, 200, 220, 0.6);"></div>
+                    <span>Moon's daily path</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #FF6B6B;"></div>
+                    <span>Sunrise</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #4ECDC4;"></div>
+                    <span>Sunset</span>
+                </div>
+            </div>
+        </div>
+        </div>
+        
+       <div class="tab-content" id="content-compass">
+            <h2 style="color: #333; margin-bottom: 15px;">Compass/Map View</h2>
+            
+            <div class="compass-container">
+                <!-- Full-width map container -->
+                <div id="compassMapContainer" style="width: 100%; height: 400px; background: #e8eaed; border-radius: 8px; position: relative; overflow: hidden;">
+                    <!-- Mapbox GL map fills the container -->
+                    <div id="compassMap" style="width: 100%; height: 100%; position: absolute; top: 0; left: 0;"></div>
+                    
+                    <!-- Compass overlay in center -->
+                    <svg style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 300px; height: 300px; pointer-events: none;" viewBox="0 0 300 300">
+                        <!-- Semi-transparent background circle -->
+                        <circle cx="150" cy="150" r="145" fill="rgba(255,255,255,0.7)" stroke="#111" stroke-width="3"/>
+                        
+                        <!-- Cardinal ticks -->
+                        <line class="compass-tick" x1="150" y1="5" x2="150" y2="25" />
+                        <line class="compass-tick" x1="295" y1="150" x2="275" y2="150" />
+                        <line class="compass-tick" x1="150" y1="295" x2="150" y2="275" />
+                        <line class="compass-tick" x1="5" y1="150" x2="25" y2="150" />
+                        
+                        <!-- Labels -->
+                        <text class="compass-label" x="150" y="15">N</text>
+                        <text class="compass-label" x="285" y="155">E</text>
+                        <text class="compass-label" x="150" y="292">S</text>
+                        <text class="compass-label" x="15" y="155">W</text>
+                        
+                        <!-- FOV sectors -->
+                        <path id="compassSector1" class="compass-shade1" d="" />
+                        <path id="compassSector2" class="compass-shade2" d="" />
+                        
+                        <!-- Arrow showing camera direction -->
+                        <g id="compassArrow" transform="rotate(0 150 150)">
+                            <line class="compass-arrow-line" x1="150" y1="150" x2="150" y2="30" />
+                            <polygon class="compass-arrow-head" points="150,20 140,45 160,45" />
+                        </g>
+                    </svg>
+                </div>
+
+                <div class="compass-controls">
+                    <div class="compass-control-group">
+                        <label>
+                            <span>Camera Direction</span>
+                            <span class="compass-control-value"><span id="compassDirectionValue">--</span>°</span>
+                        </label>
+                    </div>
+                    
+                    <div class="compass-control-group" style="display: flex; align-items: center; gap: 12px;">
+                        <button id="mapLockToggle" onclick="toggleMapLock()" style="
+                            background: #f0f0f0;
+                            border: 1px solid #ccc;
+                            border-radius: 6px;
+                            padding: 8px 16px;
+                            font-size: 14px;
+                            font-weight: 500;
+                            cursor: pointer;
+                            display: flex;
+                            align-items: center;
+                            gap: 6px;
+                            transition: background 0.2s, border-color 0.2s;
+                        ">🔒 Map Locked</button>
+                        <span style="font-size: 12px; color: #666;" id="mapLockHint">Toggle to enable pan &amp; zoom</span>
+                    </div>
+
+                    <p style="font-size: 12px; color: #666; margin-top: 16px;">
+                        The compass arrow shows camera heading.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="tab-content" id="content-fov">
+            <h2 style="color: #333; margin-bottom: 15px;">Field of View</h2>
+            
+            <div class="fov-container">
+                <svg id="fovSvg" class="fov-svg" viewBox="0 0 300 300">
+                    <line x1="40" y1="260" x2="260" y2="260" class="fov-axis" />
+                    <line x1="40" y1="260" x2="40" y2="40" class="fov-axis" />
+                    <path d="M40,40 A220,220 0 0 1 260,260" fill="none" stroke="#e5e7eb" stroke-width="2" />
+                    
+                    <path id="fovWedgeMain" class="fov-wedge-main" d="" />
+                    <path id="fovWedgeOverflow" class="fov-wedge-overflow" d="" />
+                    
+                    <circle id="fovPitchDot" cx="40" cy="260" r="3" fill="#ef4444" />
+                    
+                    <text class="fov-labels" x="150" y="280">Ground (0°)</text>
+                    <text class="fov-labels" x="30" y="50" text-anchor="start">Sky (+90°)</text>
+                    
+                    <rect style="fill:none;stroke:#e20000;stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round"
+                        id="fovBody" width="6" height="40" x="36" y="220" />
+                    
+                    <g id="fovArmGroup">
+                        <path style="fill:none;stroke:#e20000;stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round"
+                            d="M 39.749291,229.28554 L 48.959493,236.07201 L 57.927321,228.31605 V 228.31605"
+                            id="fovArm" />
+                        <circle class="fov-pivot" cx="39.749291" cy="229.28554" r="2" />
+                    </g>
+                    
+                    <g transform="translate(240,260) scale(1.2)">
+                        <rect class="fov-tree" x="-5" y="-20" width="10" height="20" />
+                        <circle class="fov-tree" cx="0" cy="-30" r="15" />
+                    </g>
+                    
+                    <g transform="translate(240,60) scale(1.2)">
+                        <ellipse class="fov-cloud" cx="0" cy="0" rx="20" ry="12" />
+                        <ellipse class="fov-cloud" cx="-15" cy="0" rx="15" ry="10" />
+                        <ellipse class="fov-cloud" cx="15" cy="0" rx="15" ry="10" />
+                    </g>
+                </svg>
+
+                <div class="fov-controls">
+                    <div class="fov-control-group">
+                        <label>
+                            <span>Camera Pitch (tilt up/down)</span>
+                            <span class="fov-control-value"><span id="fovPitchValue">0</span>°</span>
+                        </label>
+                        <input type="range" class="fov-slider" id="fovPitch" min="-45" max="90" value="0">
+                    </div>
+                    
+                    <div class="fov-control-group">
+                        <label>
+                            <span>Vertical Field of View</span>
+                            <span class="fov-control-value"><span id="fovAngleValue">45</span>°</span>
+                        </label>
+                        <input type="range" class="fov-slider" id="fovAngle" min="10" max="90" value="45">
+                    </div>
+                    
+                    <p style="font-size: 12px; color: #666; margin-top: 16px;">
+                        The red wedge shows what the camera can see vertically. Solid areas are visible, dashed areas extend beyond normal viewing bounds.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div id="error" class="error"></div>
+    </div>
+
+    <script>
+        const uploadBtn = document.getElementById('uploadBtn');
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const preview = document.getElementById('preview');
+        const tabsContainer = document.getElementById('tabs');
+        const errorDiv = document.getElementById('error');
+
+        uploadBtn.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('click', () => fileInput.click());
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            if (e.dataTransfer.files.length) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+        
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        // Tab switching
+        document.getElementById('tab-metadata').addEventListener('click', () => switchTab('metadata'));
+        document.getElementById('tab-sunmoon').addEventListener('click', () => switchTab('sunmoon'));
+        document.getElementById('tab-compass').addEventListener('click', () => switchTab('compass'));
+        document.getElementById('tab-fov').addEventListener('click', () => switchTab('fov'));
+
+        function switchTab(tabName) {
+            const allTabs = document.querySelectorAll('.tab');
+            const allContents = document.querySelectorAll('.tab-content');
+            const previewImg = document.getElementById('preview');
+            const sunmoonOverlay = document.getElementById('sunmoonOverlay');
+            
+            allTabs.forEach(tab => tab.classList.remove('active'));
+            allContents.forEach(content => content.classList.remove('active'));
+            
+            document.getElementById('tab-' + tabName).classList.add('active');
+            document.getElementById('content-' + tabName).classList.add('active');
+            
+            // Compact image for non-metadata and non-sunmoon tabs
+            if (tabName === 'metadata' || tabName === 'sunmoon') {
+                previewImg.classList.remove('compact');
+            } else {
+                previewImg.classList.add('compact');
+            }
+            
+            // Show/hide sun/moon overlay
+            if (tabName === 'sunmoon') {
+                sunmoonOverlay.style.display = 'block';
+            } else {
+                sunmoonOverlay.style.display = 'none';
+            }
+            
+            // Initialize sun/moon visualization when tab is opened
+            if (tabName === 'sunmoon' && window.sunMoonData) {
+                initializeSunMoon();
+            }
+            
+            // Initialize compass visualization when tab is opened
+            if (tabName === 'compass' && window.compassData) {
+                initializeCompass();
+            }
+            // Resize Mapbox map when compass tab is shown (needed after display:none)
+            if (tabName === 'compass' && compassMapboxMap) {
+                setTimeout(() => compassMapboxMap.resize(), 50);
+            }
+            
+            // Initialize FOV visualization when tab is opened
+            if (tabName === 'fov' && window.compassData) {
+                initializeFOV();
+            }
+        }
+        function initializeSunMoon() {
+            if (!window.sunMoonData || !window.sunMoonData.captureDate) {
+                return;
+            }
+            
+            // Set up date input
+            const captureDate = window.sunMoonData.captureDate;
+            const year = captureDate.getFullYear();
+            const month = String(captureDate.getMonth() + 1).padStart(2, '0');
+            const day = String(captureDate.getDate()).padStart(2, '0');
+            document.getElementById('dateInput').value = `${year}-${month}-${day}`;
+            document.getElementById('captureTime').textContent = 
+                `${window.sunMoonData.time.hours}:${window.sunMoonData.time.minutes}`;
+            
+            // Set up FOV override slider
+            if (window.sunMoonData.horizontalAOV) {
+                document.getElementById('fovOverride').value = window.sunMoonData.horizontalAOV;
+                document.getElementById('fovValue').textContent = window.sunMoonData.horizontalAOV.toFixed(1);
+            }
+            
+            // Reset date slider
+            document.getElementById('dateSlider').value = 0;
+            
+            // Draw the photo on the canvas
+            drawSunMoonPhoto();
+            
+            // Draw the scene
+            // drawSunMoonScene();
+        }
+   
+        function initializeCompass() {
+            if (!window.compassData) {
+                return;
+            }
+            
+            const direction = window.compassData.direction;
+            document.getElementById('compassDirectionValue').textContent = direction.toFixed(1);
+            
+            const arrow = document.getElementById('compassArrow');
+            arrow.setAttribute('transform', 'rotate(' + direction + ' 150 150)');
+            
+            drawCompassFOVSectors(direction, window.compassData.horizontalFOV);
+            
+            loadCompassMap();
+            
+            setupCompassControls();
+        }
+
+        function drawCompassFOVSectors(direction, fov) {
+            const CX = 150;
+            const CY = 150;
+            const R = 145;
+            
+            if (!window.sunMoonData) return;
+            
+            const lat = window.sunMoonData.latitude;
+            const lon = window.sunMoonData.longitude;
+            const year = new Date().getFullYear();
+            
+            // Calculate sunrise/sunset azimuths for summer and winter solstice
+            const summerSolstice = new Date(year, 5, 21, 12, 0, 0); // June 21
+            const winterSolstice = new Date(year, 11, 21, 12, 0, 0); // Dec 21
+            
+            const summerTimes = SunCalc.getTimes(summerSolstice, lat, lon);
+            const winterTimes = SunCalc.getTimes(winterSolstice, lat, lon);
+            
+            const summerSunrisePos = SunCalc.getPosition(summerTimes.sunrise, lat, lon);
+            const summerSunsetPos = SunCalc.getPosition(summerTimes.sunset, lat, lon);
+            const winterSunrisePos = SunCalc.getPosition(winterTimes.sunrise, lat, lon);
+            const winterSunsetPos = SunCalc.getPosition(winterTimes.sunset, lat, lon);
+            
+            // Convert to degrees (0-360, with 0 = North)
+            const summerSunriseAz = (summerSunrisePos.azimuth * 180 / Math.PI + 180) % 360;
+            const summerSunsetAz = (summerSunsetPos.azimuth * 180 / Math.PI + 180) % 360;
+            const winterSunriseAz = (winterSunrisePos.azimuth * 180 / Math.PI + 180) % 360;
+            const winterSunsetAz = (winterSunsetPos.azimuth * 180 / Math.PI + 180) % 360;
+            
+            // Sunrise sector (eastern side) - from winter to summer
+            const sunriseStart = Math.min(winterSunriseAz, summerSunriseAz);
+            const sunriseEnd = Math.max(winterSunriseAz, summerSunriseAz);
+            
+            // Sunset sector (western side) - from summer to winter  
+            const sunsetStart = Math.min(summerSunsetAz, winterSunsetAz);
+            const sunsetEnd = Math.max(summerSunsetAz, winterSunsetAz);
+            
+            const sector1Path = wedgePath(CX, CY, R, sunriseStart, sunriseEnd);
+            const sector2Path = wedgePath(CX, CY, R, sunsetStart, sunsetEnd);
+            
+            document.getElementById('compassSector1').setAttribute('d', sector1Path);
+            document.getElementById('compassSector2').setAttribute('d', sector2Path);
+        }
+        function polarToCartesian(cx, cy, r, degCWFromNorth) {
+            const rad = (degCWFromNorth - 90) * Math.PI / 180;
+            return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+        }
+
+        function wedgePath(cx, cy, r, startDeg, endDeg) {
+            let s = ((startDeg % 360) + 360) % 360;
+            let e = ((endDeg % 360) + 360) % 360;
+            if (e < s) e += 360;
+            const largeArc = (e - s) > 180 ? 1 : 0;
+            const p0 = polarToCartesian(cx, cy, r, s);
+            const p1 = polarToCartesian(cx, cy, r, e);
+            return 'M ' + cx + ' ' + cy + ' L ' + p0.x.toFixed(2) + ' ' + p0.y.toFixed(2) + ' A ' + r + ' ' + r + ' 0 ' + largeArc + ' 1 ' + p1.x.toFixed(2) + ' ' + p1.y.toFixed(2) + ' Z';
+        }
+
+        // Mapbox GL JS map instance (persists across tab switches)
+        let compassMapboxMap = null;
+        let compassMapLocked = true;
+
+        function toggleMapLock() {
+            compassMapLocked = !compassMapLocked;
+            const btn = document.getElementById('mapLockToggle');
+            const hint = document.getElementById('mapLockHint');
+            if (compassMapLocked) {
+                compassMapboxMap.dragPan.disable();
+                compassMapboxMap.scrollZoom.disable();
+                compassMapboxMap.doubleClickZoom.disable();
+                compassMapboxMap.touchZoomRotate.disable();
+                btn.textContent = '🔒 Map Locked';
+                btn.style.background = '#f0f0f0';
+                btn.style.borderColor = '#ccc';
+                btn.style.color = '#333';
+                hint.textContent = 'Toggle to enable pan & zoom';
+            } else {
+                compassMapboxMap.dragPan.enable();
+                compassMapboxMap.scrollZoom.enable();
+                compassMapboxMap.doubleClickZoom.enable();
+                compassMapboxMap.touchZoomRotate.enable();
+                btn.textContent = '🔓 Map Interactive';
+                btn.style.background = '#e8f0fe';
+                btn.style.borderColor = '#007AFF';
+                btn.style.color = '#007AFF';
+                hint.textContent = 'Drag or scroll to pan & zoom';
+            }
+        }
+
+        async function loadCompassMap() {
+            if (!window.compassData) return;
+
+            const lat = window.compassData.latitude;
+            const lon = window.compassData.longitude;
+
+            if (compassMapboxMap) {
+                // Map already exists — fly to the new location and re-lock
+                compassMapboxMap.flyTo({ center: [lon, lat], zoom: 15 });
+                compassMapLocked = false; // force toggleMapLock to apply locked state
+                toggleMapLock();
+                return;
+            }
+
+            // Fetch token from secret gist — paste your raw gist URL below
+            const GIST_URL = 'https://gist.githubusercontent.com/jdbrigham/bf6dad70ca495a6193770d6558f04efb/raw/5f569ebeeb5451340e9aef58ca542d05648487d9/mapbox-config.json';
+            try {
+                const resp = await fetch(GIST_URL);
+                const config = await resp.json();
+                mapboxgl.accessToken = config.token;
+            } catch (e) {
+                console.error('Could not load Mapbox token from gist:', e);
+                return;
+            }
+
+            compassMapboxMap = new mapboxgl.Map({
+                container: 'compassMap',
+                style: 'mapbox://styles/mapbox/light-v11',
+                center: [lon, lat],
+                zoom: 15
+            });
+
+            // Start locked
+            compassMapboxMap.dragPan.disable();
+            compassMapboxMap.scrollZoom.disable();
+            compassMapboxMap.doubleClickZoom.disable();
+            compassMapboxMap.touchZoomRotate.disable();
+
+            compassMapboxMap.on('load', () => {
+                // Hide all default layers
+                compassMapboxMap.getStyle().layers.forEach(layer => {
+                    compassMapboxMap.setLayoutProperty(layer.id, 'visibility', 'none');
+                });
+
+                // Background
+                compassMapboxMap.addLayer({
+                    id: 'bg',
+                    type: 'background',
+                    paint: { 'background-color': '#f4f1ea' }
+                });
+
+                // Water fill
+                compassMapboxMap.addLayer({
+                    id: 'major-water',
+                    type: 'fill',
+                    source: 'composite',
+                    'source-layer': 'water',
+                    paint: { 'fill-color': '#bbdefb' }
+                });
+
+                // Waterways (rivers, streams)
+                compassMapboxMap.addLayer({
+                    id: 'waterways',
+                    type: 'line',
+                    source: 'composite',
+                    'source-layer': 'waterway',
+                    paint: { 'line-color': '#bbdefb', 'line-width': 1 }
+                });
+
+                // Roads
+                compassMapboxMap.addLayer({
+                    id: 'major-roads',
+                    type: 'line',
+                    source: 'composite',
+                    'source-layer': 'road',
+                    filter: [
+                        'any',
+                        ['==', ['get', 'class'], 'primary'],
+                        ['==', ['get', 'class'], 'secondary'],
+                        ['==', ['get', 'structure'], 'bridge']
+                    ],
+                    paint: {
+                        'line-color': '#888888',
+                        'line-width': ['interpolate', ['linear'], ['zoom'], 12, 0.5, 15, 2]
+                    }
+                });
+
+                // Minor roads (tertiary, residential, etc.) for street-level detail
+                compassMapboxMap.addLayer({
+                    id: 'minor-roads',
+                    type: 'line',
+                    source: 'composite',
+                    'source-layer': 'road',
+                    filter: [
+                        'any',
+                        ['==', ['get', 'class'], 'tertiary'],
+                        ['==', ['get', 'class'], 'street'],
+                        ['==', ['get', 'class'], 'secondary_link'],
+                        ['==', ['get', 'class'], 'primary_link']
+                    ],
+                    paint: {
+                        'line-color': '#aaaaaa',
+                        'line-width': ['interpolate', ['linear'], ['zoom'], 12, 0.3, 15, 1]
+                    }
+                });
+
+                // Buildings
+                compassMapboxMap.addLayer({
+                    id: 'buildings',
+                    type: 'fill',
+                    source: 'composite',
+                    'source-layer': 'building',
+                    paint: { 'fill-color': '#d9d9d9', 'fill-opacity': 0.6 }
+                });
+
+                // Park landuse
+                compassMapboxMap.addLayer({
+                    id: 'parks',
+                    type: 'fill',
+                    source: 'composite',
+                    'source-layer': 'landuse',
+                    filter: ['==', ['get', 'class'], 'park'],
+                    paint: { 'fill-color': '#99d8c9', 'fill-opacity': 0.7 }
+                });
+
+                // Add a dot marker for the camera location
+                compassMapboxMap.addSource('camera-location', {
+                    type: 'geojson',
+                    data: {
+                        type: 'Feature',
+                        geometry: { type: 'Point', coordinates: [lon, lat] }
+                    }
+                });
+
+                compassMapboxMap.addLayer({
+                    id: 'camera-dot',
+                    type: 'circle',
+                    source: 'camera-location',
+                    paint: {
+                        'circle-radius': 7,
+                        'circle-color': '#e63946',
+                        'circle-stroke-width': 2,
+                        'circle-stroke-color': '#ffffff'
+                    }
+                });
+            });
+        }
+
+        function setupCompassControls() {
+            // No slider controls needed — Mapbox GL is interactive by default
+        }
+        function initializeFOV() {
+            if (!window.compassData) {
+                return;
+            }
+            
+            const vfov = window.compassData.horizontalFOV;
+            
+            document.getElementById('fovAngle').value = vfov;
+            document.getElementById('fovAngleValue').textContent = vfov.toFixed(1);
+            
+            document.getElementById('fovPitch').value = 0;
+            document.getElementById('fovPitchValue').textContent = '0';
+            
+            setupFOVControls();
+            
+            updateFOVVisualization();
+        }
+
+        function deg2rad(d) {
+            return d * Math.PI / 180;
+        }
+
+        function polarCorner(cx, cy, r, deg) {
+            const t = deg2rad(deg);
+            return { x: cx + r * Math.cos(t), y: cy - r * Math.sin(t) };
+        }
+
+        function sectorPath(cx, cy, r, startDeg, endDeg) {
+            const p0 = polarCorner(cx, cy, r, startDeg);
+            const p1 = polarCorner(cx, cy, r, endDeg);
+            const sweep = endDeg - startDeg;
+            const largeArc = sweep > 180 ? 1 : 0;
+            return 'M ' + cx + ' ' + cy + ' L ' + p0.x + ' ' + p0.y + ' A ' + r + ' ' + r + ' 0 ' + largeArc + ' 0 ' + p1.x + ' ' + p1.y + ' Z';
+        }
+
+        function getFOVCameraPosition(pitch) {
+            const shoulderX = 39.749291;
+            const shoulderY = 229.28554;
+            
+            const origArmEndX = 57.927321;
+            const origArmEndY = 228.31605;
+            
+            const armLength = Math.sqrt(
+                Math.pow(origArmEndX - shoulderX, 2) + 
+                Math.pow(origArmEndY - shoulderY, 2)
+            );
+            
+            const baseAngle = Math.atan2(
+                shoulderY - origArmEndY,
+                origArmEndX - shoulderX
+            ) * 180 / Math.PI;
+            
+            const newAngle = baseAngle + pitch;
+            const rad = deg2rad(newAngle);
+            
+            const camX = shoulderX + armLength * Math.cos(rad);
+            const camY = shoulderY - armLength * Math.sin(rad);
+            
+            return { x: camX, y: camY, angle: pitch };
+        }
+
+        function updateFOVVisualization() {
+            const pitch = parseFloat(document.getElementById('fovPitch').value);
+            const vfov = parseFloat(document.getElementById('fovAngle').value);
+            
+            document.getElementById('fovPitchValue').textContent = pitch;
+            document.getElementById('fovAngleValue').textContent = vfov;
+            
+            const shoulderX = 39.749291;
+            const shoulderY = 229.28554;
+            const armGroup = document.getElementById('fovArmGroup');
+            armGroup.setAttribute('transform', 'rotate(' + (-pitch) + ' ' + shoulderX + ' ' + shoulderY + ')');
+            
+            const camPos = getFOVCameraPosition(pitch);
+            const cx = camPos.x;
+            const cy = camPos.y;
+            const r = 220;
+            
+            const half = vfov / 2;
+            const wedgeStart = pitch - half;
+            const wedgeEnd = pitch + half;
+            
+            const focalPoint = polarCorner(cx, cy, r, pitch);
+            
+            let lineOfSightHitsGround = false;
+            
+            if (Math.abs(focalPoint.y - cy) > 0.001) {
+                const slope = (focalPoint.x - cx) / (focalPoint.y - cy);
+                const groundIntersectX = cx + slope * (260 - cy);
+                
+                if (groundIntersectX >= 40 && groundIntersectX <= 260 && focalPoint.y > cy) {
+                    lineOfSightHitsGround = true;
+                }
+            }
+            
+            let mainPath = '';
+            let overflowPath = '';
+            
+            if (lineOfSightHitsGround) {
+                const solidStart = Math.max(wedgeStart, pitch);
+                const solidEnd = Math.min(wedgeEnd, 90);
+                
+                if (solidStart < solidEnd) {
+                    mainPath = sectorPath(cx, cy, r, solidStart, solidEnd);
+                }
+                
+                const overflowPaths = [];
+                
+                if (wedgeStart < pitch) {
+                    overflowPaths.push(sectorPath(cx, cy, r, wedgeStart, Math.min(wedgeEnd, pitch)));
+                }
+                
+                if (wedgeEnd > 90) {
+                    overflowPaths.push(sectorPath(cx, cy, r, Math.max(wedgeStart, 90), wedgeEnd));
+                }
+                
+                if (overflowPaths.length > 0) {
+                    overflowPath = overflowPaths.join(' ');
+                }
+                
+            } else {
+                const solidEnd = Math.min(wedgeEnd, 90);
+                
+                if (wedgeStart < solidEnd) {
+                    mainPath = sectorPath(cx, cy, r, wedgeStart, solidEnd);
+                }
+                
+                if (wedgeEnd > 90) {
+                    overflowPath = sectorPath(cx, cy, r, Math.max(wedgeStart, 90), wedgeEnd);
+                }
+            }
+            
+            document.getElementById('fovWedgeMain').setAttribute('d', mainPath);
+            document.getElementById('fovWedgeOverflow').setAttribute('d', overflowPath);
+            
+            const pCenter = polarCorner(cx, cy, r, pitch);
+            document.getElementById('fovPitchDot').setAttribute('cx', pCenter.x);
+            document.getElementById('fovPitchDot').setAttribute('cy', pCenter.y);
+        }
+
+        function setupFOVControls() {
+            const pitchSlider = document.getElementById('fovPitch');
+            const angleSlider = document.getElementById('fovAngle');
+            
+            pitchSlider.addEventListener('input', updateFOVVisualization);
+            angleSlider.addEventListener('input', updateFOVVisualization);
+        }
+
+        function drawSunMoonPhoto() {
+            const previewImg = document.getElementById('preview');
+            const overlayCanvas = document.getElementById('sunmoonOverlay');
+            
+            // Wait for any CSS transitions to complete
+            setTimeout(() => {
+                // Get the current displayed size of the image
+                const width = previewImg.offsetWidth;
+                const height = previewImg.offsetHeight;
+                
+                // Set both canvas buffer size AND CSS size
+                overlayCanvas.width = width;
+                overlayCanvas.height = height;
+                overlayCanvas.style.width = width + 'px';
+                overlayCanvas.style.height = height + 'px';
+                
+                console.log('Canvas sized to:', width, height);
+                
+                // Draw the scene after canvas is sized
+                drawSunMoonScene();
+            }, 350);
+        }
+          
+            function drawSunMoonScene() {
+                const overlayCanvas = document.getElementById('sunmoonOverlay');
+                const ctx = overlayCanvas.getContext('2d');
+                ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+                
+                // Get the selected date with offset
+                const baseDate = new Date(document.getElementById('dateInput').value);
+                const dayOffset = parseInt(document.getElementById('dateSlider').value);
+                const selectedDate = new Date(baseDate);
+                selectedDate.setDate(selectedDate.getDate() + dayOffset);
+                selectedDate.setHours(window.sunMoonData.time.hours);
+                selectedDate.setMinutes(window.sunMoonData.time.minutes);
+                selectedDate.setSeconds(window.sunMoonData.time.seconds);
+                
+                // Update date display
+                document.getElementById('sliderDate').textContent = selectedDate.toLocaleDateString('en-US', {
+                    weekday: 'short',
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                });
+                document.getElementById('dayOffset').textContent = dayOffset > 0 ? `+${dayOffset}` : dayOffset;
+                
+                // Calculate sun position
+                const sunPos = SunCalc.getPosition(selectedDate, window.sunMoonData.latitude, window.sunMoonData.longitude);
+                const sunAzimuth = (sunPos.azimuth * 180 / Math.PI + 180) % 360;
+                const sunAltitude = sunPos.altitude * 180 / Math.PI;
+                
+                // Get sunrise/sunset times
+                const times = SunCalc.getTimes(selectedDate, window.sunMoonData.latitude, window.sunMoonData.longitude);
+                
+                // Calculate moon position
+                const moonPos = SunCalc.getMoonPosition(selectedDate, window.sunMoonData.latitude, window.sunMoonData.longitude);
+                const moonAzimuth = (moonPos.azimuth * 180 / Math.PI + 180) % 360;
+                const moonAltitude = moonPos.altitude * 180 / Math.PI;
+                
+                // Get moon illumination
+                const moonIllumination = SunCalc.getMoonIllumination(selectedDate);
+                const moonPhasePercent = (moonIllumination.phase * 100).toFixed(0);
+                const moonPhaseName = getMoonPhaseName(moonIllumination.phase);
+                
+                // Update info displays
+                document.getElementById('sunAzimuth').textContent = `${sunAzimuth.toFixed(1)}°`;
+                document.getElementById('sunAltitude').textContent = `${sunAltitude.toFixed(1)}°`;
+                document.getElementById('sunrise').textContent = formatTime(times.sunrise);
+                document.getElementById('sunset').textContent = formatTime(times.sunset);
+                document.getElementById('moonAzimuth').textContent = `${moonAzimuth.toFixed(1)}°`;
+                document.getElementById('moonAltitude').textContent = `${moonAltitude.toFixed(1)}°`;
+                document.getElementById('moonPhase').textContent = `${moonPhaseName} (${moonPhasePercent}%)`;
+                document.getElementById('cameraDir').textContent = `${window.sunMoonData.direction.toFixed(1)}°`;
+                document.getElementById('fovDisplay').textContent = `${window.sunMoonData.horizontalAOV.toFixed(1)}°`;
+                
+                // Draw paths and positions
+                drawSunPath(selectedDate);
+                drawMoonPath(selectedDate);
+                
+                // Draw current sun and moon positions
+                drawSunPosition(sunAzimuth, sunAltitude, '#FFD700', 20);
+                drawMoonPosition(moonAzimuth, moonAltitude, moonIllumination.phase, 18);
+                
+                // Draw sunrise and sunset positions
+                const sunrisePos = SunCalc.getPosition(times.sunrise, window.sunMoonData.latitude, window.sunMoonData.longitude);
+                const sunriseAz = (sunrisePos.azimuth * 180 / Math.PI + 180) % 360;
+                const sunriseAlt = sunrisePos.altitude * 180 / Math.PI;
+                drawSunPosition(sunriseAz, sunriseAlt, '#FF6B6B', 12);
+                
+                const sunsetPos = SunCalc.getPosition(times.sunset, window.sunMoonData.latitude, window.sunMoonData.longitude);
+                const sunsetAz = (sunsetPos.azimuth * 180 / Math.PI + 180) % 360;
+                const sunsetAlt = sunsetPos.altitude * 180 / Math.PI;
+                drawSunPosition(sunsetAz, sunsetAlt, '#4ECDC4', 12);
+            }
+
+            function getMoonPhaseName(phase) {
+                if (phase < 0.03) return 'New Moon';
+                if (phase < 0.22) return 'Waxing Crescent';
+                if (phase < 0.28) return 'First Quarter';
+                if (phase < 0.47) return 'Waxing Gibbous';
+                if (phase < 0.53) return 'Full Moon';
+                if (phase < 0.72) return 'Waning Gibbous';
+                if (phase < 0.78) return 'Last Quarter';
+                if (phase < 0.97) return 'Waning Crescent';
+                return 'New Moon';
+            }
+
+            function azimuthAltitudeToCanvas(azimuth, altitude) {
+            const overlayCanvas = document.getElementById('sunmoonOverlay');
+            const displayFOV = 120;
+            const halfDisplayFOV = displayFOV / 2;
+            
+            const relativeAngle = azimuth - window.sunMoonData.direction;
+            let normalizedAngle = ((relativeAngle + 180) % 360) - 180;
+            
+            if (Math.abs(normalizedAngle) > halfDisplayFOV) {
+                return null;
+            }
+            
+            const x = overlayCanvas.width / 2 + (normalizedAngle / halfDisplayFOV) * (overlayCanvas.width / 2);
+            
+            const minAltitude = -5;
+            const maxAltitude = 90;
+            const altitudeRange = maxAltitude - minAltitude;
+            const normalizedAlt = (altitude - minAltitude) / altitudeRange;
+            const y = overlayCanvas.height - (normalizedAlt * overlayCanvas.height);
+            
+            return { x, y };
+        }
+            
+            function drawSunPath(date) {
+                const overlayCanvas = document.getElementById('sunmoonOverlay');
+                const ctx = overlayCanvas.getContext('2d');
+                const baseDate = new Date(date);
+                baseDate.setHours(0, 0, 0, 0);
+                
+                const pathPoints = [];
+                
+                for (let minutes = 0; minutes < 24 * 60; minutes += 10) {
+                    const time = new Date(baseDate.getTime() + minutes * 60 * 1000);
+                    const pos = SunCalc.getPosition(time, window.sunMoonData.latitude, window.sunMoonData.longitude);
+                    const azimuth = (pos.azimuth * 180 / Math.PI + 180) % 360;
+                    const altitude = pos.altitude * 180 / Math.PI;
+                    
+                    if (altitude > -5) {
+                        const coords = azimuthAltitudeToCanvas(azimuth, altitude);
+                        if (coords) {
+                            pathPoints.push(coords);
+                        }
+                    }
+                }
+                
+                if (pathPoints.length > 1) {
+                    ctx.beginPath();
+                    ctx.moveTo(pathPoints[0].x, pathPoints[0].y);
+                    
+                    for (let i = 1; i < pathPoints.length; i++) {
+                        ctx.lineTo(pathPoints[i].x, pathPoints[i].y);
+                    }
+                    
+                    ctx.lineWidth = 6;
+                    ctx.strokeStyle = 'rgba(255, 165, 0, 0.8)';
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+                    ctx.stroke();
+                }
+            }
+            
+            function drawMoonPath(date) {
+                const overlayCanvas = document.getElementById('sunmoonOverlay');
+                const ctx = overlayCanvas.getContext('2d');
+                const baseDate = new Date(date);
+                baseDate.setHours(0, 0, 0, 0);
+                
+                const pathSegments = [];
+                let currentSegment = [];
+                
+                for (let minutes = 0; minutes < 24 * 60; minutes += 10) {
+                    const time = new Date(baseDate.getTime() + minutes * 60 * 1000);
+                    const pos = SunCalc.getMoonPosition(time, window.sunMoonData.latitude, window.sunMoonData.longitude);
+                    const azimuth = (pos.azimuth * 180 / Math.PI + 180) % 360;
+                    const altitude = pos.altitude * 180 / Math.PI;
+                    
+                    if (altitude > -5) {
+                        const coords = azimuthAltitudeToCanvas(azimuth, altitude);
+                        if (coords) {
+                            currentSegment.push(coords);
+                        } else {
+                            if (currentSegment.length > 1) {
+                                pathSegments.push(currentSegment);
+                            }
+                            currentSegment = [];
+                        }
+                    } else {
+                        if (currentSegment.length > 1) {
+                            pathSegments.push(currentSegment);
+                        }
+                        currentSegment = [];
+                    }
+                }
+                
+                if (currentSegment.length > 1) {
+                    pathSegments.push(currentSegment);
+                }
+                
+                ctx.lineWidth = 5;
+                ctx.strokeStyle = 'rgba(200, 200, 220, 0.6)';
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                
+                pathSegments.forEach(segment => {
+                    if (segment.length > 1) {
+                        ctx.beginPath();
+                        ctx.moveTo(segment[0].x, segment[0].y);
+                        for (let i = 1; i < segment.length; i++) {
+                            ctx.lineTo(segment[i].x, segment[i].y);
+                        }
+                        ctx.stroke();
+                    }
+                });
+            }
+            function drawSunPosition(azimuth, altitude, color, radius) {
+                if (altitude < -5) return;
+                
+                const coords = azimuthAltitudeToCanvas(azimuth, altitude);
+                if (!coords) return;
+                
+                const overlayCanvas = document.getElementById('sunmoonOverlay');
+                const ctx = overlayCanvas.getContext('2d');
+                
+                ctx.beginPath();
+                ctx.arc(coords.x, coords.y, radius, 0, 2 * Math.PI);
+                ctx.fillStyle = color;
+                ctx.fill();
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+            }
+
+            function drawMoonPosition(azimuth, altitude, phase, radius) {
+                if (altitude < -5) return;
+                
+                const coords = azimuthAltitudeToCanvas(azimuth, altitude);
+                if (!coords) return;
+                
+                const overlayCanvas = document.getElementById('sunmoonOverlay');
+                const ctx = overlayCanvas.getContext('2d');
+                
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(coords.x, coords.y, radius, 0, 2 * Math.PI);
+                ctx.fillStyle = '#E0E0E0';
+                ctx.fill();
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+                
+                // Draw shadow to show moon phase
+                if (phase < 0.5) {
+                    const shadowWidth = radius * 2 * (0.5 - phase) * 2;
+                    ctx.beginPath();
+                    ctx.arc(coords.x - shadowWidth/2, coords.y, radius, 0, 2 * Math.PI);
+                    ctx.fillStyle = 'rgba(50, 50, 70, 0.6)';
+                    ctx.fill();
+                } else if (phase > 0.5) {
+                    const shadowWidth = radius * 2 * (phase - 0.5) * 2;
+                    ctx.beginPath();
+                    ctx.arc(coords.x + shadowWidth/2, coords.y, radius, 0, 2 * Math.PI);
+                    ctx.fillStyle = 'rgba(50, 50, 70, 0.6)';
+                    ctx.fill();
+                }
+                
+                ctx.restore();
+            }
+
+            function formatTime(date) {
+                return date.toLocaleTimeString('en-US', { 
+                    hour: '2-digit', 
+                    minute: '2-digit',
+                    hour12: true 
+                });
+            }
+        
+            function handleFile(file) {
+            if (!file.type.startsWith('image/')) {
+                showError('Please select an image file');
+                return;
+            }
+
+            errorDiv.style.display = 'none';
+            const reader = new FileReader();
+            
+            reader.onload = (e) => {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+                tabsContainer.style.display = 'block';
+                extractMetadata(e.target.result);
+            };
+            
+            reader.readAsDataURL(file);
+        }
+
+            function extractMetadata(imageData) {
+            const img = new Image();
+            img.src = imageData;
+            
+            img.onload = () => {
+                EXIF.getData(img, function() {
+                    const allData = EXIF.getAllTags(this);
+                    
+                    // Capture Date & Time
+                    const datetime = EXIF.getTag(this, 'DateTimeOriginal') || EXIF.getTag(this, 'DateTime') || 'Not available';
+                    document.getElementById('datetime').textContent = datetime;
+                    
+                    // Field of View / Focal Length
+                    const focalLength = EXIF.getTag(this, 'FocalLength');
+                    const focalLength35 = EXIF.getTag(this, 'FocalLengthIn35mmFilm');
+                    let fovText = 'Not available';
+                    if (focalLength) {
+                        fovText = `${focalLength}mm`;
+                        if (focalLength35) {
+                            fovText += ` (${focalLength35}mm equivalent)`;
+                        }
+                    }
+                    document.getElementById('fov').textContent = fovText;
+                    
+                    // Angle of View
+                    let aovText = 'Not available';
+                    if (focalLength35) {
+                        const sensorWidth = 36;
+                        const horizontalAOV = 2 * Math.atan(sensorWidth / (2 * focalLength35)) * (180 / Math.PI);
+                        
+                        const sensorHeight = 24;
+                        const verticalAOV = 2 * Math.atan(sensorHeight / (2 * focalLength35)) * (180 / Math.PI);
+                        const sensorDiagonal = Math.sqrt(sensorWidth * sensorWidth + sensorHeight * sensorHeight);
+                        const diagonalAOV = 2 * Math.atan(sensorDiagonal / (2 * focalLength35)) * (180 / Math.PI);
+                        
+                        aovText = `${horizontalAOV.toFixed(1)}° horizontal`;
+                        aovText += `\n${verticalAOV.toFixed(1)}° vertical, ${diagonalAOV.toFixed(1)}° diagonal`;
+                    }
+                    document.getElementById('aov').textContent = aovText;
+                    
+                    // Compass Direction
+                    const imgDirection = EXIF.getTag(this, 'GPSImgDirection');
+                    const imgDirectionRef = EXIF.getTag(this, 'GPSImgDirectionRef');
+                    let directionText = 'Not available';
+                    if (imgDirection !== undefined) {
+                        const degrees = Math.round(imgDirection);
+                        const cardinal = getCardinalDirection(degrees);
+                        directionText = `${degrees}° ${cardinal}`;
+                        if (imgDirectionRef) {
+                            directionText += ` (${imgDirectionRef})`;
+                        }
+                    }
+                    document.getElementById('direction').textContent = directionText;
+                    
+                    // GPS Coordinates
+                    const lat = EXIF.getTag(this, 'GPSLatitude');
+                    const latRef = EXIF.getTag(this, 'GPSLatitudeRef');
+                    const lon = EXIF.getTag(this, 'GPSLongitude');
+                    const lonRef = EXIF.getTag(this, 'GPSLongitudeRef');
+                    
+                    let gpsText = 'Not available';
+                    if (lat && lon) {
+                        const latDecimal = convertDMSToDD(lat, latRef);
+                        const lonDecimal = convertDMSToDD(lon, lonRef);
+                        gpsText = `${latDecimal.toFixed(6)}°, ${lonDecimal.toFixed(6)}°`;
+                        gpsText += `\n(${latRef} ${formatDMS(lat)}, ${lonRef} ${formatDMS(lon)})`;
+                    }
+                    document.getElementById('gps').textContent = gpsText;
+
+                    // Store data for sun/moon visualization
+                    const latForSunMoon = EXIF.getTag(this, 'GPSLatitude');
+                    const latRefForSunMoon = EXIF.getTag(this, 'GPSLatitudeRef');
+                    const lonForSunMoon = EXIF.getTag(this, 'GPSLongitude');
+                    const lonRefForSunMoon = EXIF.getTag(this, 'GPSLongitudeRef');
+
+                    if (latForSunMoon && lonForSunMoon) {
+                        const latDecimalForSunMoon = convertDMSToDD(latForSunMoon, latRefForSunMoon);
+                        const lonDecimalForSunMoon = convertDMSToDD(lonForSunMoon, lonRefForSunMoon);
+                        
+                        window.sunMoonData = {
+                            latitude: latDecimalForSunMoon,
+                            longitude: lonDecimalForSunMoon,
+                            direction: imgDirection !== undefined ? imgDirection : null,
+                            captureDate: null,
+                            horizontalAOV: null,
+                            originalAOV: null,
+                            time: null
+                        };
+                    } else {
+                        window.sunMoonData = null;
+                    }
+
+                    // Store data for compass visualization
+                    const imgDirectionForCompass = EXIF.getTag(this, 'GPSImgDirection');
+                    const latForCompass = EXIF.getTag(this, 'GPSLatitude');
+                    const latRefForCompass = EXIF.getTag(this, 'GPSLatitudeRef');
+                    const lonForCompass = EXIF.getTag(this, 'GPSLongitude');
+                    const lonRefForCompass = EXIF.getTag(this, 'GPSLongitudeRef');
+                    const focalLength35ForCompass = EXIF.getTag(this, 'FocalLengthIn35mmFilm');
+
+                    if (latForCompass && lonForCompass) {
+                        const latDecimalForCompass = convertDMSToDD(latForCompass, latRefForCompass);
+                        const lonDecimalForCompass = convertDMSToDD(lonForCompass, lonRefForCompass);
+                        
+                        let horizontalFOV = 60;
+                        if (focalLength35ForCompass) {
+                            const sensorWidth = 36;
+                            horizontalFOV = 2 * Math.atan(sensorWidth / (2 * focalLength35ForCompass)) * (180 / Math.PI);
+                        }
+                        
+                        window.compassData = {
+                            latitude: latDecimalForCompass,
+                            longitude: lonDecimalForCompass,
+                            direction: imgDirectionForCompass !== undefined ? imgDirectionForCompass : 0,
+                            horizontalFOV: horizontalFOV
+                        };
+                    } else {
+                        window.compassData = null;
+                    }
+
+                    // Parse capture date if available
+                    const datetimeForSunMoon = EXIF.getTag(this, 'DateTimeOriginal') || EXIF.getTag(this, 'DateTime');
+                    if (datetimeForSunMoon) {
+                        const dateParts = datetimeForSunMoon.split(' ')[0].split(':');
+                        const timeParts = datetimeForSunMoon.split(' ')[1].split(':');
+                        const captureDate = new Date(dateParts[0], dateParts[1] - 1, dateParts[2], 
+                                                    timeParts[0], timeParts[1], timeParts[2]);
+                        
+                        window.sunMoonData.captureDate = captureDate;
+                        window.sunMoonData.time = {
+                            hours: timeParts[0],
+                            minutes: timeParts[1],
+                            seconds: timeParts[2]
+                        };
+                    }
+
+                    // Calculate horizontal FOV
+                    const focalLength35ForSunMoon = EXIF.getTag(this, 'FocalLengthIn35mmFilm');
+                    if (focalLength35ForSunMoon) {
+                        const sensorWidth = 36;
+                    const horizontalAOV = 2 * Math.atan(sensorWidth / (2 * focalLength35ForSunMoon)) * (180 / Math.PI);                        window.sunMoonData.horizontalAOV = horizontalAOV;
+                        window.sunMoonData.originalAOV = horizontalAOV;
+                    }
+
+                    // Store the image for sun/moon canvas
+                    window.sunMoonImage = this;
+                    
+                    // Show metadata and hide placeholder
+                    document.getElementById('metadata-empty').style.display = 'none';
+                    document.getElementById('metadata-data').style.display = 'block';
+                });
+            };
+        }
+
+            function convertDMSToDD(dms, ref) {
+            const degrees = dms[0];
+            const minutes = dms[1];
+            const seconds = dms[2];
+            let dd = degrees + minutes / 60 + seconds / 3600;
+            if (ref === 'S' || ref === 'W') {
+                dd = dd * -1;
+            }
+            return dd;
+        }
+
+            function formatDMS(dms) {
+            return `${dms[0]}° ${dms[1]}' ${dms[2].toFixed(2)}"`;
+        }
+
+            function getCardinalDirection(degrees) {
+            const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+            const index = Math.round(degrees / 45) % 8;
+            return directions[index];
+        }
+
+            function showError(message) {
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            preview.style.display = 'none';
+            tabsContainer.style.display = 'none';
+        }
+    
+            // Sun/Moon control event listeners
+            document.getElementById('dateInput').addEventListener('change', () => {
+                if (window.sunMoonData) {
+                    document.getElementById('dateSlider').value = 0;
+                    drawSunMoonScene();
+                }
+            });
+
+            document.getElementById('dateSlider').addEventListener('input', () => {
+                if (window.sunMoonData) {
+                    drawSunMoonScene();
+                }
+            });
+
+            document.getElementById('fovOverride').addEventListener('input', () => {
+                if (window.sunMoonData) {
+                    const overrideValue = parseInt(document.getElementById('fovOverride').value);
+                    if (overrideValue > 10) {
+                        window.sunMoonData.horizontalAOV = overrideValue;
+                    } else {
+                        window.sunMoonData.horizontalAOV = window.sunMoonData.originalAOV;
+                    }
+                    document.getElementById('fovValue').textContent = window.sunMoonData.horizontalAOV.toFixed(1);
+                    drawSunMoonScene();
+                }
+            });
+    
+    </script>
+</body>
+</html>
