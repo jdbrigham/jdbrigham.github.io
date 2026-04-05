@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Panorama Viewer</title>
+  <script src="https://cdn.jsdelivr.net/npm/exifr@7/dist/full.umd.cjs"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -51,7 +52,7 @@
       flex-shrink: 0;
       height: 100%;
       overflow: hidden;        /* clip scaled-up strips at top/bottom */
-      background-image: url('IMG_0541_sm.png');
+      background-image: url('IMG_0427.jpg');
       background-repeat: no-repeat;
       will-change: transform;
       transform-origin: center center;
@@ -160,6 +161,30 @@
       transform: translate(-50%, -50%);
       box-shadow: 0 0 6px rgba(255,255,255,0.6);
     }
+
+    /* ── Compass ── */
+    #compassWrap {
+      display: none;               /* shown after gyro permission */
+      position: fixed;
+      bottom: max(60px, env(safe-area-inset-bottom, 60px));
+      right: 24px;
+      width: 110px;
+      height: 110px;
+      z-index: 15;
+      pointer-events: none;
+      /* 3D context for the flat-on-ground illusion */
+      perspective: 300px;
+      perspective-origin: 50% 50%;
+    }
+    #compass {
+      width: 100%;
+      height: 100%;
+      /* rotateX tilts it away — looks like it's lying flat on the ground.
+         rotateZ is updated every frame by JS to point north. */
+      transform: rotateX(60deg) rotateZ(0deg);
+      transform-origin: center center;
+      will-change: transform;
+    }
   </style>
 </head>
 <body>
@@ -181,6 +206,74 @@
     <div id="hud"></div>
   </div>
 
+  <!-- Compass overlay: SVG drawn inline, rotated by JS -->
+  <div id="compassWrap">
+    <svg id="compass" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <!-- Outer ring -->
+      <circle cx="50" cy="50" r="47" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="1"/>
+      <!-- Inner ring -->
+      <circle cx="50" cy="50" r="40" fill="rgba(0,0,0,0.35)" stroke="rgba(255,255,255,0.12)" stroke-width="0.75"/>
+      <!-- Tick marks: 36 ticks every 10° -->
+      <g stroke="rgba(255,255,255,0.3)" stroke-width="0.75">
+        <line x1="50" y1="10" x2="50" y2="14"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(10,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(20,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(30,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(40,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(50,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(60,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(70,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(80,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(100,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(110,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(120,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(130,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(140,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(150,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(160,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(170,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(190,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(200,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(210,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(220,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(230,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(240,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(250,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(260,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(280,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(290,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(300,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(310,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(320,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(330,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(340,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(350,50,50)"/>
+      </g>
+      <!-- Cardinal longer ticks -->
+      <g stroke="rgba(255,255,255,0.6)" stroke-width="1.2">
+        <line x1="50" y1="8"  x2="50" y2="16"/>                          <!-- N -->
+        <line x1="50" y1="8"  x2="50" y2="16" transform="rotate(90,50,50)"/>  <!-- E -->
+        <line x1="50" y1="8"  x2="50" y2="16" transform="rotate(180,50,50)"/> <!-- S -->
+        <line x1="50" y1="8"  x2="50" y2="16" transform="rotate(270,50,50)"/> <!-- W -->
+      </g>
+      <!-- Rose: north point (dark blue/teal, filled) -->
+      <polygon points="50,14 54,50 50,44 46,50" fill="#2a6496"/>
+      <!-- Rose: south point (lighter) -->
+      <polygon points="50,86 54,50 50,56 46,50" fill="rgba(255,255,255,0.35)"/>
+      <!-- Rose: east point -->
+      <polygon points="86,50 50,46 56,50 50,54" fill="#2a6496" opacity="0.6"/>
+      <!-- Rose: west point -->
+      <polygon points="14,50 50,54 44,50 50,46" fill="rgba(255,255,255,0.2)"/>
+      <!-- Centre dot -->
+      <circle cx="50" cy="50" r="3" fill="rgba(255,255,255,0.8)"/>
+      <!-- Cardinal labels -->
+      <text x="50" y="7"  text-anchor="middle" font-size="7" font-family="Helvetica Neue,sans-serif" font-weight="600" fill="white" letter-spacing="0">N</text>
+      <text x="93" y="53" text-anchor="middle" font-size="6" font-family="Helvetica Neue,sans-serif" fill="rgba(255,255,255,0.7)">E</text>
+      <text x="50" y="98" text-anchor="middle" font-size="6" font-family="Helvetica Neue,sans-serif" fill="rgba(255,255,255,0.7)">S</text>
+      <text x="7"  y="53" text-anchor="middle" font-size="6" font-family="Helvetica Neue,sans-serif" fill="rgba(255,255,255,0.7)">W</text>
+    </svg>
+  </div>
+
   <script>
     // ═══════════════════════════════════════════════════════
     //  CONFIG
@@ -190,7 +283,9 @@
     const GAMMA_MIN     = -40;   // gyro: left-tilt → left edge
     const GAMMA_MAX     =  40;   // gyro: right-tilt → right edge
     const SMOOTHING     = 0.07;  // 0.04 buttery · 0.15 snappy
-    const SCROLL_HEIGHT = 3000;  // desktop: px of scroll travel = full pan
+    const SCROLL_HEIGHT   = 3000;  // desktop: px of scroll travel = full pan
+    let   COMPASS_START   = 0;     // set from EXIF GPSImgDirection on load; fallback 0
+    const COMPASS_SPAN    = 120;   // degrees swept across the full pan range
     // ═══════════════════════════════════════════════════════
 
     const cylinder   = document.getElementById('cylinder');
@@ -204,20 +299,47 @@
     let currentPct  = 50;
     let targetPct   = 50;
     let latestGamma = 0;
+    let latestAlpha = 0;      // compass heading 0–360, 0=north, clockwise
     let mode        = null;
     let strips      = [];
     let renderedImgW = 0;   // full image width in CSS px at current viewport height
 
-    // ── Load image to get natural dimensions ────────────────
-    const probe = new Image();
-    probe.src = 'IMG_0541_sm.png';
-    probe.onload  = () => init(probe.naturalWidth, probe.naturalHeight);
-    probe.onerror = () => init(3000, 1000); // fallback aspect ratio
+    // ── Load EXIF then image dimensions ────────────────────
+    // exifr reads GPS metadata from the original JPEG in the same folder.
+    // GPSImgDirection is the compass bearing the camera was pointing (0–360°).
+    // We use it to anchor COMPASS_START so the desktop compass matches the scene.
+    // If the tag is absent (e.g. file is a PNG or metadata was stripped),
+    // COMPASS_START stays at its default of 0.
+    const JPEG_SRC = 'IMG_0427.jpg';   // source for both EXIF and display
+
+    async function loadExifThenInit() {
+      // Try to read GPSImgDirection from the JPEG
+      try {
+        const exif = await exifr.parse(JPEG_SRC, ['GPSImgDirection', 'GPSImgDirectionRef']);
+        if (exif && exif.GPSImgDirection != null) {
+          COMPASS_START = exif.GPSImgDirection;
+          console.log('GPSImgDirection from EXIF:', COMPASS_START,
+                      exif.GPSImgDirectionRef ? '(' + exif.GPSImgDirectionRef + ')' : '');
+        } else {
+          console.warn('GPSImgDirection not found in EXIF — using default 0°');
+        }
+      } catch (err) {
+        console.warn('EXIF read failed:', err.message, '— using default 0°');
+      }
+
+      // Load the JPEG for its dimensions (same file used for display)
+      const probe = new Image();
+      probe.src = JPEG_SRC;
+      probe.onload  = () => init(probe.naturalWidth, probe.naturalHeight);
+      probe.onerror = () => init(3000, 1000);
+    }
 
     function init(imgW, imgH) {
       buildCylinder(imgW, imgH);
       detectAndStart();
     }
+
+    loadExifThenInit();
 
     // ── Build strips ────────────────────────────────────────
     function buildCylinder(imgW, imgH) {
@@ -319,6 +441,7 @@
       hud.textContent = 'Scroll to pan';
       hud.style.display = 'block';
       tiltBar.style.display = 'block';
+      document.getElementById('compassWrap').style.display = 'block';
       window.addEventListener('scroll', onScroll, { passive: true });
       rafLoop();
     }
@@ -347,12 +470,14 @@
       hud.textContent = 'Tilt to pan';
       hud.style.display = 'block';
       tiltBar.style.display = 'block';
+      document.getElementById('compassWrap').style.display = 'block';
       window.addEventListener('deviceorientation', onOrientation, true);
       rafLoop();
     }
 
     function onOrientation(e) {
       if (e.gamma !== null) latestGamma = e.gamma;
+      if (e.alpha !== null) latestAlpha = e.alpha;
     }
 
     // ── Shared rAF loop ─────────────────────────────────────
@@ -384,13 +509,28 @@
       cylinder.style.left = panLeft + 'px';
       tiltDot.style.left  = currentPct.toFixed(1) + '%';
 
+      // ── Compass ──
+      // Gyro mode: rotateZ(-alpha) tracks true north from the sensor.
+      // Scroll mode: map currentPct (0–100) across a fixed heading arc so the
+      //   compass sweeps as you pan. COMPASS_START/SPAN set the heading range.
+      //   e.g. start=45 span=120 means scrolling left→right sweeps NE→SE.
+      const compassEl = document.getElementById('compass');
+      let headingDeg;
+      if (mode === 'gyro') {
+        headingDeg = -latestAlpha;
+      } else {
+        // Map 0–100% pan to COMPASS_START → COMPASS_START+COMPASS_SPAN
+        headingDeg = -(COMPASS_START + (currentPct / 100) * COMPASS_SPAN);
+      }
+      compassEl.style.transform = `rotateX(60deg) rotateZ(${headingDeg}deg)`;
+
       requestAnimationFrame(rafLoop);
     }
 
     // ── Rebuild on resize ───────────────────────────────────
     window.addEventListener('resize', () => {
       const p = new Image();
-      p.src = 'IMG_0541_sm.png';
+      p.src = 'IMG_0541.jpg';
       p.onload = () => buildCylinder(p.naturalWidth, p.naturalHeight);
     });
   </script>
