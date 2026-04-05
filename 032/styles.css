@@ -1,0 +1,157 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap');
+body {
+   font-family: "Roboto", sans-serif;
+   margin: 0;
+   background-color: #ccc;
+/*
+   background: url(IMG_0541_sm.png) no-repeat left center fixed; 
+background-size: auto 100%;
+*/
+	height: 2750px;
+}
+
+button {
+   width: 600px;
+   height: 100px;
+   background-color:transparent;
+   color: #fff;
+   border: 2px solid #fff;
+   font-size: 3em;
+   position: fixed;
+   top: 12px;
+   left: 50%;
+   transform: translateX(-50%);
+   z-index: 10
+}
+
+.container {
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+}
+
+.sliding-background {
+/*
+  background: url("IMG_0541_sm.png") repeat-x;
+  background-size: contain;
+  height: 100vh;
+  width: 6249px;
+*/
+/*  animation: slide 20s linear infinite;*/
+	
+/*  from scrolling solution instead*/
+	/* The image used */
+  background-image: url("IMG_0541_sm.png");
+
+  /* Set a specific height */
+  height: 100vh;
+  width: 100vw;
+
+  /* Create the parallax scrolling effect */
+/*  background-attachment: fixed;*/
+  background-position: 0px;
+  background-repeat: no-repeat;
+  background-size: cover;
+	
+  position: fixed;
+  top: 0;
+  left: 0;
+}
+
+@keyframes slide{
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-2083px, 0, 0);
+  }
+}
+
+/*
+.thePic {
+	height: 100vh;
+	border: 2px solid crimson;
+	position: absolute;
+	top: 0;
+	 left: -2100px;
+	left: 0px;
+	z-index: 0
+}
+*/
+
+/*
+.thePic img {
+   height: 100%;
+   width: auto;
+}
+*/
+      
+/*
+.indicatorDot{
+	width: 30px;
+	height: 30px;
+	background-color: #ffab56;
+	border-radius: 50%;
+	position:fixed;
+	left: -15px;
+	top: 40%;
+ }
+*/
+
+/*info display text*/
+#windowSize {
+  display: block;
+  position: fixed;
+  bottom: 10%;
+  left: 30%;
+  z-index: 1;
+  font-size: 3em;
+  color: #fff;
+}
+
+#myMessage {
+  display: block;
+  position: fixed;
+  top: 15%;
+  left: 20%;
+  z-index: 1;
+  font-size: 3em;
+  color: #fff;
+}
+
+#myValues {
+  display: block;
+  position: fixed;
+  top: 25%;
+  left: 20%;
+  z-index: 1;
+  font-size: 3em;
+  color: #fff;
+}
+
+.statusInfo {
+	font-size: 3em;
+	color: firebrick;
+	background-color: rgba(250,250,250,0.8);
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	padding: 1em;
+	transform: translate(-50%,-50%);
+	z-index: 999;
+	border: 2px solid crimson;
+	}
+
+#myStatus {
+	color: steelblue;
+}
+
+#closebtn {
+	position: absolute;
+	right: 50px;
+	bottom: 20px;
+	width: 150px;
+	height: 50px;
+	border: 2px solid crimson;
+	cursor: pointer;
+}   

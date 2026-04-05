@@ -1,32 +1,398 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Thumbnail Grid</title>
-    <link rel="stylesheet" href="../style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Panorama Viewer</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: #000;
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    }
+
+    /* Desktop: tall scroll container */
+    body.desktop-mode { overflow-y: scroll; }
+    #scrollProxy {
+      display: none;
+      position: absolute;
+      top: 0; left: 0;
+      width: 1px;
+    }
+    body.desktop-mode #scrollProxy { display: block; }
+
+    /* ── Cylinder stage ──────────────────────────────────────
+       perspective is set here; all child rotateY values share
+       this single vanishing point, creating the curved illusion.
+    */
+    #stage {
+      position: fixed;
+      inset: 0;
+      perspective: 600px;
+      perspective-origin: 50% 50%;
+      overflow: hidden;
+    }
+
+    /* The cylinder is a flex row of strips wider than the viewport.
+       We translate it left/right to pan. */
+    #cylinder {
+      position: absolute;
+      top: 0;
+      height: 100%;
+      display: flex;
+      
+    }
+
+    /* Each strip shows one vertical slice of the panorama */
+    .strip {
+      flex-shrink: 0;
+      height: 100%;
+      overflow: hidden;        /* clip scaled-up strips at top/bottom */
+      background-image: url('IMG_0541_sm.png');
+      background-repeat: no-repeat;
+      will-change: transform;
+      transform-origin: center center;
+    }
+
+    /* ── Overlay UI ── */
+    #ui {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      padding-bottom: max(40px, env(safe-area-inset-bottom, 40px));
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    /* Permission screen */
+    #permScreen {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.82);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      z-index: 20;
+      padding: 40px;
+      text-align: center;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    #permScreen h1 {
+      color: #fff;
+      font-size: 22px;
+      font-weight: 300;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    #permScreen p {
+      color: rgba(255,255,255,0.55);
+      font-size: 14px;
+      line-height: 1.6;
+      max-width: 280px;
+    }
+    #grantBtn {
+      margin-top: 8px;
+      padding: 14px 36px;
+      background: #fff;
+      color: #000;
+      border: none;
+      border-radius: 50px;
+      font-size: 15px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      pointer-events: all;
+      -webkit-tap-highlight-color: transparent;
+      transition: opacity 0.2s;
+    }
+    #grantBtn:active { opacity: 0.7; }
+
+    /* HUD */
+    #hud {
+      display: none;
+      pointer-events: none;
+      background: rgba(0,0,0,0.45);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-radius: 50px;
+      padding: 10px 22px;
+      color: rgba(255,255,255,0.75);
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    /* Tilt indicator */
+    #tiltBar {
+      display: none;
+      width: min(280px, 70vw);
+      height: 3px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 2px;
+      overflow: visible;
+      position: relative;
+      margin-bottom: 4px;
+    }
+    #tiltBar::before {
+      content: '';
+      position: absolute;
+      left: 50%; top: 50%;
+      transform: translate(-50%, -50%);
+      width: 1px; height: 10px;
+      background: rgba(255,255,255,0.3);
+    }
+    #tiltDot {
+      position: absolute;
+      top: 50%; left: 50%;
+      width: 10px; height: 10px;
+      background: #fff;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 6px rgba(255,255,255,0.6);
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="grid">
-            <a href="BENT/index.html" title='curved panorama'>
-                <img src="../img/noun-panorama-6422517.svg" alt="Thumbnail 1">
-			<p>BENT</p>
-            </a>
-            <a href="SCROLLING/index.html" title='scrolling panorama'>
-                <img src="../img/noun-scroll-7284306.svg" alt="Thumbnail 2">
-			<p>SCROLLING</p>
-            </a>
-            <a href="STRAIGHT/index.html" title='straight panorama'>
-                <img src="../img/noun-panorama-4148557.svg" alt="Thumbnail 3">
-			<p>STRAIGHT</p>
-            </a>
-			<a href="four_flex/index.html" title='capturing panorama'>
-                <img src="../img/noun-smartphone-6768529.png" alt="Thumbnail 3">
-			<p>CAPTURING</p>
-            </a>
-            
-        </div>
-    </div>
+
+  <div id="stage">
+    <div id="cylinder"></div>
+  </div>
+
+  <div id="permScreen">
+    <h1>Panorama Viewer</h1>
+    <p>Tilt your iPhone left and right to pan across the scene.</p>
+    <button id="grantBtn">Enable Gyroscope</button>
+  </div>
+
+  <div id="scrollProxy"></div>
+
+  <div id="ui">
+    <div id="tiltBar"><div id="tiltDot"></div></div>
+    <div id="hud"></div>
+  </div>
+
+  <script>
+    // ═══════════════════════════════════════════════════════
+    //  CONFIG
+    // ═══════════════════════════════════════════════════════
+    const NUM_STRIPS    = 20;    // vertical slices (more = smoother, ~20 is plenty)
+    const CURVE_ANGLE   = 70;    // total arc in degrees — try 50 (subtle) to 90 (dramatic)
+    const GAMMA_MIN     = -40;   // gyro: left-tilt → left edge
+    const GAMMA_MAX     =  40;   // gyro: right-tilt → right edge
+    const SMOOTHING     = 0.07;  // 0.04 buttery · 0.15 snappy
+    const SCROLL_HEIGHT = 3000;  // desktop: px of scroll travel = full pan
+    // ═══════════════════════════════════════════════════════
+
+    const cylinder   = document.getElementById('cylinder');
+    const permScreen = document.getElementById('permScreen');
+    const grantBtn   = document.getElementById('grantBtn');
+    const hud        = document.getElementById('hud');
+    const tiltBar    = document.getElementById('tiltBar');
+    const tiltDot    = document.getElementById('tiltDot');
+    const scrollProxy = document.getElementById('scrollProxy');
+
+    let currentPct  = 50;
+    let targetPct   = 50;
+    let latestGamma = 0;
+    let mode        = null;
+    let strips      = [];
+    let renderedImgW = 0;   // full image width in CSS px at current viewport height
+
+    // ── Load image to get natural dimensions ────────────────
+    const probe = new Image();
+    probe.src = 'IMG_0541_sm.png';
+    probe.onload  = () => init(probe.naturalWidth, probe.naturalHeight);
+    probe.onerror = () => init(3000, 1000); // fallback aspect ratio
+
+    function init(imgW, imgH) {
+      buildCylinder(imgW, imgH);
+      detectAndStart();
+    }
+
+    // ── Build strips ────────────────────────────────────────
+    function buildCylinder(imgW, imgH) {
+      cylinder.innerHTML = '';
+      strips = [];
+
+      const vH = window.innerHeight;
+      const vW = window.innerWidth;
+
+      // Scale the image so its height fills the viewport
+      const scale = vH / imgH;
+      renderedImgW = imgW * scale;
+
+      const stripW = renderedImgW / NUM_STRIPS;
+
+      // Position cylinder so it starts centred at 50% pan
+      cylinder.style.width  = renderedImgW + 'px';
+      cylinder.style.height = '100%';
+      cylinder.style.left   = ((vW - renderedImgW) / 2) + 'px';
+
+      const halfAngle = CURVE_ANGLE / 2;
+
+      for (let i = 0; i < NUM_STRIPS; i++) {
+        const div = document.createElement('div');
+        div.className = 'strip';
+        div.style.width = stripW + 'px';
+
+        // Show the correct horizontal slice of the image inside this strip.
+        div.style.backgroundSize      = renderedImgW + 'px ' + vH + 'px';
+        div.style.backgroundPositionX = (-i * stripW) + 'px';
+        div.style.backgroundPositionY = 'center';
+
+        // t: -1 (left edge) → 0 (centre) → +1 (right edge)
+        const t = (i / (NUM_STRIPS - 1)) * 2 - 1;
+        const angle = t * halfAngle;
+        const angleRad = angle * Math.PI / 180;
+
+        // GAP FIX: scaleX by 1/cos(angle) compensates for perspective foreshortening.
+        // OVERLAP adds a small extra bleed on each side to cover sub-pixel gaps
+        // where the clip-path edge and transform edge don't quite meet.
+        // Increase OVERLAP (try 1.005–1.015) if faint lines persist.
+        const OVERLAP = 1.006;
+        const scaleX = (1 / Math.cos(angleRad)) * OVERLAP;
+
+        div.style.transform = `rotateY(${angle}deg) scaleX(${scaleX})`;
+
+        // VERTICAL BOW via clip-path trapezoid:
+        // Each strip is clipped to a trapezoid whose four corners follow the cosine
+        // bow curve evaluated at the strip's left and right x-positions.
+        // This means adjacent strips share the same curve value at their shared edge,
+        // so the boundary is seamless — no staircase.
+        const edgeCos = Math.cos(halfAngle * Math.PI / 180);
+
+        // bowMargin(a): how many % to cut from top (and bottom) at angle a.
+        // 0% at the outermost edges (full height), max at centre (most clipped).
+        function bowMargin(a) {
+          const clipFrac = edgeCos / Math.cos(a * Math.PI / 180);
+          return ((1 - clipFrac) / 2) * 100;
+        }
+
+        // t for the left edge of this strip = current t
+        // t for the right edge of this strip = next strip's t
+        const tRight     = (Math.min(i + 1, NUM_STRIPS - 1) / (NUM_STRIPS - 1)) * 2 - 1;
+        const angleRight = tRight * halfAngle;
+
+        const mL = bowMargin(angle);
+        const mR = bowMargin(angleRight);
+
+        // polygon: top-left, top-right, bottom-right, bottom-left
+        div.style.clipPath = [
+          `polygon(`,
+          `0% ${mL.toFixed(3)}%,`,
+          `100% ${mR.toFixed(3)}%,`,
+          `100% ${(100 - mR).toFixed(3)}%,`,
+          `0% ${(100 - mL).toFixed(3)}%)`
+        ].join(' ');
+
+        cylinder.appendChild(div);
+        strips.push(div);
+      }
+    }
+
+    // ── Detect mobile vs desktop ────────────────────────────
+    function detectAndStart() {
+      const isMobile = (
+        typeof DeviceOrientationEvent !== 'undefined' &&
+        /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+      );
+      if (!isMobile) startScrollMode();
+      // else: wait for button tap
+    }
+
+    // ── SCROLL MODE ─────────────────────────────────────────
+    function startScrollMode() {
+      mode = 'scroll';
+      permScreen.style.display = 'none';
+      document.body.classList.add('desktop-mode');
+      scrollProxy.style.height = (SCROLL_HEIGHT + window.innerHeight) + 'px';
+      hud.textContent = 'Scroll to pan';
+      hud.style.display = 'block';
+      tiltBar.style.display = 'block';
+      window.addEventListener('scroll', onScroll, { passive: true });
+      rafLoop();
+    }
+
+    function onScroll() {
+      targetPct = Math.min(100, (window.scrollY / SCROLL_HEIGHT) * 100);
+    }
+
+    // ── GYRO MODE ───────────────────────────────────────────
+    grantBtn.addEventListener('click', () => {
+      if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+        DeviceOrientationEvent.requestPermission()
+          .then(state => {
+            if (state === 'granted') startGyroMode();
+            else alert('Permission denied. Allow motion access in Settings › Safari.');
+          })
+          .catch(console.error);
+      } else {
+        startGyroMode();
+      }
+    });
+
+    function startGyroMode() {
+      mode = 'gyro';
+      permScreen.style.display = 'none';
+      hud.textContent = 'Tilt to pan';
+      hud.style.display = 'block';
+      tiltBar.style.display = 'block';
+      window.addEventListener('deviceorientation', onOrientation, true);
+      rafLoop();
+    }
+
+    function onOrientation(e) {
+      if (e.gamma !== null) latestGamma = e.gamma;
+    }
+
+    // ── Shared rAF loop ─────────────────────────────────────
+    /*
+      Panning = translating the entire #cylinder left or right.
+
+      At currentPct = 0  → left edge of image at left edge of viewport
+      At currentPct = 50 → image centred (default)
+      At currentPct = 100 → right edge of image at right edge of viewport
+
+      maxShift = renderedImgW - viewportW  (pixels the cylinder can travel)
+      panLeft  = baseLeft + (0.5 - currentPct/100) * maxShift
+        where baseLeft = (vW - renderedImgW) / 2  (centred starting position)
+    */
+    function rafLoop() {
+      if (mode === 'gyro') {
+        const clamped = Math.max(GAMMA_MIN, Math.min(GAMMA_MAX, latestGamma));
+        targetPct = ((clamped - GAMMA_MIN) / (GAMMA_MAX - GAMMA_MIN)) * 100;
+      }
+
+      currentPct += (targetPct - currentPct) * SMOOTHING;
+
+      const vW      = window.innerWidth;
+      const cylW    = renderedImgW;
+      const maxShift = Math.max(0, cylW - vW);
+      const baseLeft = (vW - cylW) / 2;
+      const panLeft  = baseLeft + (0.5 - currentPct / 100) * maxShift;
+
+      cylinder.style.left = panLeft + 'px';
+      tiltDot.style.left  = currentPct.toFixed(1) + '%';
+
+      requestAnimationFrame(rafLoop);
+    }
+
+    // ── Rebuild on resize ───────────────────────────────────
+    window.addEventListener('resize', () => {
+      const p = new Image();
+      p.src = 'IMG_0541_sm.png';
+      p.onload = () => buildCylinder(p.naturalWidth, p.naturalHeight);
+    });
+  </script>
 </body>
 </html>
