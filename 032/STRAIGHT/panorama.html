@@ -10,9 +10,22 @@
     html, body {
       width: 100%;
       height: 100%;
-      overflow: hidden;
       background: #000;
       font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    }
+
+    /* Desktop: tall scroll container to give wheel/trackpad something to scroll */
+    body.desktop-mode {
+      overflow-y: scroll;
+    }
+    #scrollProxy {
+      display: none;
+      position: absolute;
+      top: 0; left: 0;
+      width: 1px;
+    }
+    body.desktop-mode #scrollProxy {
+      display: block;
     }
 
     /* ── Panorama image ── */
@@ -170,10 +183,8 @@
     <button id="grantBtn">Enable Gyroscope</button>
   </div>
 
-  <!-- Desktop fallback -->
-  <div id="desktopNotice">
-    Open this page on an iPhone<br>to use the gyroscope viewer.
-  </div>
+  <!-- Scroll proxy: tall invisible element that enables scrolling on desktop -->
+  <div id="scrollProxy"></div>
 
   <!-- HUD (visible after permission) -->
   <div id="ui">
@@ -186,89 +197,103 @@
     const GAMMA_MIN   = -40;   // left-tilt angle → left edge of panorama
     const GAMMA_MAX   =  40;   // right-tilt angle → right edge
     const SMOOTHING   = 0.07;  // 0.04 (buttery) → 0.15 (snappier)
+    const SCROLL_HEIGHT = 3000; // px of scroll travel mapped to full pan
     // ────────────────────────────────────────────────────────
 
-    const panorama  = document.getElementById('panorama');
+    const panorama   = document.getElementById('panorama');
     const permScreen = document.getElementById('permScreen');
-    const grantBtn  = document.getElementById('grantBtn');
-    const hud       = document.getElementById('hud');
-    const tiltBar   = document.getElementById('tiltBar');
-    const tiltDot   = document.getElementById('tiltDot');
-    const desktopNotice = document.getElementById('desktopNotice');
+    const grantBtn   = document.getElementById('grantBtn');
+    const hud        = document.getElementById('hud');
+    const tiltBar    = document.getElementById('tiltBar');
+    const tiltDot    = document.getElementById('tiltDot');
+    const scrollProxy = document.getElementById('scrollProxy');
 
-    let currentPct = 50; // start centered
-    let rafId = null;
+    let currentPct  = 50;
+    let targetPct   = 50;
     let latestGamma = 0;
-    let listening = false;
+    let mode        = null; // 'gyro' | 'scroll'
 
-    // ── Check for gyroscope support ─────────────────────────
-    if (typeof DeviceOrientationEvent === 'undefined') {
-      permScreen.style.display = 'none';
-      desktopNotice.style.display = 'flex';
+    // ── Detect mobile (has gyro API) vs desktop ─────────────
+    const isMobile = (
+      typeof DeviceOrientationEvent !== 'undefined' &&
+      /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+    );
+
+    if (isMobile) {
+      // Show permission screen as normal
+    } else {
+      startScrollMode();
     }
 
-    // ── Permission button ───────────────────────────────────
-    grantBtn.addEventListener('click', () => {
-      if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-        // iOS 13+
-        DeviceOrientationEvent.requestPermission()
-          .then(state => {
-            if (state === 'granted') startListening();
-            else alert('Permission denied. Please allow motion access in Settings > Safari.');
-          })
-          .catch(err => console.error(err));
-      } else if (typeof DeviceOrientationEvent !== 'undefined') {
-        // Android / older iOS — no permission dialog needed
-        startListening();
-      } else {
-        permScreen.style.display = 'none';
-        desktopNotice.style.display = 'flex';
-      }
-    });
-
-    // ── Start sensor + animation loop ───────────────────────
-    function startListening() {
+    // ── SCROLL MODE (desktop fallback) ──────────────────────
+    function startScrollMode() {
+      mode = 'scroll';
       permScreen.style.display = 'none';
+      document.body.classList.add('desktop-mode');
+
+      // Make the proxy tall enough to give smooth scroll travel
+      scrollProxy.style.height = (SCROLL_HEIGHT + window.innerHeight) + 'px';
+
       hud.style.display = 'block';
+      hud.textContent   = 'Scroll to pan';
       tiltBar.style.display = 'block';
 
-      window.addEventListener('deviceorientation', onOrientation, true);
-      listening = true;
+      window.addEventListener('scroll', onScroll, { passive: true });
       rafLoop();
     }
 
-    // ── Sensor handler: just capture latest gamma ───────────
+    function onScroll() {
+      // Map scroll position 0→SCROLL_HEIGHT to 0→100%
+      const scrolled = window.scrollY;
+      targetPct = Math.min(100, (scrolled / SCROLL_HEIGHT) * 100);
+    }
+
+    // ── GYRO MODE (mobile) ───────────────────────────────────
+    grantBtn.addEventListener('click', () => {
+      if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+        DeviceOrientationEvent.requestPermission()
+          .then(state => {
+            if (state === 'granted') startGyroMode();
+            else alert('Permission denied. Allow motion access in Settings › Safari.');
+          })
+          .catch(console.error);
+      } else {
+        startGyroMode();
+      }
+    });
+
+    function startGyroMode() {
+      mode = 'gyro';
+      permScreen.style.display = 'none';
+      hud.style.display = 'block';
+      hud.textContent = 'Tilt to pan';
+      tiltBar.style.display = 'block';
+
+      window.addEventListener('deviceorientation', onOrientation, true);
+      rafLoop();
+    }
+
     function onOrientation(e) {
       if (e.gamma === null) return;
       latestGamma = e.gamma;
     }
 
-    // ── rAF loop: smooth + apply ─────────────────────────────
+    // ── Shared rAF loop ──────────────────────────────────────
     function rafLoop() {
-      // Adjust gamma for landscape if needed
-      let gamma = latestGamma;
-
-      // If phone is landscape, beta and gamma swap — detect and compensate
-      const angle = (screen.orientation && screen.orientation.angle) || window.orientation || 0;
-      if (Math.abs(angle) === 90) {
-        // In landscape, use beta instead (which becomes the left-right axis)
-        // For simplicity we just note it; landscape support can be added later
+      if (mode === 'gyro') {
+        const clamped = Math.max(GAMMA_MIN, Math.min(GAMMA_MAX, latestGamma));
+        targetPct = ((clamped - GAMMA_MIN) / (GAMMA_MAX - GAMMA_MIN)) * 100;
       }
+      // (scroll mode updates targetPct directly from onScroll)
 
-      // 1. Map gamma → 0–100%
-      const clamped = Math.max(GAMMA_MIN, Math.min(GAMMA_MAX, gamma));
-      const targetPct = ((clamped - GAMMA_MIN) / (GAMMA_MAX - GAMMA_MIN)) * 100;
-
-      // 2. Exponential smooth
+      // Smooth toward target
       currentPct += (targetPct - currentPct) * SMOOTHING;
 
-      // 3. Apply to image via object-position
+      // Apply
       panorama.style.objectPosition = `${currentPct.toFixed(2)}% center`;
-
-      // 4. Update tilt dot indicator
       tiltDot.style.left = `${currentPct.toFixed(1)}%`;
 
-      rafId = requestAnimationFrame(rafLoop);
+      requestAnimationFrame(rafLoop);
     }
   </script>
 </body>
