@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Panorama Viewer</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    }
+
+    /* ── Panorama image ── */
+    #panorama {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+      object-position: 50% center;
+      will-change: object-position;
+      transition: object-position 0.05s linear; /* fallback smoothing */
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* ── Overlay UI ── */
+    #ui {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      padding-bottom: max(40px, env(safe-area-inset-bottom, 40px));
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    /* Permission screen (shown before grant) */
+    #permScreen {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.82);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      z-index: 20;
+      padding: 40px;
+      text-align: center;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    #permScreen h1 {
+      color: #fff;
+      font-size: 22px;
+      font-weight: 300;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    #permScreen p {
+      color: rgba(255,255,255,0.55);
+      font-size: 14px;
+      line-height: 1.6;
+      max-width: 280px;
+    }
+
+    #grantBtn {
+      margin-top: 8px;
+      padding: 14px 36px;
+      background: #fff;
+      color: #000;
+      border: none;
+      border-radius: 50px;
+      font-size: 15px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      pointer-events: all;
+      -webkit-tap-highlight-color: transparent;
+      transition: opacity 0.2s;
+    }
+    #grantBtn:active { opacity: 0.7; }
+
+    /* Non-mobile notice */
+    #desktopNotice {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #111;
+      color: rgba(255,255,255,0.6);
+      font-size: 15px;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+      z-index: 20;
+      line-height: 1.7;
+    }
+
+    /* HUD bar */
+    #hud {
+      display: none; /* shown after permission granted */
+      pointer-events: none;
+      background: rgba(0,0,0,0.45);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-radius: 50px;
+      padding: 10px 22px;
+      color: rgba(255,255,255,0.75);
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    /* Tilt indicator bar */
+    #tiltBar {
+      display: none;
+      width: min(280px, 70vw);
+      height: 3px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 2px;
+      overflow: visible;
+      position: relative;
+      margin-bottom: 4px;
+    }
+    #tiltBar::before {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 1px;
+      height: 10px;
+      background: rgba(255,255,255,0.3);
+    }
+    #tiltDot {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 10px;
+      height: 10px;
+      background: #fff;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      transition: left 0.05s linear;
+      box-shadow: 0 0 6px rgba(255,255,255,0.6);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- The panorama -->
+  <img id="panorama" src="IMG_0541_sm.png" alt="Panorama">
+
+  <!-- Permission overlay -->
+  <div id="permScreen">
+    <h1>Panorama Viewer</h1>
+    <p>Tilt your iPhone left and right to pan across the scene.</p>
+    <button id="grantBtn">Enable Gyroscope</button>
+  </div>
+
+  <!-- Desktop fallback -->
+  <div id="desktopNotice">
+    Open this page on an iPhone<br>to use the gyroscope viewer.
+  </div>
+
+  <!-- HUD (visible after permission) -->
+  <div id="ui">
+    <div id="tiltBar"><div id="tiltDot"></div></div>
+    <div id="hud">Tilt to pan</div>
+  </div>
+
+  <script>
+    // ── Config ──────────────────────────────────────────────
+    const GAMMA_MIN   = -40;   // left-tilt angle → left edge of panorama
+    const GAMMA_MAX   =  40;   // right-tilt angle → right edge
+    const SMOOTHING   = 0.07;  // 0.04 (buttery) → 0.15 (snappier)
+    // ────────────────────────────────────────────────────────
+
+    const panorama  = document.getElementById('panorama');
+    const permScreen = document.getElementById('permScreen');
+    const grantBtn  = document.getElementById('grantBtn');
+    const hud       = document.getElementById('hud');
+    const tiltBar   = document.getElementById('tiltBar');
+    const tiltDot   = document.getElementById('tiltDot');
+    const desktopNotice = document.getElementById('desktopNotice');
+
+    let currentPct = 50; // start centered
+    let rafId = null;
+    let latestGamma = 0;
+    let listening = false;
+
+    // ── Check for gyroscope support ─────────────────────────
+    if (typeof DeviceOrientationEvent === 'undefined') {
+      permScreen.style.display = 'none';
+      desktopNotice.style.display = 'flex';
+    }
+
+    // ── Permission button ───────────────────────────────────
+    grantBtn.addEventListener('click', () => {
+      if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+        // iOS 13+
+        DeviceOrientationEvent.requestPermission()
+          .then(state => {
+            if (state === 'granted') startListening();
+            else alert('Permission denied. Please allow motion access in Settings > Safari.');
+          })
+          .catch(err => console.error(err));
+      } else if (typeof DeviceOrientationEvent !== 'undefined') {
+        // Android / older iOS — no permission dialog needed
+        startListening();
+      } else {
+        permScreen.style.display = 'none';
+        desktopNotice.style.display = 'flex';
+      }
+    });
+
+    // ── Start sensor + animation loop ───────────────────────
+    function startListening() {
+      permScreen.style.display = 'none';
+      hud.style.display = 'block';
+      tiltBar.style.display = 'block';
+
+      window.addEventListener('deviceorientation', onOrientation, true);
+      listening = true;
+      rafLoop();
+    }
+
+    // ── Sensor handler: just capture latest gamma ───────────
+    function onOrientation(e) {
+      if (e.gamma === null) return;
+      latestGamma = e.gamma;
+    }
+
+    // ── rAF loop: smooth + apply ─────────────────────────────
+    function rafLoop() {
+      // Adjust gamma for landscape if needed
+      let gamma = latestGamma;
+
+      // If phone is landscape, beta and gamma swap — detect and compensate
+      const angle = (screen.orientation && screen.orientation.angle) || window.orientation || 0;
+      if (Math.abs(angle) === 90) {
+        // In landscape, use beta instead (which becomes the left-right axis)
+        // For simplicity we just note it; landscape support can be added later
+      }
+
+      // 1. Map gamma → 0–100%
+      const clamped = Math.max(GAMMA_MIN, Math.min(GAMMA_MAX, gamma));
+      const targetPct = ((clamped - GAMMA_MIN) / (GAMMA_MAX - GAMMA_MIN)) * 100;
+
+      // 2. Exponential smooth
+      currentPct += (targetPct - currentPct) * SMOOTHING;
+
+      // 3. Apply to image via object-position
+      panorama.style.objectPosition = `${currentPct.toFixed(2)}% center`;
+
+      // 4. Update tilt dot indicator
+      tiltDot.style.left = `${currentPct.toFixed(1)}%`;
+
+      rafId = requestAnimationFrame(rafLoop);
+    }
+  </script>
+</body>
+</html>

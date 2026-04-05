@@ -1,4 +1,4 @@
-// chatGPT method
+
 function requestDeviceOrientationPermission() {
     if (typeof DeviceOrientationEvent.requestPermission === 'function') {
         DeviceOrientationEvent.requestPermission()
