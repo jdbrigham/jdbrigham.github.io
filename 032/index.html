@@ -624,7 +624,7 @@
       // to get the left-edge heading, then interpolate across the pan range.
       const panHeading = (COMPASS_START - COMPASS_SPAN / 2 + (currentPct / 100) * COMPASS_SPAN + 360) % 360;
       document.getElementById('compass').style.transform =
-        `rotateX(60deg) rotateZ(${-panHeading}deg)`;
+        `rotateX(60deg) rotateZ(${panHeading}deg)`;
 
       // Update heading readout
       const headingEl  = document.getElementById('headingDisplay');
