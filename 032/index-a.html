@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Panorama Viewer</title>
+  <script src="https://unpkg.com/exifr@7/dist/full.umd.cjs"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: #000;
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    }
+
+    /* Desktop: tall scroll container */
+    body.desktop-mode { overflow-y: scroll; }
+    #scrollProxy {
+      display: none;
+      position: absolute;
+      top: 0; left: 0;
+      width: 1px;
+    }
+    body.desktop-mode #scrollProxy { display: block; }
+
+    /* ── Cylinder stage ──────────────────────────────────────
+       perspective is set here; all child rotateY values share
+       this single vanishing point, creating the curved illusion.
+    */
+    #stage {
+      position: fixed;
+      inset: 0;
+      perspective: 600px;
+      perspective-origin: 50% 50%;
+      overflow: hidden;
+    }
+
+    /* The cylinder is a flex row of strips wider than the viewport.
+       We translate it left/right to pan. */
+    #cylinder {
+      position: absolute;
+      top: 0;
+      height: 100%;
+      display: flex;
+      
+    }
+
+    /* Each strip shows one vertical slice of the panorama */
+    .strip {
+      flex-shrink: 0;
+      height: 100%;
+      overflow: hidden;        /* clip scaled-up strips at top/bottom */
+      background-image: url('IMG_0541.jpg');
+      background-repeat: no-repeat;
+      will-change: transform;
+      transform-origin: center center;
+    }
+
+    /* ── Overlay UI ── */
+    #ui {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      padding-bottom: max(40px, env(safe-area-inset-bottom, 40px));
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    /* Permission screen */
+    #permScreen {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.82);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      z-index: 20;
+      padding: 40px;
+      text-align: center;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    #permScreen h1 {
+      color: #fff;
+      font-size: 22px;
+      font-weight: 300;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    #permScreen p {
+      color: rgba(255,255,255,0.55);
+      font-size: 14px;
+      line-height: 1.6;
+      max-width: 280px;
+    }
+    #grantBtn {
+      margin-top: 8px;
+      padding: 14px 36px;
+      background: #fff;
+      color: #000;
+      border: none;
+      border-radius: 50px;
+      font-size: 15px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      pointer-events: all;
+      -webkit-tap-highlight-color: transparent;
+      transition: opacity 0.2s;
+    }
+    #grantBtn:active { opacity: 0.7; }
+
+    /* HUD */
+    #hud {
+      display: none;
+      pointer-events: none;
+      background: rgba(0,0,0,0.45);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-radius: 50px;
+      padding: 10px 22px;
+      color: rgba(255,255,255,0.75);
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    /* Tilt indicator */
+    #tiltBar {
+      display: none;
+      width: min(280px, 70vw);
+      height: 3px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 2px;
+      overflow: visible;
+      position: relative;
+      margin-bottom: 4px;
+    }
+    #tiltBar::before {
+      content: '';
+      position: absolute;
+      left: 50%; top: 50%;
+      transform: translate(-50%, -50%);
+      width: 1px; height: 10px;
+      background: rgba(255,255,255,0.3);
+    }
+    #tiltDot {
+      position: absolute;
+      top: 50%; left: 50%;
+      width: 10px; height: 10px;
+      background: #fff;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 6px rgba(255,255,255,0.6);
+    }
+
+    /* ── Compass ── */
+    #compassWrap {
+      display: none;               /* shown after gyro permission */
+      position: fixed;
+      bottom: max(60px, env(safe-area-inset-bottom, 60px));
+      right: 24px;
+      width: 110px;
+      height: 110px;
+      z-index: 15;
+      pointer-events: none;
+      /* 3D context for the flat-on-ground illusion */
+      perspective: 300px;
+      perspective-origin: 50% 50%;
+    }
+    #compass {
+      width: 100%;
+      height: 100%;
+      /* rotateX tilts it away — looks like it's lying flat on the ground.
+         rotateZ is updated every frame by JS to point north. */
+      transform: rotateX(60deg) rotateZ(0deg);
+      transform-origin: center center;
+      will-change: transform;
+    }
+
+    /* ── Heading display ── */
+    #headingDisplay {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 15;
+      text-align: center;
+      pointer-events: none;
+      animation: headingFadeOut 3s ease-out forwards;
+    }
+    #headingDisplay .deg {
+      font-size: clamp(64px, 15vw, 120px);
+      font-weight: 100;
+      color: #fff;
+      letter-spacing: -0.02em;
+      line-height: 1;
+      text-shadow: 0 2px 40px rgba(0,0,0,0.6);
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    }
+    #headingDisplay .label {
+      font-size: clamp(13px, 3vw, 20px);
+      font-weight: 300;
+      color: rgba(255,255,255,0.55);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-top: 6px;
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    }
+    @keyframes headingFadeOut {
+      0%   { opacity: 1; }
+      60%  { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    /* ── Curve toggle button ── */
+    #curveBtn {
+      display: none;
+      position: fixed;
+      top: max(18px, env(safe-area-inset-top, 18px));
+      right: 18px;
+      z-index: 15;
+      background: rgba(0,0,0,0.45);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 50px;
+      padding: 8px 16px;
+      color: rgba(255,255,255,0.85);
+      font-size: 11px;
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: background 0.2s, color 0.2s;
+    }
+    #curveBtn:active { background: rgba(255,255,255,0.15); }
+    #curveBtn.flat  { color: rgba(255,255,255,0.4); }
+  </style>
+</head>
+<body>
+
+  <div id="stage">
+    <div id="cylinder"></div>
+  </div>
+
+  <div id="permScreen">
+    <h1>Panorama Viewer</h1>
+    <p>Tilt your iPhone left and right to pan across the scene.</p>
+    <button id="grantBtn">Enable Gyroscope</button>
+  </div>
+
+  <div id="scrollProxy"></div>
+  <button id="curveBtn">Curved</button>
+
+  <!-- Heading display: shown briefly when pan changes -->
+  <div id="headingDisplay">
+    <div class="deg" id="headingDeg">--°</div>
+    <div class="label" id="headingLabel">--</div>
+  </div>
+
+  <div id="ui">
+    <div id="tiltBar"><div id="tiltDot"></div></div>
+    <div id="hud"></div>
+  </div>
+
+  <!-- Compass overlay: SVG drawn inline, rotated by JS -->
+  <div id="compassWrap">
+    <svg id="compass" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <!-- Outer ring -->
+      <circle cx="50" cy="50" r="47" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="1"/>
+      <!-- Inner ring -->
+      <circle cx="50" cy="50" r="40" fill="rgba(0,0,0,0.35)" stroke="rgba(255,255,255,0.12)" stroke-width="0.75"/>
+      <!-- Tick marks: 36 ticks every 10° -->
+      <g stroke="rgba(255,255,255,0.3)" stroke-width="0.75">
+        <line x1="50" y1="10" x2="50" y2="14"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(10,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(20,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(30,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(40,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(50,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(60,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(70,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(80,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(100,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(110,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(120,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(130,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(140,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(150,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(160,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(170,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(190,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(200,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(210,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(220,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(230,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(240,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(250,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(260,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(280,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(290,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(300,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(310,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(320,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(330,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(340,50,50)"/>
+        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(350,50,50)"/>
+      </g>
+      <!-- Cardinal longer ticks -->
+      <g stroke="rgba(255,255,255,0.6)" stroke-width="1.2">
+        <line x1="50" y1="8"  x2="50" y2="16"/>                          <!-- N -->
+        <line x1="50" y1="8"  x2="50" y2="16" transform="rotate(90,50,50)"/>  <!-- E -->
+        <line x1="50" y1="8"  x2="50" y2="16" transform="rotate(180,50,50)"/> <!-- S -->
+        <line x1="50" y1="8"  x2="50" y2="16" transform="rotate(270,50,50)"/> <!-- W -->
+      </g>
+      <!-- Rose: north point (dark blue/teal, filled) -->
+      <polygon points="50,14 54,50 50,44 46,50" fill="#2a6496"/>
+      <!-- Rose: south point (lighter) -->
+      <polygon points="50,86 54,50 50,56 46,50" fill="rgba(255,255,255,0.35)"/>
+      <!-- Rose: east point -->
+      <polygon points="86,50 50,46 56,50 50,54" fill="#2a6496" opacity="0.6"/>
+      <!-- Rose: west point -->
+      <polygon points="14,50 50,54 44,50 50,46" fill="rgba(255,255,255,0.2)"/>
+      <!-- Centre dot -->
+      <circle cx="50" cy="50" r="3" fill="rgba(255,255,255,0.8)"/>
+      <!-- Cardinal labels -->
+      <text x="50" y="7"  text-anchor="middle" font-size="7" font-family="Helvetica Neue,sans-serif" font-weight="600" fill="white" letter-spacing="0">N</text>
+      <text x="93" y="53" text-anchor="middle" font-size="6" font-family="Helvetica Neue,sans-serif" fill="rgba(255,255,255,0.7)">E</text>
+      <text x="50" y="98" text-anchor="middle" font-size="6" font-family="Helvetica Neue,sans-serif" fill="rgba(255,255,255,0.7)">S</text>
+      <text x="7"  y="53" text-anchor="middle" font-size="6" font-family="Helvetica Neue,sans-serif" fill="rgba(255,255,255,0.7)">W</text>
+    </svg>
+  </div>
+
+  <script>
+    // ═══════════════════════════════════════════════════════
+    //  CONFIG
+    // ═══════════════════════════════════════════════════════
+    const NUM_STRIPS    = 20;    // vertical slices (more = smoother, ~20 is plenty)
+    const CURVE_ANGLE   = 70;    // total arc in degrees — try 50 (subtle) to 90 (dramatic)
+    const GAMMA_MIN     = -40;   // gyro: left-tilt → left edge
+    const GAMMA_MAX     =  40;   // gyro: right-tilt → right edge
+    const SMOOTHING     = 0.07;  // 0.04 buttery · 0.15 snappy
+    const SCROLL_HEIGHT   = 3000;  // desktop: px of scroll travel = full pan
+    let   COMPASS_START   = 0;     // set from EXIF GPSImgDirection on load; fallback 0
+    const COMPASS_SPAN    = 120;   // degrees swept across the full pan range
+    const COMPASS_FLIP    = true;  // flip 180° — GPSImgDirection sometimes points toward
+                                   // the subject rather than the camera direction; toggle
+                                   // this if the compass is 180° off
+    // ═══════════════════════════════════════════════════════
+
+    const cylinder   = document.getElementById('cylinder');
+    const permScreen = document.getElementById('permScreen');
+    const grantBtn   = document.getElementById('grantBtn');
+    const hud        = document.getElementById('hud');
+    const tiltBar    = document.getElementById('tiltBar');
+    const tiltDot    = document.getElementById('tiltDot');
+    const scrollProxy = document.getElementById('scrollProxy');
+
+    let currentPct  = 50;
+    let targetPct   = 50;
+    let latestGamma = 0;
+    let latestAlpha = 0;      // compass heading 0–360, 0=north, clockwise
+    let mode        = null;
+    let _lastPctForHeading = 50;  // tracks pan position for heading display trigger
+    let strips      = [];
+    let renderedImgW = 0;   // full image width in CSS px at current viewport height
+
+    // Curve animation state
+    let curveOn          = true;          // toggle state
+    let currentCurveAngle = CURVE_ANGLE; // animated value, lerps between 0 and CURVE_ANGLE
+    const CURVE_SMOOTHING = 0.06;        // lerp speed for the curve transition
+
+    // ── Load EXIF then image dimensions ────────────────────
+    // exifr reads GPS metadata from the original JPEG in the same folder.
+    // GPSImgDirection is the compass bearing the camera was pointing (0–360°).
+    // We use it to anchor COMPASS_START so the desktop compass matches the scene.
+    // If the tag is absent (e.g. file is a PNG or metadata was stripped),
+    // COMPASS_START stays at its default of 0.
+    const JPEG_SRC = 'IMG_0541.jpg';   // source for both EXIF and display
+
+    async function loadExifThenInit() {
+      // Try to read GPSImgDirection from the JPEG
+      try {
+        const exif = await exifr.parse(JPEG_SRC, ['GPSImgDirection', 'GPSImgDirectionRef']);
+        if (exif && exif.GPSImgDirection != null) {
+          const raw = exif.GPSImgDirection;
+          COMPASS_START = COMPASS_FLIP ? (raw + 180) % 360 : raw;
+          console.log('GPSImgDirection from EXIF:', raw,
+                      exif.GPSImgDirectionRef ? '(' + exif.GPSImgDirectionRef + ')' : '',
+                      COMPASS_FLIP ? '→ flipped to ' + COMPASS_START.toFixed(1) + '°' : '');
+        } else {
+          console.warn('GPSImgDirection not found in EXIF — using default 0°');
+        }
+      } catch (err) {
+        console.warn('EXIF read failed:', err.message, '— using default 0°');
+      }
+
+      // Load the JPEG for its dimensions (same file used for display)
+      const probe = new Image();
+      probe.src = JPEG_SRC;
+      probe.onload  = () => init(probe.naturalWidth, probe.naturalHeight);
+      probe.onerror = () => init(3000, 1000);
+    }
+
+    function init(imgW, imgH) {
+      buildCylinder(imgW, imgH);
+      detectAndStart();
+    }
+
+    loadExifThenInit();
+
+    // ── Build strips ────────────────────────────────────────
+    function buildCylinder(imgW, imgH) {
+      cylinder.innerHTML = '';
+      strips = [];
+
+      const vH = window.innerHeight;
+      const vW = window.innerWidth;
+
+      // Scale the image so its height fills the viewport
+      const scale = vH / imgH;
+      renderedImgW = imgW * scale;
+
+      const stripW = renderedImgW / NUM_STRIPS;
+
+      // Position cylinder so it starts centred at 50% pan
+      cylinder.style.width  = renderedImgW + 'px';
+      cylinder.style.height = '100%';
+      cylinder.style.left   = ((vW - renderedImgW) / 2) + 'px';
+
+      const halfAngle = CURVE_ANGLE / 2;
+
+      for (let i = 0; i < NUM_STRIPS; i++) {
+        const div = document.createElement('div');
+        div.className = 'strip';
+        div.style.width = stripW + 'px';
+
+        // Background slice — static, never changes
+        div.style.backgroundSize      = renderedImgW + 'px ' + vH + 'px';
+        div.style.backgroundPositionX = (-i * stripW) + 'px';
+        div.style.backgroundPositionY = 'center';
+
+        // Store normalised position for use in applyStripCurve each frame
+        div._t = (i / (NUM_STRIPS - 1)) * 2 - 1;  // -1 … +1
+        div._tRight = (Math.min(i + 1, NUM_STRIPS - 1) / (NUM_STRIPS - 1)) * 2 - 1;
+
+        cylinder.appendChild(div);
+        strips.push(div);
+      }
+
+      // Apply initial curve immediately (no animation on first build)
+      currentCurveAngle = curveOn ? CURVE_ANGLE : 0;
+      applyStripCurve(currentCurveAngle);
+    }
+
+    // ── Apply curve transforms to all strips at a given arc angle ──
+    // Called every rAF frame during transitions, once settled otherwise.
+    const OVERLAP = 1.006;
+    function applyStripCurve(arcAngle) {
+      const halfAngle = arcAngle / 2;
+      const halfAngleRad = halfAngle * Math.PI / 180;
+      const edgeCos = arcAngle > 0.01 ? Math.cos(halfAngleRad) : 1;
+
+      function bowMargin(a) {
+        if (arcAngle < 0.01) return 0;  // flat: no clipping
+        const aRad = a * Math.PI / 180;
+        const clipFrac = edgeCos / Math.cos(aRad);
+        return ((1 - clipFrac) / 2) * 100;
+      }
+
+      strips.forEach(div => {
+        const angle    = div._t      * halfAngle;
+        const angleR   = div._tRight * halfAngle;
+        const angleRad = angle * Math.PI / 180;
+
+        const scaleX = arcAngle > 0.01
+          ? (1 / Math.cos(angleRad)) * OVERLAP
+          : 1;
+
+        const mL = bowMargin(angle);
+        const mR = bowMargin(angleR);
+
+        div.style.transform = `rotateY(${angle}deg) scaleX(${scaleX})`;
+        div.style.clipPath = [
+          `polygon(`,
+          `0% ${mL.toFixed(3)}%,`,
+          `100% ${mR.toFixed(3)}%,`,
+          `100% ${(100 - mR).toFixed(3)}%,`,
+          `0% ${(100 - mL).toFixed(3)}%)`
+        ].join(' ');
+      });
+    }
+
+    // ── Detect mobile vs desktop ────────────────────────────
+    function detectAndStart() {
+      const isMobile = (
+        typeof DeviceOrientationEvent !== 'undefined' &&
+        /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+      );
+      if (!isMobile) startScrollMode();
+      // else: wait for button tap
+    }
+
+    // ── SCROLL MODE ─────────────────────────────────────────
+    function startScrollMode() {
+      mode = 'scroll';
+      permScreen.style.display = 'none';
+      document.body.classList.add('desktop-mode');
+      scrollProxy.style.height = (SCROLL_HEIGHT + window.innerHeight) + 'px';
+      hud.textContent = 'Scroll to pan';
+      hud.style.display = 'block';
+      tiltBar.style.display = 'block';
+      document.getElementById('compassWrap').style.display = 'block';
+      document.getElementById('curveBtn').style.display = 'block';
+      window.addEventListener('scroll', onScroll, { passive: true });
+      rafLoop();
+    }
+
+    function onScroll() {
+      targetPct = Math.min(100, (window.scrollY / SCROLL_HEIGHT) * 100);
+    }
+
+    // ── GYRO MODE ───────────────────────────────────────────
+    grantBtn.addEventListener('click', () => {
+      if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+        DeviceOrientationEvent.requestPermission()
+          .then(state => {
+            if (state === 'granted') startGyroMode();
+            else alert('Permission denied. Allow motion access in Settings › Safari.');
+          })
+          .catch(console.error);
+      } else {
+        startGyroMode();
+      }
+    });
+
+    // ── Curve toggle ────────────────────────────────────────
+    document.getElementById('curveBtn').addEventListener('click', () => {
+      curveOn = !curveOn;
+      const btn = document.getElementById('curveBtn');
+      btn.textContent = curveOn ? 'Curved' : 'Flat';
+      btn.classList.toggle('flat', !curveOn);
+    });
+
+    function startGyroMode() {
+      mode = 'gyro';
+      permScreen.style.display = 'none';
+      hud.textContent = 'Tilt to pan';
+      hud.style.display = 'block';
+      tiltBar.style.display = 'block';
+      document.getElementById('compassWrap').style.display = 'block';
+      document.getElementById('curveBtn').style.display = 'block';
+      window.addEventListener('deviceorientation', onOrientation, true);
+      rafLoop();
+    }
+
+    function onOrientation(e) {
+      if (e.gamma !== null) latestGamma = e.gamma;
+      // alpha not used — compass is driven by photo EXIF + pan position
+    }
+
+    // ── Shared rAF loop ─────────────────────────────────────
+    /*
+      Panning = translating the entire #cylinder left or right.
+
+      At currentPct = 0  → left edge of image at left edge of viewport
+      At currentPct = 50 → image centred (default)
+      At currentPct = 100 → right edge of image at right edge of viewport
+
+      maxShift = renderedImgW - viewportW  (pixels the cylinder can travel)
+      panLeft  = baseLeft + (0.5 - currentPct/100) * maxShift
+        where baseLeft = (vW - renderedImgW) / 2  (centred starting position)
+    */
+    // ── Cardinal direction label ────────────────────────────
+    function headingToCardinal(deg) {
+      const dirs = ['N','NNE','NE','ENE','E','ESE','SE','SSE',
+                    'S','SSW','SW','WSW','W','WNW','NW','NNW'];
+      return dirs[Math.round(deg / 22.5) % 16];
+    }
+
+    function rafLoop() {
+      if (mode === 'gyro') {
+        const clamped = Math.max(GAMMA_MIN, Math.min(GAMMA_MAX, latestGamma));
+        targetPct = ((clamped - GAMMA_MIN) / (GAMMA_MAX - GAMMA_MIN)) * 100;
+      }
+
+      currentPct += (targetPct - currentPct) * SMOOTHING;
+
+      const vW      = window.innerWidth;
+      const cylW    = renderedImgW;
+      const maxShift = Math.max(0, cylW - vW);
+      const baseLeft = (vW - cylW) / 2;
+      const panLeft  = baseLeft + (0.5 - currentPct / 100) * maxShift;
+
+      cylinder.style.left = panLeft + 'px';
+      tiltDot.style.left  = currentPct.toFixed(1) + '%';
+
+      // ── Animate curve angle ──
+      const targetCurveAngle = curveOn ? CURVE_ANGLE : 0;
+      const curveDelta = targetCurveAngle - currentCurveAngle;
+      if (Math.abs(curveDelta) > 0.05) {
+        currentCurveAngle += curveDelta * CURVE_SMOOTHING;
+        applyStripCurve(currentCurveAngle);
+      } else if (Math.abs(curveDelta) > 0) {
+        // Snap to final value once close enough
+        currentCurveAngle = targetCurveAngle;
+        applyStripCurve(currentCurveAngle);
+      }
+
+      // ── Compass + heading display ──
+      // Both modes: derive heading from EXIF COMPASS_START + pan position.
+      // The photo heading is the centre of the frame; subtract half the span
+      // to get the left-edge heading, then interpolate across the pan range.
+      const panHeading = (COMPASS_START - COMPASS_SPAN / 2 + (currentPct / 100) * COMPASS_SPAN + 360) % 360;
+      document.getElementById('compass').style.transform =
+        `rotateX(60deg) rotateZ(${panHeading}deg)`;
+
+      // Update heading readout
+      const headingEl  = document.getElementById('headingDisplay');
+      const headingDegEl = document.getElementById('headingDeg');
+      const headingLabelEl = document.getElementById('headingLabel');
+      const roundedHeading = Math.round(panHeading);
+      headingDegEl.textContent = roundedHeading + '°';
+      headingLabelEl.textContent = headingToCardinal(roundedHeading);
+
+      // Show/hide: reveal on pan change, fade after 3s of stillness
+      const panDelta = Math.abs(currentPct - _lastPctForHeading);
+      if (panDelta > 0.15) {
+        headingEl.style.display = 'block';
+        // Restart the CSS fade animation by cloning the element
+        headingEl.style.animation = 'none';
+        headingEl.offsetHeight;   // force reflow
+        headingEl.style.animation = 'headingFadeOut 3s ease-out forwards';
+        _lastPctForHeading = currentPct;
+      }
+
+      requestAnimationFrame(rafLoop);
+    }
+
+    // ── Rebuild on resize ───────────────────────────────────
+    window.addEventListener('resize', () => {
+      const p = new Image();
+      p.src = 'IMG_0541.jpg';
+      p.onload = () => buildCylinder(p.naturalWidth, p.naturalHeight);
+    });
+  </script>
+</body>
+</html>
