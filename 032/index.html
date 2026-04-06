@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Panorama Viewer</title>
-  <script src="https://cdn.jsdelivr.net/npm/exifr@7/dist/full.umd.cjs"></script>
+  <script src="https://unpkg.com/exifr@7/dist/full.umd.cjs"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -52,7 +52,7 @@
       flex-shrink: 0;
       height: 100%;
       overflow: hidden;        /* clip scaled-up strips at top/bottom */
-      background-image: url('IMG_0427.jpg');
+      background-image: url('IMG_0541.jpg');
       background-repeat: no-repeat;
       will-change: transform;
       transform-origin: center center;
@@ -185,6 +185,67 @@
       transform-origin: center center;
       will-change: transform;
     }
+
+    /* ── Heading display ── */
+    #headingDisplay {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 15;
+      text-align: center;
+      pointer-events: none;
+      animation: headingFadeOut 3s ease-out forwards;
+    }
+    #headingDisplay .deg {
+      font-size: clamp(64px, 15vw, 120px);
+      font-weight: 100;
+      color: #fff;
+      letter-spacing: -0.02em;
+      line-height: 1;
+      text-shadow: 0 2px 40px rgba(0,0,0,0.6);
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    }
+    #headingDisplay .label {
+      font-size: clamp(13px, 3vw, 20px);
+      font-weight: 300;
+      color: rgba(255,255,255,0.55);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-top: 6px;
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    }
+    @keyframes headingFadeOut {
+      0%   { opacity: 1; }
+      60%  { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    /* ── Curve toggle button ── */
+    #curveBtn {
+      display: none;
+      position: fixed;
+      top: max(18px, env(safe-area-inset-top, 18px));
+      right: 18px;
+      z-index: 15;
+      background: rgba(0,0,0,0.45);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 50px;
+      padding: 8px 16px;
+      color: rgba(255,255,255,0.85);
+      font-size: 11px;
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: background 0.2s, color 0.2s;
+    }
+    #curveBtn:active { background: rgba(255,255,255,0.15); }
+    #curveBtn.flat  { color: rgba(255,255,255,0.4); }
   </style>
 </head>
 <body>
@@ -200,6 +261,13 @@
   </div>
 
   <div id="scrollProxy"></div>
+  <button id="curveBtn">Curved</button>
+
+  <!-- Heading display: shown briefly when pan changes -->
+  <div id="headingDisplay">
+    <div class="deg" id="headingDeg">--°</div>
+    <div class="label" id="headingLabel">--</div>
+  </div>
 
   <div id="ui">
     <div id="tiltBar"><div id="tiltDot"></div></div>
@@ -286,6 +354,9 @@
     const SCROLL_HEIGHT   = 3000;  // desktop: px of scroll travel = full pan
     let   COMPASS_START   = 0;     // set from EXIF GPSImgDirection on load; fallback 0
     const COMPASS_SPAN    = 120;   // degrees swept across the full pan range
+    const COMPASS_FLIP    = true;  // flip 180° — GPSImgDirection sometimes points toward
+                                   // the subject rather than the camera direction; toggle
+                                   // this if the compass is 180° off
     // ═══════════════════════════════════════════════════════
 
     const cylinder   = document.getElementById('cylinder');
@@ -301,8 +372,14 @@
     let latestGamma = 0;
     let latestAlpha = 0;      // compass heading 0–360, 0=north, clockwise
     let mode        = null;
+    let _lastPctForHeading = 50;  // tracks pan position for heading display trigger
     let strips      = [];
     let renderedImgW = 0;   // full image width in CSS px at current viewport height
+
+    // Curve animation state
+    let curveOn          = true;          // toggle state
+    let currentCurveAngle = CURVE_ANGLE; // animated value, lerps between 0 and CURVE_ANGLE
+    const CURVE_SMOOTHING = 0.06;        // lerp speed for the curve transition
 
     // ── Load EXIF then image dimensions ────────────────────
     // exifr reads GPS metadata from the original JPEG in the same folder.
@@ -310,16 +387,18 @@
     // We use it to anchor COMPASS_START so the desktop compass matches the scene.
     // If the tag is absent (e.g. file is a PNG or metadata was stripped),
     // COMPASS_START stays at its default of 0.
-    const JPEG_SRC = 'IMG_0427.jpg';   // source for both EXIF and display
+    const JPEG_SRC = 'IMG_0541.jpg';   // source for both EXIF and display
 
     async function loadExifThenInit() {
       // Try to read GPSImgDirection from the JPEG
       try {
         const exif = await exifr.parse(JPEG_SRC, ['GPSImgDirection', 'GPSImgDirectionRef']);
         if (exif && exif.GPSImgDirection != null) {
-          COMPASS_START = exif.GPSImgDirection;
-          console.log('GPSImgDirection from EXIF:', COMPASS_START,
-                      exif.GPSImgDirectionRef ? '(' + exif.GPSImgDirectionRef + ')' : '');
+          const raw = exif.GPSImgDirection;
+          COMPASS_START = COMPASS_FLIP ? (raw + 180) % 360 : raw;
+          console.log('GPSImgDirection from EXIF:', raw,
+                      exif.GPSImgDirectionRef ? '(' + exif.GPSImgDirectionRef + ')' : '',
+                      COMPASS_FLIP ? '→ flipped to ' + COMPASS_START.toFixed(1) + '°' : '');
         } else {
           console.warn('GPSImgDirection not found in EXIF — using default 0°');
         }
@@ -367,48 +446,52 @@
         div.className = 'strip';
         div.style.width = stripW + 'px';
 
-        // Show the correct horizontal slice of the image inside this strip.
+        // Background slice — static, never changes
         div.style.backgroundSize      = renderedImgW + 'px ' + vH + 'px';
         div.style.backgroundPositionX = (-i * stripW) + 'px';
         div.style.backgroundPositionY = 'center';
 
-        // t: -1 (left edge) → 0 (centre) → +1 (right edge)
-        const t = (i / (NUM_STRIPS - 1)) * 2 - 1;
-        const angle = t * halfAngle;
+        // Store normalised position for use in applyStripCurve each frame
+        div._t = (i / (NUM_STRIPS - 1)) * 2 - 1;  // -1 … +1
+        div._tRight = (Math.min(i + 1, NUM_STRIPS - 1) / (NUM_STRIPS - 1)) * 2 - 1;
+
+        cylinder.appendChild(div);
+        strips.push(div);
+      }
+
+      // Apply initial curve immediately (no animation on first build)
+      currentCurveAngle = curveOn ? CURVE_ANGLE : 0;
+      applyStripCurve(currentCurveAngle);
+    }
+
+    // ── Apply curve transforms to all strips at a given arc angle ──
+    // Called every rAF frame during transitions, once settled otherwise.
+    const OVERLAP = 1.006;
+    function applyStripCurve(arcAngle) {
+      const halfAngle = arcAngle / 2;
+      const halfAngleRad = halfAngle * Math.PI / 180;
+      const edgeCos = arcAngle > 0.01 ? Math.cos(halfAngleRad) : 1;
+
+      function bowMargin(a) {
+        if (arcAngle < 0.01) return 0;  // flat: no clipping
+        const aRad = a * Math.PI / 180;
+        const clipFrac = edgeCos / Math.cos(aRad);
+        return ((1 - clipFrac) / 2) * 100;
+      }
+
+      strips.forEach(div => {
+        const angle    = div._t      * halfAngle;
+        const angleR   = div._tRight * halfAngle;
         const angleRad = angle * Math.PI / 180;
 
-        // GAP FIX: scaleX by 1/cos(angle) compensates for perspective foreshortening.
-        // OVERLAP adds a small extra bleed on each side to cover sub-pixel gaps
-        // where the clip-path edge and transform edge don't quite meet.
-        // Increase OVERLAP (try 1.005–1.015) if faint lines persist.
-        const OVERLAP = 1.006;
-        const scaleX = (1 / Math.cos(angleRad)) * OVERLAP;
-
-        div.style.transform = `rotateY(${angle}deg) scaleX(${scaleX})`;
-
-        // VERTICAL BOW via clip-path trapezoid:
-        // Each strip is clipped to a trapezoid whose four corners follow the cosine
-        // bow curve evaluated at the strip's left and right x-positions.
-        // This means adjacent strips share the same curve value at their shared edge,
-        // so the boundary is seamless — no staircase.
-        const edgeCos = Math.cos(halfAngle * Math.PI / 180);
-
-        // bowMargin(a): how many % to cut from top (and bottom) at angle a.
-        // 0% at the outermost edges (full height), max at centre (most clipped).
-        function bowMargin(a) {
-          const clipFrac = edgeCos / Math.cos(a * Math.PI / 180);
-          return ((1 - clipFrac) / 2) * 100;
-        }
-
-        // t for the left edge of this strip = current t
-        // t for the right edge of this strip = next strip's t
-        const tRight     = (Math.min(i + 1, NUM_STRIPS - 1) / (NUM_STRIPS - 1)) * 2 - 1;
-        const angleRight = tRight * halfAngle;
+        const scaleX = arcAngle > 0.01
+          ? (1 / Math.cos(angleRad)) * OVERLAP
+          : 1;
 
         const mL = bowMargin(angle);
-        const mR = bowMargin(angleRight);
+        const mR = bowMargin(angleR);
 
-        // polygon: top-left, top-right, bottom-right, bottom-left
+        div.style.transform = `rotateY(${angle}deg) scaleX(${scaleX})`;
         div.style.clipPath = [
           `polygon(`,
           `0% ${mL.toFixed(3)}%,`,
@@ -416,10 +499,7 @@
           `100% ${(100 - mR).toFixed(3)}%,`,
           `0% ${(100 - mL).toFixed(3)}%)`
         ].join(' ');
-
-        cylinder.appendChild(div);
-        strips.push(div);
-      }
+      });
     }
 
     // ── Detect mobile vs desktop ────────────────────────────
@@ -442,6 +522,7 @@
       hud.style.display = 'block';
       tiltBar.style.display = 'block';
       document.getElementById('compassWrap').style.display = 'block';
+      document.getElementById('curveBtn').style.display = 'block';
       window.addEventListener('scroll', onScroll, { passive: true });
       rafLoop();
     }
@@ -464,6 +545,14 @@
       }
     });
 
+    // ── Curve toggle ────────────────────────────────────────
+    document.getElementById('curveBtn').addEventListener('click', () => {
+      curveOn = !curveOn;
+      const btn = document.getElementById('curveBtn');
+      btn.textContent = curveOn ? 'Curved' : 'Flat';
+      btn.classList.toggle('flat', !curveOn);
+    });
+
     function startGyroMode() {
       mode = 'gyro';
       permScreen.style.display = 'none';
@@ -471,13 +560,14 @@
       hud.style.display = 'block';
       tiltBar.style.display = 'block';
       document.getElementById('compassWrap').style.display = 'block';
+      document.getElementById('curveBtn').style.display = 'block';
       window.addEventListener('deviceorientation', onOrientation, true);
       rafLoop();
     }
 
     function onOrientation(e) {
       if (e.gamma !== null) latestGamma = e.gamma;
-      if (e.alpha !== null) latestAlpha = e.alpha;
+      // alpha not used — compass is driven by photo EXIF + pan position
     }
 
     // ── Shared rAF loop ─────────────────────────────────────
@@ -492,6 +582,13 @@
       panLeft  = baseLeft + (0.5 - currentPct/100) * maxShift
         where baseLeft = (vW - renderedImgW) / 2  (centred starting position)
     */
+    // ── Cardinal direction label ────────────────────────────
+    function headingToCardinal(deg) {
+      const dirs = ['N','NNE','NE','ENE','E','ESE','SE','SSE',
+                    'S','SSW','SW','WSW','W','WNW','NW','NNW'];
+      return dirs[Math.round(deg / 22.5) % 16];
+    }
+
     function rafLoop() {
       if (mode === 'gyro') {
         const clamped = Math.max(GAMMA_MIN, Math.min(GAMMA_MAX, latestGamma));
@@ -509,20 +606,44 @@
       cylinder.style.left = panLeft + 'px';
       tiltDot.style.left  = currentPct.toFixed(1) + '%';
 
-      // ── Compass ──
-      // Gyro mode: rotateZ(-alpha) tracks true north from the sensor.
-      // Scroll mode: map currentPct (0–100) across a fixed heading arc so the
-      //   compass sweeps as you pan. COMPASS_START/SPAN set the heading range.
-      //   e.g. start=45 span=120 means scrolling left→right sweeps NE→SE.
-      const compassEl = document.getElementById('compass');
-      let headingDeg;
-      if (mode === 'gyro') {
-        headingDeg = -latestAlpha;
-      } else {
-        // Map 0–100% pan to COMPASS_START → COMPASS_START+COMPASS_SPAN
-        headingDeg = -(COMPASS_START + (currentPct / 100) * COMPASS_SPAN);
+      // ── Animate curve angle ──
+      const targetCurveAngle = curveOn ? CURVE_ANGLE : 0;
+      const curveDelta = targetCurveAngle - currentCurveAngle;
+      if (Math.abs(curveDelta) > 0.05) {
+        currentCurveAngle += curveDelta * CURVE_SMOOTHING;
+        applyStripCurve(currentCurveAngle);
+      } else if (Math.abs(curveDelta) > 0) {
+        // Snap to final value once close enough
+        currentCurveAngle = targetCurveAngle;
+        applyStripCurve(currentCurveAngle);
       }
-      compassEl.style.transform = `rotateX(60deg) rotateZ(${headingDeg}deg)`;
+
+      // ── Compass + heading display ──
+      // Both modes: derive heading from EXIF COMPASS_START + pan position.
+      // The photo heading is the centre of the frame; subtract half the span
+      // to get the left-edge heading, then interpolate across the pan range.
+      const panHeading = (COMPASS_START - COMPASS_SPAN / 2 + (currentPct / 100) * COMPASS_SPAN + 360) % 360;
+      document.getElementById('compass').style.transform =
+        `rotateX(60deg) rotateZ(${-panHeading}deg)`;
+
+      // Update heading readout
+      const headingEl  = document.getElementById('headingDisplay');
+      const headingDegEl = document.getElementById('headingDeg');
+      const headingLabelEl = document.getElementById('headingLabel');
+      const roundedHeading = Math.round(panHeading);
+      headingDegEl.textContent = roundedHeading + '°';
+      headingLabelEl.textContent = headingToCardinal(roundedHeading);
+
+      // Show/hide: reveal on pan change, fade after 3s of stillness
+      const panDelta = Math.abs(currentPct - _lastPctForHeading);
+      if (panDelta > 0.15) {
+        headingEl.style.display = 'block';
+        // Restart the CSS fade animation by cloning the element
+        headingEl.style.animation = 'none';
+        headingEl.offsetHeight;   // force reflow
+        headingEl.style.animation = 'headingFadeOut 3s ease-out forwards';
+        _lastPctForHeading = currentPct;
+      }
 
       requestAnimationFrame(rafLoop);
     }
