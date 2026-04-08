@@ -146,19 +146,22 @@
     #compassWrap {
       display: none;
       position: fixed;
-      bottom: max(60px, env(safe-area-inset-bottom, 60px));
-      right: 24px;
-      width: 110px;
-      height: 110px;
+      bottom: max(48px, env(safe-area-inset-bottom, 48px));
+      left: 50%;
+      transform: translateX(-50%);
+      width: 160px;
+      height: 160px;
       z-index: 15;
       pointer-events: none;
-      perspective: 300px;
+      /* 3D context: children share this vanishing point */
+      perspective: 320px;
       perspective-origin: 50% 50%;
     }
     #compass {
       width: 100%;
       height: 100%;
-      transform: rotateX(60deg) rotateZ(0deg);
+      /* Tilt away — looks like it's lying flat on the ground */
+      transform: rotateX(62deg);
       transform-origin: center center;
       will-change: transform;
     }
@@ -217,58 +220,85 @@
 
   <div id="compassWrap">
     <svg id="compass" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <!-- Outer ring (outside the rose group, always fixed) -->
       <circle cx="50" cy="50" r="47" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="1"/>
-      <circle cx="50" cy="50" r="40" fill="rgba(0,0,0,0.35)" stroke="rgba(255,255,255,0.12)" stroke-width="0.75"/>
-      <g stroke="rgba(255,255,255,0.3)" stroke-width="0.75">
-        <line x1="50" y1="10" x2="50" y2="14"/>
-        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(10,50,50)"/>
-        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(20,50,50)"/>
-        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(30,50,50)"/>
-        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(40,50,50)"/>
-        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(50,50,50)"/>
-        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(60,50,50)"/>
-        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(70,50,50)"/>
-        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(80,50,50)"/>
-        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(100,50,50)"/>
-        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(110,50,50)"/>
-        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(120,50,50)"/>
-        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(130,50,50)"/>
-        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(140,50,50)"/>
-        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(150,50,50)"/>
-        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(160,50,50)"/>
-        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(170,50,50)"/>
-        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(190,50,50)"/>
-        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(200,50,50)"/>
-        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(210,50,50)"/>
-        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(220,50,50)"/>
-        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(230,50,50)"/>
-        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(240,50,50)"/>
-        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(250,50,50)"/>
-        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(260,50,50)"/>
-        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(280,50,50)"/>
-        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(290,50,50)"/>
-        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(300,50,50)"/>
-        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(310,50,50)"/>
-        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(320,50,50)"/>
-        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(330,50,50)"/>
-        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(340,50,50)"/>
-        <line x1="50" y1="10" x2="50" y2="14" transform="rotate(350,50,50)"/>
+
+      <!-- Rose group: ticks, cardinal labels, facing marker.
+           Rotated by JS so COMPASS_START sits at 12 o'clock. -->
+      <g id="compassRose" transform="rotate(0,50,50)">
+        <circle cx="50" cy="50" r="40" fill="rgba(0,0,0,0.45)" stroke="rgba(255,255,255,0.12)" stroke-width="0.75"/>
+        <!-- Minor ticks every 10° -->
+        <g stroke="rgba(255,255,255,0.3)" stroke-width="0.75">
+          <line x1="50" y1="10" x2="50" y2="14" transform="rotate(10,50,50)"/>
+          <line x1="50" y1="10" x2="50" y2="14" transform="rotate(20,50,50)"/>
+          <line x1="50" y1="10" x2="50" y2="14" transform="rotate(30,50,50)"/>
+          <line x1="50" y1="10" x2="50" y2="14" transform="rotate(40,50,50)"/>
+          <line x1="50" y1="10" x2="50" y2="14" transform="rotate(50,50,50)"/>
+          <line x1="50" y1="10" x2="50" y2="14" transform="rotate(60,50,50)"/>
+          <line x1="50" y1="10" x2="50" y2="14" transform="rotate(70,50,50)"/>
+          <line x1="50" y1="10" x2="50" y2="14" transform="rotate(80,50,50)"/>
+          <line x1="50" y1="10" x2="50" y2="14" transform="rotate(100,50,50)"/>
+          <line x1="50" y1="10" x2="50" y2="14" transform="rotate(110,50,50)"/>
+          <line x1="50" y1="10" x2="50" y2="14" transform="rotate(120,50,50)"/>
+          <line x1="50" y1="10" x2="50" y2="14" transform="rotate(130,50,50)"/>
+          <line x1="50" y1="10" x2="50" y2="14" transform="rotate(140,50,50)"/>
+          <line x1="50" y1="10" x2="50" y2="14" transform="rotate(150,50,50)"/>
+          <line x1="50" y1="10" x2="50" y2="14" transform="rotate(160,50,50)"/>
+          <line x1="50" y1="10" x2="50" y2="14" transform="rotate(170,50,50)"/>
+          <line x1="50" y1="10" x2="50" y2="14" transform="rotate(190,50,50)"/>
+          <line x1="50" y1="10" x2="50" y2="14" transform="rotate(200,50,50)"/>
+          <line x1="50" y1="10" x2="50" y2="14" transform="rotate(210,50,50)"/>
+          <line x1="50" y1="10" x2="50" y2="14" transform="rotate(220,50,50)"/>
+          <line x1="50" y1="10" x2="50" y2="14" transform="rotate(230,50,50)"/>
+          <line x1="50" y1="10" x2="50" y2="14" transform="rotate(240,50,50)"/>
+          <line x1="50" y1="10" x2="50" y2="14" transform="rotate(250,50,50)"/>
+          <line x1="50" y1="10" x2="50" y2="14" transform="rotate(260,50,50)"/>
+          <line x1="50" y1="10" x2="50" y2="14" transform="rotate(280,50,50)"/>
+          <line x1="50" y1="10" x2="50" y2="14" transform="rotate(290,50,50)"/>
+          <line x1="50" y1="10" x2="50" y2="14" transform="rotate(300,50,50)"/>
+          <line x1="50" y1="10" x2="50" y2="14" transform="rotate(310,50,50)"/>
+          <line x1="50" y1="10" x2="50" y2="14" transform="rotate(320,50,50)"/>
+          <line x1="50" y1="10" x2="50" y2="14" transform="rotate(330,50,50)"/>
+          <line x1="50" y1="10" x2="50" y2="14" transform="rotate(340,50,50)"/>
+          <line x1="50" y1="10" x2="50" y2="14" transform="rotate(350,50,50)"/>
+        </g>
+        <!-- Cardinal ticks (longer, brighter) -->
+        <g stroke="rgba(255,255,255,0.55)" stroke-width="1.2">
+          <line x1="50" y1="8" x2="50" y2="16"/>
+          <line x1="50" y1="8" x2="50" y2="16" transform="rotate(90,50,50)"/>
+          <line x1="50" y1="8" x2="50" y2="16" transform="rotate(180,50,50)"/>
+          <line x1="50" y1="8" x2="50" y2="16" transform="rotate(270,50,50)"/>
+        </g>
+        <!-- Cardinal labels — rotate with the rose -->
+        <text x="50" y="7.5" text-anchor="middle" font-size="7" font-family="Helvetica Neue,sans-serif" font-weight="600" fill="rgba(255,255,255,0.7)">N</text>
+        <text x="93" y="53"  text-anchor="middle" font-size="6" font-family="Helvetica Neue,sans-serif" fill="rgba(255,255,255,0.5)">E</text>
+        <text x="50" y="98"  text-anchor="middle" font-size="6" font-family="Helvetica Neue,sans-serif" fill="rgba(255,255,255,0.5)">S</text>
+        <text x="7"  y="53"  text-anchor="middle" font-size="6" font-family="Helvetica Neue,sans-serif" fill="rgba(255,255,255,0.5)">W</text>
+
+        <!-- Facing-direction marker at 12 o'clock (0° of the rose = COMPASS_START).
+             A small bright triangle just inside the outer ring. -->
+        <polygon points="50,4 52.5,10 47.5,10" fill="#2a9fd6"/>
       </g>
-      <g stroke="rgba(255,255,255,0.6)" stroke-width="1.2">
-        <line x1="50" y1="8"  x2="50" y2="16"/>
-        <line x1="50" y1="8"  x2="50" y2="16" transform="rotate(90,50,50)"/>
-        <line x1="50" y1="8"  x2="50" y2="16" transform="rotate(180,50,50)"/>
-        <line x1="50" y1="8"  x2="50" y2="16" transform="rotate(270,50,50)"/>
+
+      <!-- Fixed heading label at centre — absolute degrees, never rotates -->
+      <text id="compassHeadingDeg" x="50" y="56"
+            text-anchor="middle" font-size="9"
+            font-family="Helvetica Neue,sans-serif" font-weight="300"
+            fill="rgba(255,255,255,0.9)" letter-spacing="0.5">--°</text>
+      <text id="compassHeadingCard" x="50" y="65"
+            text-anchor="middle" font-size="6"
+            font-family="Helvetica Neue,sans-serif" font-weight="400"
+            fill="rgba(255,255,255,0.5)" letter-spacing="1">--</text>
+
+      <!-- Needle: rotates relative to the rose, so angle = panHeading - COMPASS_START -->
+      <g id="compassNeedle" transform="rotate(0,50,50)">
+        <!-- Forward tip: blue -->
+        <polygon points="50,18 53,50 50,43 47,50" fill="#2a9fd6"/>
+        <!-- Rear tip: muted -->
+        <polygon points="50,82 53,50 50,57 47,50" fill="rgba(255,255,255,0.25)"/>
+        <!-- Centre cap -->
+        <circle cx="50" cy="50" r="2.5" fill="rgba(255,255,255,0.9)"/>
       </g>
-      <polygon points="50,14 54,50 50,44 46,50" fill="#2a6496"/>
-      <polygon points="50,86 54,50 50,56 46,50" fill="rgba(255,255,255,0.35)"/>
-      <polygon points="86,50 50,46 56,50 50,54" fill="#2a6496" opacity="0.6"/>
-      <polygon points="14,50 50,54 44,50 50,46" fill="rgba(255,255,255,0.2)"/>
-      <circle cx="50" cy="50" r="3" fill="rgba(255,255,255,0.8)"/>
-      <text x="50" y="7"  text-anchor="middle" font-size="7" font-family="Helvetica Neue,sans-serif" font-weight="600" fill="white">N</text>
-      <text x="93" y="53" text-anchor="middle" font-size="6" font-family="Helvetica Neue,sans-serif" fill="rgba(255,255,255,0.7)">E</text>
-      <text x="50" y="98" text-anchor="middle" font-size="6" font-family="Helvetica Neue,sans-serif" fill="rgba(255,255,255,0.7)">S</text>
-      <text x="7"  y="53" text-anchor="middle" font-size="6" font-family="Helvetica Neue,sans-serif" fill="rgba(255,255,255,0.7)">W</text>
     </svg>
   </div>
 
@@ -285,12 +315,17 @@
     const GAMMA_MAX       =  40;   // gyro: right-tilt → right edge
     const SMOOTHING       = 0.07;  // 0.04 buttery · 0.15 snappy
     const SCROLL_HEIGHT   = 3000;  // desktop: px of scroll travel = full pan
-    let   COMPASS_START   = 0;     // set from EXIF GPSImgDirection on load
+    let   COMPASS_START   = 0;     // set from EXIF GPSImgDirection on load; = camera facing direction
     const COMPASS_SPAN    = 120;   // degrees swept across the full pan range
-    const COMPASS_FLIP    = true;  // flip 180° if EXIF points toward subject not camera
     // ═══════════════════════════════════════════════════════
 
     const panorama    = document.getElementById('panorama');
+
+    // Read image filename from URL param ?img=filename.jpg
+    // Falls back to the src already set on the <img> tag if no param supplied
+    const params   = new URLSearchParams(window.location.search);
+    const JPEG_SRC = params.get('img') || panorama.getAttribute('src');
+    panorama.src   = JPEG_SRC;
     const permScreen  = document.getElementById('permScreen');
     const grantBtn    = document.getElementById('grantBtn');
     const hud         = document.getElementById('hud');
@@ -304,24 +339,14 @@
     let mode        = null;
     let _lastPctForHeading = 50;
 
-    // Read image filename from URL param ?img=filename.jpg
-    // Falls back to IMG_0541.jpg if no param supplied
-    const params   = new URLSearchParams(window.location.search);
-    const JPEG_SRC = params.get('img') || 'IMG_0541.jpg';
-
-    // Update the <img> src to the selected panorama
-    panorama.src = JPEG_SRC;
-
     // ── Load EXIF then start ─────────────────────────────────
     async function loadExifThenInit() {
       try {
         const exif = await exifr.parse(JPEG_SRC, ['GPSImgDirection', 'GPSImgDirectionRef']);
         if (exif && exif.GPSImgDirection != null) {
-          const raw = exif.GPSImgDirection;
-          COMPASS_START = COMPASS_FLIP ? (raw + 180) % 360 : raw;
-          console.log('GPSImgDirection from EXIF:', raw,
-            exif.GPSImgDirectionRef ? '(' + exif.GPSImgDirectionRef + ')' : '',
-            COMPASS_FLIP ? '→ flipped to ' + COMPASS_START.toFixed(1) + '°' : '');
+          COMPASS_START = exif.GPSImgDirection;
+          console.log('GPSImgDirection from EXIF:', COMPASS_START.toFixed(1) + '°',
+            exif.GPSImgDirectionRef ? '(' + exif.GPSImgDirectionRef + ')' : '');
         } else {
           console.warn('GPSImgDirection not found in EXIF — using default 0°');
         }
@@ -418,8 +443,27 @@
 
       // Compass + heading
       const panHeading = (COMPASS_START - COMPASS_SPAN / 2 + (currentPct / 100) * COMPASS_SPAN + 360) % 360;
-      document.getElementById('compass').style.transform =
-        `rotateX(60deg) rotateZ(${panHeading}deg)`;
+      // Rotate the rose so COMPASS_START sits at 12 o'clock.
+      // Rose rotation = -COMPASS_START (bring facing direction to top).
+      document.getElementById('compassRose')
+        .setAttribute('transform', `rotate(${-COMPASS_START},50,50)`);
+
+      // Needle points to panHeading in absolute degrees.
+      // Since the rose is rotated by -COMPASS_START, needle must compensate:
+      // needle rotation = panHeading - COMPASS_START
+      // At pan centre: panHeading ≈ COMPASS_START → needle angle ≈ 0 → points to top ✓
+      const needleAngle = panHeading - COMPASS_START;
+      document.getElementById('compassNeedle')
+        .setAttribute('transform', `rotate(${needleAngle},50,50)`);
+
+      // Populate the fixed heading label once COMPASS_START is known
+      const _hdgDegEl  = document.getElementById('compassHeadingDeg');
+      const _hdgCardEl = document.getElementById('compassHeadingCard');
+      if (_hdgDegEl && _hdgDegEl.textContent === '--°') {
+        const startRounded = Math.round(COMPASS_START);
+        _hdgDegEl.textContent  = startRounded + '°';
+        _hdgCardEl.textContent = headingToCardinal(startRounded);
+      }
 
       const roundedHeading = Math.round(panHeading);
       document.getElementById('headingDeg').textContent   = roundedHeading + '°';

@@ -213,13 +213,14 @@
     //  optional — if omitted, title defaults to the filename
     //  and heading is read from EXIF automatically.
     // ═══════════════════════════════════════════════════════
-  const PANORAMAS = [
+    const PANORAMAS = [
       { file: 'IMG_2030.jpeg', title: 'Lake View' },
       { file: 'IMG_1979.jpeg', title: 'Mountain Ridge' },
       { file: 'IMG_1965.jpeg' },  // title will default to filename
     ];
 
     const VIEWER = 'panorama_flat.html';  // path to the gyroscope viewer
+    const COMPASS_FLIP = true;            // match the viewer setting
 
     const grid = document.getElementById('grid');
 
@@ -268,7 +269,7 @@
         const exif = await exifr.parse(file, ['GPSImgDirection', 'GPSImgDirectionRef']);
         if (exif && exif.GPSImgDirection != null) {
           const raw = exif.GPSImgDirection;
-          const heading = raw;
+          const heading = COMPASS_FLIP ? (raw + 180) % 360 : raw;
           const cardinal = headingToCardinal(heading);
           const hdgEl = document.getElementById(`hdg-${file}`);
           if (hdgEl) {
