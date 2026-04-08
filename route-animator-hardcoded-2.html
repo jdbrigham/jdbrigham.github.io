@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Route Animator</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background: #1a1a2e;
+            color: white;
+            font-family: system-ui, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 24px;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #e2e8f0;
+        }
+
+        p.subtitle {
+            color: #94a3b8;
+            margin-bottom: 24px;
+            font-size: 0.9rem;
+        }
+
+        #svgContainer {
+            width: 100%;
+            max-width: 900px;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #0f172a;
+            position: relative;
+            margin-bottom: 16px;
+        }
+
+        #svgContainer svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        #controls {
+            background: #0f172a;
+            border-radius: 12px;
+            padding: 20px 24px;
+            width: 100%;
+            max-width: 900px;
+        }
+
+        #progressBar {
+            width: 100%;
+            height: 6px;
+            background: #1e293b;
+            border-radius: 3px;
+            margin-bottom: 16px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        #progressFill {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            border-radius: 3px;
+            width: 0%;
+            transition: width 0.05s linear;
+        }
+
+        #progressHandle {
+            width: 14px;
+            height: 14px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            top: -4px;
+            left: 0%;
+            transform: translateX(-50%);
+            cursor: grab;
+            box-shadow: 0 0 6px rgba(0,0,0,0.5);
+        }
+
+        .btn-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 8px 20px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        #playBtn { background: #3b82f6; color: white; min-width: 90px; }
+        #playBtn:hover { background: #2563eb; }
+        #resetBtn { background: #475569; color: white; }
+        #resetBtn:hover { background: #334155; }
+
+        .speed-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: auto;
+        }
+
+        .speed-group label { font-size: 0.85rem; color: #94a3b8; }
+
+        select {
+            background: #1e293b;
+            color: white;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+
+        .style-group { display: flex; align-items: center; gap: 8px; }
+        .style-group label { font-size: 0.85rem; color: #94a3b8; }
+
+        input[type="color"] {
+            width: 32px;
+            height: 32px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            padding: 2px;
+            background: #1e293b;
+        }
+
+        input[type="range"] { width: 80px; accent-color: #3b82f6; }
+
+        #timeDisplay {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        #errorMsg {
+            color: #f87171;
+            font-size: 0.9rem;
+            margin-bottom: 16px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ============================================================
+         CONFIGURATION - Change these values to customize
+         ============================================================ -->
+    <script>
+        // *** CHANGE THIS to the path of your SVG file ***
+        // If the HTML and SVG are in the same folder, just use the filename:
+        //   const SVG_FILE = 'my-route.svg';
+        // If in a subfolder:
+        //   const SVG_FILE = 'maps/boston-june-7.svg';
+        const SVG_FILE = 'timeline-map-2.svg';
+
+        // *** OPTIONAL: Customize the title and subtitle ***
+        const TITLE = '🗺️ My Route';
+        const SUBTITLE = 'Animated route visualization';
+
+        // *** OPTIONAL: Default animation settings ***
+        const DEFAULT_COLOR = '#3b82f6';   // Route color (hex)
+        const DEFAULT_WIDTH = 3;           // Route line width (pixels)
+        const DEFAULT_SPEED = 1;           // Playback speed (0.5, 1, 2, 5, 10)
+        const AUTOPLAY = false;            // Start playing automatically?
+    </script>
+    <!-- ============================================================ -->
+
+    <h1 id="pageTitle"></h1>
+    <p class="subtitle" id="pageSubtitle"></p>
+    <p id="errorMsg"></p>
+
+    <div id="svgContainer"></div>
+
+    <div id="controls">
+        <div id="progressBar">
+            <div id="progressFill"></div>
+            <div id="progressHandle"></div>
+        </div>
+        <div class="btn-row">
+            <button id="playBtn">▶ Play</button>
+            <button id="resetBtn">↺ Reset</button>
+            <div class="style-group">
+                <label>Color</label>
+                <input type="color" id="pathColor">
+            </div>
+            <div class="style-group">
+                <label>Width</label>
+                <input type="range" id="pathWidth" min="1" max="10">
+            </div>
+            <div class="speed-group">
+                <label>Speed</label>
+                <select id="speedSelect">
+                    <option value="0.5">0.5x</option>
+                    <option value="1">1x</option>
+                    <option value="2">2x</option>
+                    <option value="5">5x</option>
+                    <option value="10">10x</option>
+                </select>
+            </div>
+        </div>
+        <div id="timeDisplay">0% complete</div>
+    </div>
+
+    <script>
+        // Apply config
+        document.getElementById('pageTitle').textContent = TITLE;
+        document.getElementById('pageSubtitle').textContent = SUBTITLE;
+        document.getElementById('pathColor').value = DEFAULT_COLOR;
+        document.getElementById('pathWidth').value = DEFAULT_WIDTH;
+        document.getElementById('speedSelect').value = DEFAULT_SPEED;
+
+        // State
+        let animPath = null, dotEl = null;
+        let totalLength = 0, progress = 0;
+        let playing = false, animFrame = null, lastTime = null;
+
+        // Load SVG file automatically
+        fetch(SVG_FILE)
+            .then(r => {
+                if (!r.ok) throw new Error(`Could not load "${SVG_FILE}" (${r.status})`);
+                return r.text();
+            })
+            .then(text => {
+                const parser = new DOMParser();
+                const svgDoc = parser.parseFromString(text, 'image/svg+xml');
+                setupAnimation(svgDoc);
+                if (AUTOPLAY) {
+                    document.getElementById('playBtn').click();
+                }
+            })
+            .catch(err => {
+                const msg = document.getElementById('errorMsg');
+                msg.style.display = 'block';
+                msg.textContent = `⚠️ ${err.message} — Make sure the SVG file is in the same folder as this HTML file and you're running it from a local server (not file://).`;
+            });
+
+        function setupAnimation(svgDoc) {
+            // Find the route path
+            let pathEl = null;
+            for (const p of svgDoc.querySelectorAll('path')) {
+                if (p.getAttribute('fill') === 'none') { pathEl = p; break; }
+            }
+
+            if (!pathEl) {
+                const msg = document.getElementById('errorMsg');
+                msg.style.display = 'block';
+                msg.textContent = '⚠️ No route path found in the SVG file.';
+                return;
+            }
+
+            const displaySVG = svgDoc.documentElement.cloneNode(true);
+            displaySVG.querySelectorAll('path[fill="none"]').forEach(p => p.remove());
+            displaySVG.querySelectorAll('circle').forEach(c => c.remove());
+            displaySVG.querySelectorAll('text').forEach(t => t.remove());
+
+            animPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            animPath.setAttribute('d', pathEl.getAttribute('d'));
+            animPath.setAttribute('fill', 'none');
+            animPath.setAttribute('stroke', DEFAULT_COLOR);
+            animPath.setAttribute('stroke-width', DEFAULT_WIDTH);
+            animPath.setAttribute('stroke-linecap', 'round');
+            animPath.setAttribute('stroke-linejoin', 'round');
+            displaySVG.appendChild(animPath);
+
+            dotEl = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            dotEl.setAttribute('r', DEFAULT_WIDTH * 2.5);
+            dotEl.setAttribute('fill', DEFAULT_COLOR);
+            dotEl.setAttribute('stroke', 'white');
+            dotEl.setAttribute('stroke-width', '2');
+            dotEl.style.display = 'none';
+            displaySVG.appendChild(dotEl);
+
+            document.getElementById('svgContainer').appendChild(displaySVG);
+            totalLength = animPath.getTotalLength();
+            animPath.style.strokeDasharray = totalLength;
+            animPath.style.strokeDashoffset = totalLength;
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            if (!animPath || !totalLength) return;
+            const drawn = progress * totalLength;
+            animPath.style.strokeDashoffset = totalLength - drawn;
+
+            if (dotEl && progress > 0) {
+                const p = animPath.getPointAtLength(Math.min(drawn, totalLength));
+                dotEl.setAttribute('cx', p.x);
+                dotEl.setAttribute('cy', p.y);
+                dotEl.style.display = 'block';
+            } else if (dotEl) {
+                dotEl.style.display = 'none';
+            }
+
+            document.getElementById('progressFill').style.width = (progress * 100) + '%';
+            document.getElementById('progressHandle').style.left = (progress * 100) + '%';
+            document.getElementById('timeDisplay').textContent = Math.round(progress * 100) + '% complete';
+        }
+
+        function animate(ts) {
+            if (!playing) return;
+            if (!lastTime) lastTime = ts;
+            const delta = ts - lastTime;
+            lastTime = ts;
+
+            const speed = parseFloat(document.getElementById('speedSelect').value);
+            progress += delta / (8000 / speed);
+
+            if (progress >= 1) {
+                progress = 1;
+                playing = false;
+                document.getElementById('playBtn').textContent = '▶ Play';
+                lastTime = null;
+            }
+
+            updateDisplay();
+            if (playing) animFrame = requestAnimationFrame(animate);
+        }
+
+        document.getElementById('playBtn').addEventListener('click', () => {
+            if (progress >= 1) { progress = 0; updateDisplay(); }
+            playing = !playing;
+            document.getElementById('playBtn').textContent = playing ? '⏸ Pause' : '▶ Play';
+            if (playing) { lastTime = null; animFrame = requestAnimationFrame(animate); }
+            else { cancelAnimationFrame(animFrame); lastTime = null; }
+        });
+
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            playing = false;
+            cancelAnimationFrame(animFrame);
+            lastTime = null;
+            progress = 0;
+            document.getElementById('playBtn').textContent = '▶ Play';
+            updateDisplay();
+        });
+
+        // Progress bar
+        const progressBar = document.getElementById('progressBar');
+        progressBar.addEventListener('click', e => {
+            const rect = progressBar.getBoundingClientRect();
+            progress = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+            updateDisplay();
+        });
+
+        let draggingProgress = false;
+        document.getElementById('progressHandle').addEventListener('mousedown', () => draggingProgress = true);
+        window.addEventListener('mousemove', e => {
+            if (!draggingProgress) return;
+            const rect = progressBar.getBoundingClientRect();
+            progress = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+            updateDisplay();
+        });
+        window.addEventListener('mouseup', () => draggingProgress = false);
+
+        document.getElementById('pathColor').addEventListener('input', e => {
+            if (animPath) animPath.setAttribute('stroke', e.target.value);
+            if (dotEl) dotEl.setAttribute('fill', e.target.value);
+        });
+
+        document.getElementById('pathWidth').addEventListener('input', e => {
+            if (animPath) animPath.setAttribute('stroke-width', e.target.value);
+            if (dotEl) dotEl.setAttribute('r', parseInt(e.target.value) * 2.5);
+        });
+    </script>
+</body>
+</html>
