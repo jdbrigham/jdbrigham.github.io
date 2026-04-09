@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Mapbox GL Minimal Test</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.js"></script>
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.css" rel="stylesheet" />
+  <style>
+    body { margin: 0; padding: 0; }
+    #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+  </style>
+</head>
+<body>
+<div id="map"></div>
+
+<script>
+  mapboxgl.accessToken = 'pk.eyJ1IjoiamRicmlnaGFtIiwiYSI6ImNtbTF4N3YweTAxYmoycHFiYmg5YW5yaTkifQ.rvmCAAfDUvJcACLLpxH8cw';
+
+  const map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/jdbrigham/cmm1d982c000101qj625b0t0c',
+    center: [-71.06, 42.36], // Boston
+    zoom: 13
+  });
+
+//   map.on('load', () => {
+//   const layers = map.getStyle().layers;
+
+//   layers.forEach(layer => {
+//     const id = layer.id;
+
+//     // Hide everything except water, land, and parks
+//     if (
+//       !id.includes('water') &&
+//       !id.includes('land') &&
+//       !id.includes('park') &&
+//       !id.includes('background')
+//     ) {
+//       map.setLayoutProperty(id, 'visibility', 'none');
+//     }
+//   });
+// });
+
+// map.on('load', () => {
+//   const layers = map.getStyle().layers;
+
+//   layers.forEach(layer => {
+//     console.log(layer.id);
+//   });
+// });
+
+map.on('load', () => {
+  const layers = map.getStyle().layers;
+
+  layers.forEach(layer => {
+    try {
+      map.setLayoutProperty(layer.id, 'visibility', 'none');
+    } catch (e) {}
+  });
+});
+</script>
+
+</body>
+</html>

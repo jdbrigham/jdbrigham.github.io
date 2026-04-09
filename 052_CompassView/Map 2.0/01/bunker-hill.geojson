@@ -1,0 +1,76 @@
+{
+  "type": "FeatureCollection",
+  "generator": "overpass-turbo",
+  "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL.",
+  "timestamp": "2026-02-26T21:16:44Z",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "way/1263320391",
+        "access": "yes",
+        "boundary": "protected_area",
+        "ele": "19",
+        "gnis:feature_id": "600132",
+        "historic": "yes",
+        "leisure": "park",
+        "massgis:ARTICLE97": "0",
+        "massgis:ASSESS_ACR": "3.70000000",
+        "massgis:ATT_DATE": "1994/08/03",
+        "massgis:DCAM_ID": "0",
+        "massgis:DEED_ACRES": "0.00000000",
+        "massgis:EOEAINVOLV": "0",
+        "massgis:FEESYM": "F",
+        "massgis:FEE_OWNER": "National Park Service",
+        "massgis:FY_FUNDING": "0",
+        "massgis:LEV_PROT": "P",
+        "massgis:OS_DEED_BO": "0",
+        "massgis:OS_DEED_PA": "0",
+        "massgis:OS_ID": "35-301",
+        "massgis:OWNER_ABRV": "NPS",
+        "massgis:OWNER_TYPE": "F",
+        "massgis:POLY_ID": "301",
+        "massgis:PRIM_PURP": "H",
+        "massgis:PUB_ACCESS": "Y",
+        "massgis:SITE_NAME": "BUNKER HILL MONUMENT",
+        "massgis:TOWN_ID": "35",
+        "name": "Monument Square",
+        "owner": "National Park Service",
+        "ownership": "national",
+        "protect_class": "3",
+        "protected": "perpetuity",
+        "protection_title": "National Historic Site",
+        "source": "MassGIS OpenSpace (http://www.mass.gov/mgis/osp.htm)",
+        "wikidata": "Q6906850"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -71.0611639,
+              42.3770821
+            ],
+            [
+              -71.0617346,
+              42.3760104
+            ],
+            [
+              -71.0604169,
+              42.3755512
+            ],
+            [
+              -71.0598462,
+              42.3766243
+            ],
+            [
+              -71.0611639,
+              42.3770821
+            ]
+          ]
+        ]
+      },
+      "id": "way/1263320391"
+    }
+  ]
+}

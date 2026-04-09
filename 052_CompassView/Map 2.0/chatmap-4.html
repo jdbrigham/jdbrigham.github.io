@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Photo Map w/ Park Boundaries</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+<style>
+  body {
+    margin: 0;
+    background: #f2f2f2;
+    font-family: system-ui, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+  #map-container {
+    width: 80vw;
+    max-width: 900px;
+    height: 70vh;
+    max-height: 700px;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    background: #ddd;
+  }
+  #map { width: 100%; height: 100%; }
+  .camera-marker {
+    width: 40px; height: 40px;
+    background: white; border-radius: 50%;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .camera-marker img {
+    width: 26px; height: 26px;
+    transform-origin: center center;
+  }
+</style>
+</head>
+<body>
+
+<div id="map-container"><div id="map"></div></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+  const photos = [
+    { lat: 42.368806, lon: -71.059608, heading: 102, label: "Photo 1" },
+    { lat: 42.352628, lon: -71.052239, heading: 219, label: "Photo 2" }
+  ];
+
+  const map = L.map('map', { zoomControl:true, attributionControl:false })
+    .setView([photos[0].lat, photos[0].lon], 13);
+
+
+  // L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{
+  //   subdomains:'abcd', maxZoom:19
+  // }).addTo(map);
+
+//   L.tileLayer(
+//   'https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}',
+//   {
+//     id: 'mapbox/light-v11',
+//     accessToken: 'pk.eyJ1IjoiamRicmlnaGFtIiwiYSI6ImNtbTF4N3YweTAxYmoycHFiYmg5YW5yaTkifQ.rvmCAAfDUvJcACLLpxH8cw',
+//     tileSize: 512,
+//     zoomOffset: -1,
+//     attribution: '© Mapbox © OpenStreetMap'
+//   }
+// ).addTo(map);
+
+L.tileLayer(
+  'https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}',
+  {
+    id: 'jdbrigham/cmm1d982c000101qj625b0t0c',
+    accessToken: 'pk.eyJ1IjoiamRicmlnaGFtIiwiYSI6ImNtbTF4N3YweTAxYmoycHFiYmg5YW5yaTkifQ.rvmCAAfDUvJcACLLpxH8cw',
+    tileSize: 512,
+    zoomOffset: -1,
+    attribution: '© Mapbox © OpenStreetMap'
+  }
+).addTo(map);
+
+
+
+
+  function addPhotoMarker(photo) {
+    const icon = L.divIcon({
+      className: '',
+      html:`<div class="camera-marker">
+              <img src="https://cdn-icons-png.flaticon.com/512/685/685655.png"
+                   style="transform: rotate(${photo.heading}deg);">
+            </div>`,
+      iconSize:[40,40], iconAnchor:[20,20]
+    });
+    L.marker([photo.lat, photo.lon], {icon})
+     .addTo(map)
+     .bindPopup(`${photo.label}<br>Heading: ${photo.heading}°`);
+  }
+  photos.forEach(addPhotoMarker);
+
+  // -- Park boundaries overlay --
+  fetch('parks.geojson')
+    .then(res => res.json())
+    .then(data => {
+      L.geoJSON(data, {
+        style: {
+          color: "#2a7f3e",        // boundary stroke color
+          weight: 2,
+          fillColor: "#7ecf8e",    // fill color
+          fillOpacity: 0.25
+        }
+      }).addTo(map);
+    })
+    .catch(err => console.warn('Park GeoJSON failed to load:', err));
+
+    const svgBounds = [
+  [42.354992, -71.065750],  // southwest (minLat, minLng)
+  [42.375412, -71.054420]   // northeast (maxLat, maxLng)
+];
+
+// L.imageOverlay("georeferenced-map-3.svg", svgBounds, {
+//   opacity: 1,
+//   interactive: false
+// }).addTo(map);
+
+// function scaleBounds(bounds, factor) {
+//   const sw = bounds[0];
+//   const ne = bounds[1];
+
+//   const centerLat = (sw[0] + ne[0]) / 2;
+//   const centerLng = (sw[1] + ne[1]) / 2;
+
+//   const latHalf = (ne[0] - sw[0]) / 2 * factor;
+//   const lngHalf = (ne[1] - sw[1]) / 2 * factor;
+
+//   return [
+//     [centerLat - latHalf, centerLng - lngHalf],
+//     [centerLat + latHalf, centerLng + lngHalf]
+//   ];
+// }
+
+// const originalBounds = [
+//   [42.354992, -71.065750],
+//   [42.375412, -71.054420]
+// ];
+
+// // Try scaling 4×
+// const scaledBounds = scaleBounds(originalBounds, 4);
+
+// L.imageOverlay("georeferenced-map.svg", scaledBounds).addTo(map);
+</script>
+
+</body>
+</html>

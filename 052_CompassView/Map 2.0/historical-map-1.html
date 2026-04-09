@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Mapbox GL Minimal Test</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.js"></script>
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.css" rel="stylesheet" />
+  <style>
+    body { margin: 0; padding: 0; }
+    #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+  </style>
+</head>
+<body>
+<div id="map"></div>
+
+<script>
+
+  mapboxgl.accessToken = 'pk.eyJ1IjoiamRicmlnaGFtIiwiYSI6ImNtbTF4N3YweTAxYmoycHFiYmg5YW5yaTkifQ.rvmCAAfDUvJcACLLpxH8cw';
+
+  const map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/mapbox/light-v11',
+    center: [-71.06, 42.36], // Boston
+    zoom: 13
+  });
+
+  map.on('load', () => {
+
+  // 1️⃣ Hide all original layers FIRST
+  map.getStyle().layers.forEach(layer => {
+    map.setLayoutProperty(layer.id, 'visibility', 'none');
+  });
+
+
+
+  // 2️⃣ Add background FIRST
+  map.addLayer({
+    id: 'bg',
+    type: 'background',
+    paint: {
+      'background-color': '#f4f1ea'
+    }
+  });
+
+  // 3️⃣ Add water
+map.addLayer({
+  id: 'major-water',
+  type: 'fill',
+  source: 'composite',
+  'source-layer': 'water',
+  paint: {
+    'fill-color': '#bbdefb'
+  }
+});
+
+// add separate layer for rivers
+map.addLayer({
+  id: 'waterways',
+  type: 'line',
+  source: 'composite',
+  'source-layer': 'waterway',
+  paint: {
+    'line-color': '#bbdefb',
+    'line-width': 1
+  }
+});
+
+  // 6️⃣ Add your GeoJSON parks LAST so they sit above landuse
+  map.addSource('boston-common', {
+    type: 'geojson',
+    data: 'parks.geojson'
+  });
+
+  map.addLayer({
+    id: 'boston-common-fill',
+    type: 'fill',
+    source: 'boston-common',
+    paint: {
+      'fill-color': '#6aa84f',
+      'fill-opacity': 0.8
+    }
+  });
+
+});
+
+
+
+// new alternative on load code
+// map.on('load', () => {
+
+//   // Hide everything
+//   map.getStyle().layers.forEach(layer => {
+//     map.setLayoutProperty(layer.id, 'visibility', 'none');
+//   });
+
+//   // Background
+//   map.addLayer({
+//     id: 'bg',
+//     type: 'background',
+//     paint: {
+//       'background-color': '#f4f1ea'
+//     }
+//   });
+
+//   // Modern water
+//   map.addLayer({
+//     id: 'water',
+//     type: 'fill',
+//     source: 'composite',
+//     'source-layer': 'water',
+//     paint: {
+//       'fill-color': '#cfe8f3'
+//     }
+//   });
+
+// });
+
+</script>
+
+</body>
+</html>

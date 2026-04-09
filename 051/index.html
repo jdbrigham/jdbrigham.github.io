@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photo Metadata Reader</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .upload-area:hover {
+            border-color: #007AFF;
+            background: #f8f9ff;
+        }
+        .upload-area.dragover {
+            border-color: #007AFF;
+            background: #f0f4ff;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        .preview {
+            max-width: 100%;
+            max-height: 400px;
+            margin: 20px 0;
+            border-radius: 8px;
+            display: none;
+        }
+        .metadata {
+            display: none;
+            margin-top: 20px;
+        }
+        .metadata-item {
+            padding: 12px;
+            margin: 10px 0;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border-left: 4px solid #007AFF;
+        }
+        .metadata-label {
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 4px;
+        }
+        .metadata-value {
+            color: #333;
+            font-size: 14px;
+        }
+        .error {
+            color: #dc3545;
+            padding: 12px;
+            background: #f8d7da;
+            border-radius: 6px;
+            display: none;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📸 Photo Metadata Reader</h1>
+        
+        <div class="upload-area" id="uploadArea">
+            <p style="margin: 0; color: #666;">Click to upload or drag and drop a photo</p>
+            <p style="margin: 10px 0 0 0; color: #999; font-size: 14px;">Works best with iPhone photos</p>
+        </div>
+        
+        <input type="file" id="fileInput" accept="image/*">
+        
+        <img id="preview" class="preview" alt="Preview">
+        
+        <div id="metadata" class="metadata">
+            <h2 style="color: #333; margin-bottom: 15px;">Metadata</h2>
+            <div class="metadata-item">
+                <div class="metadata-label">Capture Date & Time</div>
+                <div class="metadata-value" id="datetime">-</div>
+            </div>
+            <div class="metadata-item">
+                <div class="metadata-label">Field of View / Focal Length</div>
+                <div class="metadata-value" id="fov">-</div>
+            </div>
+            <div class="metadata-item">
+                <div class="metadata-label">Angle of View</div>
+                <div class="metadata-value" id="aov">-</div>
+            </div>
+            <div class="metadata-item">
+                <div class="metadata-label">Compass Direction</div>
+                <div class="metadata-value" id="direction">-</div>
+            </div>
+            <div class="metadata-item">
+                <div class="metadata-label">GPS Coordinates</div>
+                <div class="metadata-value" id="gps">-</div>
+            </div>
+        </div>
+        
+        <div id="error" class="error"></div>
+    </div>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const preview = document.getElementById('preview');
+        const metadataDiv = document.getElementById('metadata');
+        const errorDiv = document.getElementById('error');
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            if (e.dataTransfer.files.length) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+        
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            if (!file.type.startsWith('image/')) {
+                showError('Please select an image file');
+                return;
+            }
+
+            errorDiv.style.display = 'none';
+            const reader = new FileReader();
+            
+            reader.onload = (e) => {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+                extractMetadata(e.target.result);
+            };
+            
+            reader.readAsDataURL(file);
+        }
+
+        function extractMetadata(imageData) {
+            const img = new Image();
+            img.src = imageData;
+            
+            img.onload = () => {
+                EXIF.getData(img, function() {
+                    const allData = EXIF.getAllTags(this);
+                    
+                    // Capture Date & Time
+                    const datetime = EXIF.getTag(this, 'DateTimeOriginal') || EXIF.getTag(this, 'DateTime') || 'Not available';
+                    document.getElementById('datetime').textContent = datetime;
+                    
+                    // Field of View / Focal Length
+                    const focalLength = EXIF.getTag(this, 'FocalLength');
+                    const focalLength35 = EXIF.getTag(this, 'FocalLengthIn35mmFilm');
+                    let fovText = 'Not available';
+                    if (focalLength) {
+                        fovText = `${focalLength}mm`;
+                        if (focalLength35) {
+                            fovText += ` (${focalLength35}mm equivalent)`;
+                        }
+                    }
+                    document.getElementById('fov').textContent = fovText;
+                    
+                    // Angle of View
+                    let aovText = 'Not available';
+                    if (focalLength35) {
+                        // Calculate horizontal angle of view using 35mm film dimensions (36mm x 24mm)
+                        // Formula: AOV = 2 * arctan(sensor_width / (2 * focal_length))
+                        const sensorWidth = 36; // 35mm film width in mm
+                        const horizontalAOV = 2 * Math.atan(sensorWidth / (2 * focalLength35)) * (180 / Math.PI);
+                        
+                        // Also calculate vertical and diagonal
+                        const sensorHeight = 24;
+                        const verticalAOV = 2 * Math.atan(sensorHeight / (2 * focalLength35)) * (180 / Math.PI);
+                        const sensorDiagonal = Math.sqrt(sensorWidth * sensorWidth + sensorHeight * sensorHeight);
+                        const diagonalAOV = 2 * Math.atan(sensorDiagonal / (2 * focalLength35)) * (180 / Math.PI);
+                        
+                        aovText = `${horizontalAOV.toFixed(1)}° horizontal`;
+                        aovText += `\n${verticalAOV.toFixed(1)}° vertical, ${diagonalAOV.toFixed(1)}° diagonal`;
+                    }
+                    document.getElementById('aov').textContent = aovText;
+                    
+                    // Compass Direction
+                    const imgDirection = EXIF.getTag(this, 'GPSImgDirection');
+                    const imgDirectionRef = EXIF.getTag(this, 'GPSImgDirectionRef');
+                    let directionText = 'Not available';
+                    if (imgDirection !== undefined) {
+                        const degrees = Math.round(imgDirection);
+                        const cardinal = getCardinalDirection(degrees);
+                        directionText = `${degrees}° ${cardinal}`;
+                        if (imgDirectionRef) {
+                            directionText += ` (${imgDirectionRef})`;
+                        }
+                    }
+                    document.getElementById('direction').textContent = directionText;
+                    
+                    // GPS Coordinates
+                    const lat = EXIF.getTag(this, 'GPSLatitude');
+                    const latRef = EXIF.getTag(this, 'GPSLatitudeRef');
+                    const lon = EXIF.getTag(this, 'GPSLongitude');
+                    const lonRef = EXIF.getTag(this, 'GPSLongitudeRef');
+                    
+                    let gpsText = 'Not available';
+                    if (lat && lon) {
+                        const latDecimal = convertDMSToDD(lat, latRef);
+                        const lonDecimal = convertDMSToDD(lon, lonRef);
+                        gpsText = `${latDecimal.toFixed(6)}°, ${lonDecimal.toFixed(6)}°`;
+                        gpsText += `\n(${latRef} ${formatDMS(lat)}, ${lonRef} ${formatDMS(lon)})`;
+                    }
+                    document.getElementById('gps').textContent = gpsText;
+                    
+                    metadataDiv.style.display = 'block';
+                });
+            };
+        }
+
+        function convertDMSToDD(dms, ref) {
+            const degrees = dms[0];
+            const minutes = dms[1];
+            const seconds = dms[2];
+            let dd = degrees + minutes / 60 + seconds / 3600;
+            if (ref === 'S' || ref === 'W') {
+                dd = dd * -1;
+            }
+            return dd;
+        }
+
+        function formatDMS(dms) {
+            return `${dms[0]}° ${dms[1]}' ${dms[2].toFixed(2)}"`;
+        }
+
+        function getCardinalDirection(degrees) {
+            const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+            const index = Math.round(degrees / 45) % 8;
+            return directions[index];
+        }
+
+        function showError(message) {
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            preview.style.display = 'none';
+            metadataDiv.style.display = 'none';
+        }
+    </script>
+</body>
+</html>
