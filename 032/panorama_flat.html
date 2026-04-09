@@ -275,9 +275,37 @@
         <text x="50" y="98"  text-anchor="middle" font-size="6" font-family="Helvetica Neue,sans-serif" fill="rgba(255,255,255,0.5)">S</text>
         <text x="7"  y="53"  text-anchor="middle" font-size="6" font-family="Helvetica Neue,sans-serif" fill="rgba(255,255,255,0.5)">W</text>
 
-        <!-- Facing-direction marker at 12 o'clock (0° of the rose = COMPASS_START).
-             A small bright triangle just inside the outer ring. -->
-        <polygon points="50,4 52.5,10 47.5,10" fill="#2a9fd6"/>
+        <!-- ── Photo field-of-view indicators ──────────────────
+             All elements start at 0° (top of SVG). JS rotates each one
+             to the correct position inside the rose coordinate system.
+             Because the rose itself rotates by -COMPASS_START, an element
+             at angle A inside the rose appears at (A - COMPASS_START) on screen.
+             So to appear at screen-top (0°) we place elements at +COMPASS_START.
+             Left bound → COMPASS_START - halfSpan. Right → COMPASS_START + halfSpan.
+        -->
+
+        <!-- Centre facing marker — JS sets rotate(COMPASS_START) -->
+        <g id="fovCentre" transform="rotate(0,50,50)">
+          <polygon points="50,3 53,11 47,11" fill="#2a9fd6"/>
+        </g>
+
+        <!-- Left bound marker — JS sets rotate(COMPASS_START - halfSpan) -->
+        <g id="fovLeft" transform="rotate(0,50,50)">
+          <line x1="50" y1="3" x2="50" y2="13"
+                stroke="rgba(100,180,230,0.6)" stroke-width="1.5"/>
+          <polygon points="50,14 52,19 48,19" fill="rgba(100,180,230,0.5)"/>
+        </g>
+
+        <!-- Right bound marker — JS sets rotate(COMPASS_START + halfSpan) -->
+        <g id="fovRight" transform="rotate(0,50,50)">
+          <line x1="50" y1="3" x2="50" y2="13"
+                stroke="rgba(100,180,230,0.6)" stroke-width="1.5"/>
+          <polygon points="50,14 52,19 48,19" fill="rgba(100,180,230,0.5)"/>
+        </g>
+
+        <!-- Arc connecting the two bounds, drawn by JS -->
+        <path id="fovArc" d="" fill="none"
+              stroke="rgba(100,180,230,0.25)" stroke-width="2.5"/>
       </g>
 
       <!-- Fixed heading label at centre — absolute degrees, never rotates -->
@@ -308,6 +336,12 @@
   </div>
 
   <script>
+    // Disable browser scroll restoration so the page always
+    // opens at the correct pan position, not wherever it was left
+    if ('scrollRestoration' in history) {
+      history.scrollRestoration = 'manual';
+    }
+
     // ═══════════════════════════════════════════════════════
     //  CONFIG
     // ═══════════════════════════════════════════════════════
@@ -353,6 +387,7 @@
       } catch (err) {
         console.warn('EXIF read failed:', err.message, '— using default 0°');
       }
+      setFovMarkers();
       detectAndStart();
     }
 
@@ -380,6 +415,8 @@
       permScreen.style.display = 'none';
       document.body.classList.add('desktop-mode');
       scrollProxy.style.height = (SCROLL_HEIGHT + window.innerHeight) + 'px';
+      // Scroll to 50% = centre of pan range = COMPASS_START heading
+      window.scrollTo(0, SCROLL_HEIGHT * 0.5);
       hud.textContent = 'Scroll to pan';
       hud.style.display = 'block';
       tiltBar.style.display = 'block';
@@ -429,6 +466,41 @@
     }
 
     // ── rAF loop ─────────────────────────────────────────────
+    // ── FOV marker setup ────────────────────────────────────
+    function setFovMarkers() {
+      const halfSpan = COMPASS_SPAN / 2;
+      const cs = COMPASS_START;
+
+      // The rose rotates by -cs, so to appear at screen-top (0°),
+      // an element inside the rose must be at angle +cs.
+      // Centre marker: at cs (appears at top after rose rotates by -cs)
+      document.getElementById('fovCentre')
+        .setAttribute('transform', `rotate(${cs},50,50)`);
+
+      // Left bound: cs - halfSpan inside rose → appears at -halfSpan on screen
+      document.getElementById('fovLeft')
+        .setAttribute('transform', `rotate(${cs - halfSpan},50,50)`);
+
+      // Right bound: cs + halfSpan inside rose → appears at +halfSpan on screen
+      document.getElementById('fovRight')
+        .setAttribute('transform', `rotate(${cs + halfSpan},50,50)`);
+
+      // Arc: sweep from left to right bound, just inside the outer ring (r=44)
+      // Angles in rose space: cs-halfSpan to cs+halfSpan
+      // toRad converts SVG angle (0°=top) to Math angle (0°=right)
+      const r = 44;
+      const toRad = d => (d - 90) * Math.PI / 180;
+      const lx = 50 + r * Math.cos(toRad(cs - halfSpan));
+      const ly = 50 + r * Math.sin(toRad(cs - halfSpan));
+      const rx = 50 + r * Math.cos(toRad(cs + halfSpan));
+      const ry = 50 + r * Math.sin(toRad(cs + halfSpan));
+      const largeArc = halfSpan * 2 > 180 ? 1 : 0;
+      document.getElementById('fovArc')
+        .setAttribute('d', `M ${lx.toFixed(2)} ${ly.toFixed(2)} A ${r} ${r} 0 ${largeArc} 1 ${rx.toFixed(2)} ${ry.toFixed(2)}`);
+
+      window._fovSet = true;
+    }
+
     function rafLoop() {
       if (mode === 'gyro') {
         const clamped = Math.max(GAMMA_MIN, Math.min(GAMMA_MAX, latestGamma));
@@ -443,6 +515,9 @@
 
       // Compass + heading
       const panHeading = (COMPASS_START - COMPASS_SPAN / 2 + (currentPct / 100) * COMPASS_SPAN + 360) % 360;
+      // ── Set FOV markers (fallback if EXIF loaded before rAF started) ──
+      if (!window._fovSet) setFovMarkers();
+
       // Rotate the rose so COMPASS_START sits at 12 o'clock.
       // Rose rotation = -COMPASS_START (bring facing direction to top).
       document.getElementById('compassRose')
