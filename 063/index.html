@@ -65,9 +65,43 @@
       .replay { background: #191919; border-color: #333; color: #eee; }
       #pieces path, #pieces polygon, #pieces rect, #pieces circle, #pieces ellipse { fill: #eee; }
     }
+
+    .btn-container {
+      width: 90%;
+      display: flex;
+      background-color: #000;
+    }
+
+    .box-button {
+        display: inline-flex;          /* keeps text centered */
+        align-items: center;           /* vertical centering */
+        justify-content: center;       /* horizontal centering */
+        padding: 12px 24px;            /* adjust size */
+        border: 1px solid white;       /* white rectangular outline */
+        color: white;                  /* text color */
+        text-decoration: none;         /* remove underline */
+        font-weight: normal;             /* bold text */
+        font-family: sans-serif;
+        letter-spacing: 1px;           /* optional: spaced-out text */
+
+        background: transparent;       /* transparent fill */
+        transition: background 0.2s, color 0.2s;
+        margin: 22px;
+    }
+
+    .box-button:hover {
+        background: white;             /* hover effect */
+        color: black;
+    }
   </style>
 </head>
 <body>
+  <div class="btn-container">
+    <a href="animation.html" class="box-button">Line design</a>
+    <a href="dot-animation.html" class="box-button">Dots design</a>
+    <a href="path-animation-major-roads.html" class="box-button">Major Roads</a>
+  </div>
+
   <div class="frame">
     <!-- Replace this <svg> with YOUR SVG. 
          Keep id="pieces" on the group that contains all your 20–30 shapes. -->
