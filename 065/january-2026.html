@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Route Animator — Hardcoded</title>
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.css" rel="stylesheet" />
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #1a1a2e;
+            color: white;
+            font-family: system-ui, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 24px;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #e2e8f0;
+        }
+
+        p.subtitle {
+            color: #94a3b8;
+            margin-bottom: 24px;
+            font-size: 0.9rem;
+        }
+
+        #mapContainer {
+            width: 100%;
+            max-width: 900px;
+            height: 520px;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 16px;
+            display: block;
+            position: relative;
+        }
+
+        #map { width: 100%; height: 100%; }
+
+        #statsBar {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background: rgba(15, 23, 42, 0.88);
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 0.8rem;
+            color: #94a3b8;
+            line-height: 1.6;
+            pointer-events: none;
+            min-width: 160px;
+        }
+        #statsBar strong { color: #e2e8f0; }
+
+        #legend {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(15, 23, 42, 0.88);
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 0.78rem;
+            color: #94a3b8;
+            line-height: 1.8;
+            pointer-events: none;
+        }
+        .legend-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .legend-swatch {
+            width: 24px;
+            height: 4px;
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+
+        #controls {
+            background: #0f172a;
+            border-radius: 12px;
+            padding: 20px 24px;
+            width: 100%;
+            max-width: 900px;
+            display: block;
+        }
+
+        #progressBar {
+            width: 100%;
+            height: 6px;
+            background: #1e293b;
+            border-radius: 3px;
+            margin-bottom: 16px;
+            cursor: pointer;
+            position: relative;
+        }
+        #progressFill {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            border-radius: 3px;
+            width: 0%;
+            transition: width 0.05s linear;
+        }
+        #progressHandle {
+            width: 14px;
+            height: 14px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            top: -4px;
+            left: 0%;
+            transform: translateX(-50%);
+            cursor: grab;
+            box-shadow: 0 0 6px rgba(0,0,0,0.5);
+        }
+
+        .btn-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 8px 20px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        #playBtn   { background: #3b82f6; color: white; min-width: 90px; }
+        #playBtn:hover { background: #2563eb; }
+        #resetBtn  { background: #475569; color: white; }
+        #resetBtn:hover { background: #334155; }
+        .speed-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: auto;
+        }
+        .speed-group label { font-size: 0.85rem; color: #94a3b8; }
+
+        select {
+            background: #1e293b;
+            color: white;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+
+        .style-group { display: flex; align-items: center; gap: 8px; }
+        .style-group label { font-size: 0.85rem; color: #94a3b8; }
+        input[type="range"] { width: 80px; accent-color: #3b82f6; }
+
+        #timeDisplay {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        #errorMsg {
+            color: #f87171;
+            font-size: 0.9rem;
+            margin-bottom: 16px;
+            text-align: center;
+            max-width: 900px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ============================================================
+         CONFIGURATION — edit these values for each copy of this page
+         ============================================================ -->
+    <script>
+        const JSON_FILE     = 'location-history_filtered_2026-01-01_to_2026-01-31.json'; // path to your JSON file
+        const PAGE_TITLE    = '🗺️ Route Animator (Jan 2026)';
+        const PAGE_SUBTITLE = '';              // e.g. 'March 2025'
+        const AUTOPLAY      = false;
+    </script>
+    <!-- ============================================================ -->
+
+    <h1 id="pageTitle"></h1>
+    <p class="subtitle" id="pageSubtitle"></p>
+    <p id="errorMsg"></p>
+
+    <div id="mapContainer">
+        <div id="map"></div>
+        <div id="statsBar">
+            <div><strong id="statActivities">—</strong> activity segments</div>
+            <div><strong id="statDistance">—</strong> km total distance</div>
+            <div><strong id="statDates">—</strong></div>
+            <div style="margin-top:6px;">Showing: <strong id="statProgress">0%</strong></div>
+        </div>
+        <div id="legend"></div>
+    </div>
+
+    <div id="controls">
+        <div id="progressBar">
+            <div id="progressFill"></div>
+            <div id="progressHandle"></div>
+        </div>
+        <div class="btn-row">
+            <button id="playBtn">▶ Play</button>
+            <button id="resetBtn">↺ Reset</button>
+            <div class="style-group">
+                <label>Width</label>
+                <input type="range" id="pathWidth" min="1" max="10" value="3">
+            </div>
+            <div class="speed-group">
+                <label>Speed</label>
+                <select id="speedSelect">
+                    <option value="0.5">0.5x</option>
+                    <option value="1" selected>1x</option>
+                    <option value="2">2x</option>
+                    <option value="5">5x</option>
+                    <option value="10">10x</option>
+                </select>
+            </div>
+        </div>
+        <div id="timeDisplay">0% complete</div>
+    </div>
+
+    <script>
+        // ── Config ──────────────────────────────────────────────────
+        const GIST_URL = 'https://gist.githubusercontent.com/jdbrigham/bf6dad70ca495a6193770d6558f04efb/raw/mapbox-config.json';
+
+        // Activity type → display label + color
+        const ACTIVITY_STYLES = {
+            'walking':              { label: 'Walking',    color: '#22c55e' },
+            'running':              { label: 'Running',    color: '#ef4444' },
+            'cycling':              { label: 'Cycling',    color: '#f59e0b' },
+            'in_vehicle':           { label: 'In vehicle', color: '#3b82f6' },
+            'in_passenger_vehicle': { label: 'In vehicle', color: '#3b82f6' },
+            'motorcycling':         { label: 'Motorcycling', color: '#8b5cf6' },
+            'flying':               { label: 'Flying',    color: '#06b6d4' },
+            'sailing':              { label: 'Sailing',   color: '#0ea5e9' },
+            'skiing':               { label: 'Skiing',    color: '#bae6fd' },
+        };
+        const FALLBACK_COLOR = '#94a3b8';
+
+        function typeColor(type) {
+            return (ACTIVITY_STYLES[type] || {}).color || FALLBACK_COLOR;
+        }
+
+        // ── State ───────────────────────────────────────────────────
+        let map = null;
+        // allSegments: [ { start: [lng,lat], end: [lng,lat], type: string }, ... ]
+        let allSegments = [];
+        let progress = 0;
+        let playing = false;
+        let animFrame = null;
+        let lastTime = null;
+
+        // ── Apply config & load JSON ────────────────────────────────
+        document.getElementById('pageTitle').textContent    = PAGE_TITLE;
+        document.getElementById('pageSubtitle').textContent = PAGE_SUBTITLE;
+
+        fetch(JSON_FILE)
+            .then(r => {
+                if (!r.ok) throw new Error(`Could not load "${JSON_FILE}" (${r.status})`);
+                return r.json();
+            })
+            .then(data => {
+                processTimeline(data);
+                if (AUTOPLAY) document.getElementById('playBtn').click();
+            })
+            .catch(err => showError(err.message + ' — make sure the JSON file is in the same folder and you are running from a local server.'));
+
+        function parseGeo(geoStr) {
+            const m = geoStr.match(/geo:([-\d.]+),([-\d.]+)/);
+            if (!m) return null;
+            return [parseFloat(m[2]), parseFloat(m[1])]; // [lng, lat] for Mapbox
+        }
+
+        function normalizeType(raw) {
+            if (!raw) return 'unknown';
+            return raw.toLowerCase().replace(/\s+/g, '_');
+        }
+
+        function processTimeline(data) {
+            const activities = data.filter(e => e.activity && e.activity.start && e.activity.end);
+
+            if (activities.length === 0) {
+                showError('No activity segments with start/end coordinates found in this file.');
+                return;
+            }
+
+            activities.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+
+            const segments = [];
+            for (const act of activities) {
+                const start = parseGeo(act.activity.start);
+                const end   = parseGeo(act.activity.end);
+                if (!start || !end) continue;
+                const type = normalizeType(act.activity.topCandidate?.type);
+                segments.push({ start, end, type });
+            }
+
+            if (segments.length < 1) {
+                showError('Not enough valid coordinates to draw a route.');
+                return;
+            }
+
+            allSegments = segments;
+
+            // Stats
+            const totalKm   = activities.reduce((s, a) => s + (parseFloat(a.activity.distanceMeters) || 0), 0) / 1000;
+            const dateStart = new Date(activities[0].startTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            const dateEnd   = new Date(activities[activities.length-1].endTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+            document.getElementById('statActivities').textContent = activities.length;
+            document.getElementById('statDistance').textContent   = totalKm.toFixed(1);
+            document.getElementById('statDates').textContent      = dateStart + ' – ' + dateEnd;
+
+            buildLegend(segments);
+            initMap();
+        }
+
+        function buildLegend(segments) {
+            // Only show types actually present in the data, in order of first appearance
+            const seen = new Map();
+            for (const seg of segments) {
+                if (!seen.has(seg.type)) seen.set(seg.type, typeColor(seg.type));
+            }
+            const legend = document.getElementById('legend');
+            legend.innerHTML = '';
+            for (const [type, color] of seen) {
+                const label = (ACTIVITY_STYLES[type] || {}).label || type.replace(/_/g, ' ');
+                const row = document.createElement('div');
+                row.className = 'legend-row';
+                row.innerHTML = `<div class="legend-swatch" style="background:${color}"></div><span>${label}</span>`;
+                legend.appendChild(row);
+            }
+        }
+
+        // ── Mapbox ──────────────────────────────────────────────────
+        async function initMap() {
+            try {
+                const resp = await fetch(GIST_URL + '?t=' + Date.now());
+                const config = await resp.json();
+                mapboxgl.accessToken = config.token;
+            } catch(e) {
+                showError('Could not load Mapbox token from gist.');
+                return;
+            }
+
+            const allPoints = allSegments.flatMap(s => [s.start, s.end]);
+            const bounds = allPoints.reduce((b, c) => b.extend(c), new mapboxgl.LngLatBounds(allPoints[0], allPoints[0]));
+
+            map = new mapboxgl.Map({
+                container: 'map',
+                style: 'mapbox://styles/mapbox/light-v11',
+                bounds: bounds,
+                fitBoundsOptions: { padding: 60 }
+            });
+
+            map.on('load', () => {
+                map.getStyle().layers.forEach(layer => {
+                    map.setLayoutProperty(layer.id, 'visibility', 'none');
+                });
+
+                // Map style
+                map.addLayer({ id: 'bg', type: 'background', paint: { 'background-color': '#f4f1ea' } });
+                map.addLayer({ id: 'major-water', type: 'fill', source: 'composite', 'source-layer': 'water', paint: { 'fill-color': '#bbdefb' } });
+                map.addLayer({ id: 'waterways', type: 'line', source: 'composite', 'source-layer': 'waterway', paint: { 'line-color': '#bbdefb', 'line-width': 1 } });
+                map.addLayer({
+                    id: 'major-roads', type: 'line', source: 'composite', 'source-layer': 'road',
+                    filter: ['any', ['==', ['get', 'class'], 'primary'], ['==', ['get', 'class'], 'secondary'], ['==', ['get', 'structure'], 'bridge']],
+                    paint: { 'line-color': '#888888', 'line-width': ['interpolate', ['linear'], ['zoom'], 12, 0.5, 15, 2] }
+                });
+                map.addLayer({
+                    id: 'minor-roads', type: 'line', source: 'composite', 'source-layer': 'road',
+                    filter: ['any', ['==', ['get', 'class'], 'tertiary'], ['==', ['get', 'class'], 'street'], ['==', ['get', 'class'], 'secondary_link'], ['==', ['get', 'class'], 'primary_link']],
+                    paint: { 'line-color': '#aaaaaa', 'line-width': ['interpolate', ['linear'], ['zoom'], 12, 0.3, 15, 1] }
+                });
+                map.addLayer({ id: 'buildings', type: 'fill', source: 'composite', 'source-layer': 'building', paint: { 'fill-color': '#d9d9d9', 'fill-opacity': 0.6 } });
+                map.addLayer({ id: 'parks', type: 'fill', source: 'composite', 'source-layer': 'landuse', filter: ['==', ['get', 'class'], 'park'], paint: { 'fill-color': '#99d8c9', 'fill-opacity': 0.7 } });
+
+                // Route: FeatureCollection of per-segment LineStrings with activityType property
+                map.addSource('route', {
+                    type: 'geojson',
+                    data: { type: 'FeatureCollection', features: [] }
+                });
+
+                map.addLayer({
+                    id: 'route-line',
+                    type: 'line',
+                    source: 'route',
+                    layout: { 'line-cap': 'round', 'line-join': 'round' },
+                    paint: {
+                        'line-color': ['match', ['get', 'activityType'],
+                            'walking',              '#22c55e',
+                            'running',              '#ef4444',
+                            'cycling',              '#f59e0b',
+                            'in_vehicle',           '#3b82f6',
+                            'in_passenger_vehicle', '#3b82f6',
+                            'motorcycling',         '#8b5cf6',
+                            'flying',               '#06b6d4',
+                            'sailing',              '#0ea5e9',
+                            'skiing',               '#bae6fd',
+                            FALLBACK_COLOR
+                        ],
+                        'line-width': parseInt(document.getElementById('pathWidth').value),
+                        'line-opacity': 0.9
+                    }
+                });
+
+                // Dot at current tip — white with dark stroke so it's visible over any color
+                map.addSource('dot', {
+                    type: 'geojson',
+                    data: { type: 'Feature', geometry: { type: 'Point', coordinates: allSegments[0].start } }
+                });
+
+                map.addLayer({
+                    id: 'route-dot',
+                    type: 'circle',
+                    source: 'dot',
+                    paint: {
+                        'circle-radius': parseInt(document.getElementById('pathWidth').value) * 2.5,
+                        'circle-color': '#ffffff',
+                        'circle-stroke-width': 2,
+                        'circle-stroke-color': '#1a1a2e',
+                        'circle-opacity': 0
+                    }
+                });
+
+                updateDisplay();
+            });
+        }
+
+        // ── Animation ───────────────────────────────────────────────
+        function buildVisibleGeoJSON(p) {
+            const total = allSegments.length;
+            const drawn = p * total;
+            const fullCount = Math.floor(drawn);
+            const partial = drawn - fullCount;
+
+            const features = [];
+
+            for (let i = 0; i < fullCount && i < total; i++) {
+                features.push(makeFeature(allSegments[i].start, allSegments[i].end, allSegments[i].type));
+            }
+
+            if (fullCount < total && partial > 0) {
+                const seg = allSegments[fullCount];
+                const interp = [
+                    seg.start[0] + (seg.end[0] - seg.start[0]) * partial,
+                    seg.start[1] + (seg.end[1] - seg.start[1]) * partial
+                ];
+                features.push(makeFeature(seg.start, interp, seg.type));
+            }
+
+            return { type: 'FeatureCollection', features };
+        }
+
+        function makeFeature(start, end, type) {
+            return {
+                type: 'Feature',
+                properties: { activityType: type },
+                geometry: { type: 'LineString', coordinates: [start, end] }
+            };
+        }
+
+        function currentTip(p) {
+            const total = allSegments.length;
+            const drawn = p * total;
+            const fullCount = Math.floor(drawn);
+            const partial = drawn - fullCount;
+            if (fullCount >= total) return allSegments[total - 1].end;
+            const seg = allSegments[fullCount];
+            return [
+                seg.start[0] + (seg.end[0] - seg.start[0]) * partial,
+                seg.start[1] + (seg.end[1] - seg.start[1]) * partial
+            ];
+        }
+
+        function updateDisplay() {
+            if (!map || !map.getSource('route')) return;
+
+            map.getSource('route').setData(buildVisibleGeoJSON(progress));
+
+            const tip = currentTip(progress);
+            map.getSource('dot').setData({ type: 'Feature', geometry: { type: 'Point', coordinates: tip } });
+            map.setPaintProperty('route-dot', 'circle-opacity', progress > 0 ? 1 : 0);
+
+            const pct = Math.round(progress * 100);
+            document.getElementById('progressFill').style.width  = pct + '%';
+            document.getElementById('progressHandle').style.left = pct + '%';
+            document.getElementById('timeDisplay').textContent   = pct + '% complete';
+            document.getElementById('statProgress').textContent  = pct + '%';
+        }
+
+        function animate(ts) {
+            if (!playing) return;
+            if (!lastTime) lastTime = ts;
+            const delta = ts - lastTime;
+            lastTime = ts;
+
+            const speed = parseFloat(document.getElementById('speedSelect').value);
+            progress += delta / (8000 / speed);
+
+            if (progress >= 1) {
+                progress = 1;
+                playing = false;
+                document.getElementById('playBtn').textContent = '▶ Play';
+                lastTime = null;
+            }
+
+            updateDisplay();
+            if (playing) animFrame = requestAnimationFrame(animate);
+        }
+
+        // ── Controls ────────────────────────────────────────────────
+        document.getElementById('playBtn').addEventListener('click', () => {
+            if (!map || allSegments.length === 0) return;
+            if (progress >= 1) { progress = 0; updateDisplay(); }
+            playing = !playing;
+            document.getElementById('playBtn').textContent = playing ? '⏸ Pause' : '▶ Play';
+            if (playing) { lastTime = null; animFrame = requestAnimationFrame(animate); }
+            else { cancelAnimationFrame(animFrame); lastTime = null; }
+        });
+
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            playing = false;
+            cancelAnimationFrame(animFrame);
+            lastTime = null; progress = 0;
+            document.getElementById('playBtn').textContent = '▶ Play';
+            updateDisplay();
+        });
+
+        const progressBar = document.getElementById('progressBar');
+        progressBar.addEventListener('click', e => {
+            const rect = progressBar.getBoundingClientRect();
+            progress = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+            updateDisplay();
+        });
+
+        let draggingProgress = false;
+        document.getElementById('progressHandle').addEventListener('mousedown', () => draggingProgress = true);
+        window.addEventListener('mousemove', e => {
+            if (!draggingProgress) return;
+            const rect = progressBar.getBoundingClientRect();
+            progress = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+            updateDisplay();
+        });
+        window.addEventListener('mouseup', () => draggingProgress = false);
+
+        document.getElementById('pathWidth').addEventListener('input', e => {
+            if (!map) return;
+            map.setPaintProperty('route-line', 'line-width', parseInt(e.target.value));
+            map.setPaintProperty('route-dot', 'circle-radius', parseInt(e.target.value) * 2.5);
+        });
+
+        function showError(msg) {
+            const el = document.getElementById('errorMsg');
+            el.textContent = '⚠️ ' + msg;
+            el.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
