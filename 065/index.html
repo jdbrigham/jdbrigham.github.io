@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Route Animator</title>
+    <title>Route Animator — Hardcoded</title>
     <script src="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.js"></script>
     <link href="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.css" rel="stylesheet" />
     <style>
@@ -33,39 +33,6 @@
             font-size: 0.9rem;
         }
 
-        #uploadArea {
-            width: 100%;
-            max-width: 900px;
-            border: 2px dashed #334155;
-            border-radius: 12px;
-            padding: 40px;
-            text-align: center;
-            color: #94a3b8;
-            cursor: pointer;
-            margin-bottom: 24px;
-            transition: border-color 0.2s, background 0.2s;
-        }
-        #uploadArea:hover { border-color: #3b82f6; background: rgba(59,130,246,0.05); }
-        #uploadArea.hidden { display: none; }
-        #uploadArea p { margin-bottom: 12px; font-size: 1rem; }
-        #uploadArea span { font-size: 0.85rem; color: #64748b; }
-
-        .upload-btn {
-            background: #3b82f6;
-            color: white;
-            border: none;
-            padding: 10px 24px;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 12px;
-            transition: background 0.2s;
-        }
-        .upload-btn:hover { background: #2563eb; }
-
-        input[type="file"] { display: none; }
-
         #mapContainer {
             width: 100%;
             max-width: 900px;
@@ -73,7 +40,7 @@
             border-radius: 12px;
             overflow: hidden;
             margin-bottom: 16px;
-            display: none;
+            display: block;
             position: relative;
         }
 
@@ -124,7 +91,7 @@
             padding: 20px 24px;
             width: 100%;
             max-width: 900px;
-            display: none;
+            display: block;
         }
 
         #progressBar {
@@ -176,9 +143,6 @@
         #playBtn:hover { background: #2563eb; }
         #resetBtn  { background: #475569; color: white; }
         #resetBtn:hover { background: #334155; }
-        #reloadBtn { background: #1e293b; color: #94a3b8; }
-        #reloadBtn:hover { background: #334155; color: white; }
-
         .speed-group {
             display: flex;
             align-items: center;
@@ -220,16 +184,20 @@
 </head>
 <body>
 
-    <h1>🗺️ Route Animator</h1>
-    <p class="subtitle">Load a Google Timeline JSON export to animate your route</p>
-    <p id="errorMsg"></p>
+    <!-- ============================================================
+         CONFIGURATION — edit these values for each copy of this page
+         ============================================================ -->
+    <script>
+        const JSON_FILE     = 'location-history_filtered_2026-01-01_to_2026-01-31.json'; // path to your JSON file
+        const PAGE_TITLE    = '🗺️ Route Animator (Jan 2026)';
+        const PAGE_SUBTITLE = '';              // e.g. 'March 2025'
+        const AUTOPLAY      = false;
+    </script>
+    <!-- ============================================================ -->
 
-    <div id="uploadArea">
-        <p>Drop your Google Timeline JSON file here</p>
-        <span>Exports from Google Takeout — Timeline JSON format</span><br>
-        <button class="upload-btn" id="uploadBtn">Choose File</button>
-        <input type="file" id="fileInput" accept=".json">
-    </div>
+    <h1 id="pageTitle"></h1>
+    <p class="subtitle" id="pageSubtitle"></p>
+    <p id="errorMsg"></p>
 
     <div id="mapContainer">
         <div id="map"></div>
@@ -250,7 +218,6 @@
         <div class="btn-row">
             <button id="playBtn">▶ Play</button>
             <button id="resetBtn">↺ Reset</button>
-            <button id="reloadBtn">⬆ Load new file</button>
             <div class="style-group">
                 <label>Width</label>
                 <input type="range" id="pathWidth" min="1" max="10" value="3">
@@ -300,44 +267,20 @@
         let animFrame = null;
         let lastTime = null;
 
-        // ── Upload wiring ───────────────────────────────────────────
-        const uploadBtn  = document.getElementById('uploadBtn');
-        const fileInput  = document.getElementById('fileInput');
-        const uploadArea = document.getElementById('uploadArea');
+        // ── Apply config & load JSON ────────────────────────────────
+        document.getElementById('pageTitle').textContent    = PAGE_TITLE;
+        document.getElementById('pageSubtitle').textContent = PAGE_SUBTITLE;
 
-        uploadBtn.addEventListener('click', () => fileInput.click());
-        fileInput.addEventListener('change', e => { if (e.target.files.length) readJSON(e.target.files[0]); });
-
-        uploadArea.addEventListener('dragover',  e => { e.preventDefault(); uploadArea.style.borderColor = '#3b82f6'; });
-        uploadArea.addEventListener('dragleave', () => { uploadArea.style.borderColor = '#334155'; });
-        uploadArea.addEventListener('drop', e => {
-            e.preventDefault();
-            uploadArea.style.borderColor = '#334155';
-            if (e.dataTransfer.files.length) readJSON(e.dataTransfer.files[0]);
-        });
-
-        document.getElementById('reloadBtn').addEventListener('click', () => {
-            playing = false;
-            cancelAnimationFrame(animFrame);
-            lastTime = null; progress = 0; allSegments = [];
-            document.getElementById('playBtn').textContent = '▶ Play';
-            document.getElementById('mapContainer').style.display = 'none';
-            document.getElementById('controls').style.display = 'none';
-            document.getElementById('uploadArea').classList.remove('hidden');
-            document.getElementById('errorMsg').style.display = 'none';
-            fileInput.value = '';
-            if (map) { map.remove(); map = null; }
-        });
-
-        // ── Parse JSON ──────────────────────────────────────────────
-        function readJSON(file) {
-            const reader = new FileReader();
-            reader.onload = e => {
-                try { processTimeline(JSON.parse(e.target.result)); }
-                catch (err) { showError('Could not parse JSON: ' + err.message); }
-            };
-            reader.readAsText(file);
-        }
+        fetch(JSON_FILE)
+            .then(r => {
+                if (!r.ok) throw new Error(`Could not load "${JSON_FILE}" (${r.status})`);
+                return r.json();
+            })
+            .then(data => {
+                processTimeline(data);
+                if (AUTOPLAY) document.getElementById('playBtn').click();
+            })
+            .catch(err => showError(err.message + ' — make sure the JSON file is in the same folder and you are running from a local server.'));
 
         function parseGeo(geoStr) {
             const m = geoStr.match(/geo:([-\d.]+),([-\d.]+)/);
@@ -386,11 +329,6 @@
             document.getElementById('statDates').textContent      = dateStart + ' – ' + dateEnd;
 
             buildLegend(segments);
-
-            document.getElementById('uploadArea').classList.add('hidden');
-            document.getElementById('mapContainer').style.display = 'block';
-            document.getElementById('controls').style.display = 'block';
-
             initMap();
         }
 
