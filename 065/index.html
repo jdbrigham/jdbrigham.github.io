@@ -1,83 +1,219 @@
-<!--
-Source - https://stackoverflow.com/q/59823984
-Posted by Zoltan King, modified by community. See post 'Timeline' for change history
-Retrieved 2026-04-10, License - CC BY-SA 4.0
--->
-
 <!DOCTYPE html>
-<html lang="en-US">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- <link rel="stylesheet" href="boxes.css"> -->
-   <style>
-      /*
-      Source - https://stackoverflow.com/q/59823984
-      Posted by Zoltan King, modified by community. See post 'Timeline' for change history
-      Retrieved 2026-04-10, License - CC BY-SA 4.0
-      */
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Route Archive</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
-      :root {
-        box-sizing: border-box;
-      }
-
-      *,
-      *::before,
-      *::after {
-        box-sizing: inherit;
-      }
-
-      body {
-        margin: 0;
-        padding: 0;
-      }
-
-      .grid-container {
-        display: grid;
-        max-width: 600px;
-        height: 110px;
-        overflow: auto;
-        grid-template-columns: repeat(auto-fill, 50px);
-        justify-content: space-between;
-        align-items: center;
-        grid-gap: 4px;
-        border: 1px solid red;
-      }
-
-      .button {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        background: skyblue;
-        width: 50px;
-        height: 50px;
-        font-size: 1rem;
-        border: none;
-        outline-color: #00A8EF;
-        cursor: pointer;
-      }
-
-      @media screen and (min-width: 37.5em) {
-        .grid-container {
-          height: auto;
+        body {
+            background: #1a1a2e;
+            color: white;
+            font-family: system-ui, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 24px;
         }
-      }
+
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #e2e8f0;
+        }
+
+        p.subtitle {
+            color: #94a3b8;
+            margin-bottom: 40px;
+            font-size: 0.9rem;
+        }
+
+        .year-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: #475569;
+            margin-bottom: 16px;
+            width: 100%;
+            max-width: 700px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            width: 100%;
+            max-width: 700px;
+            margin-bottom: 48px;
+        }
+
+        /* ── Active month card ── */
+        .month-card {
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            border-radius: 12px;
+            padding: 20px 12px 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: inherit;
+            cursor: pointer;
+            transition: background 0.2s, border-color 0.2s, transform 0.15s;
+        }
+
+        .month-card:hover {
+            background: #1e293b;
+            border-color: #3b82f6;
+            transform: translateY(-2px);
+        }
+
+        .month-card:active {
+            transform: translateY(0);
+        }
+
+        /* ── Inactive month card ── */
+        .month-card.inactive {
+            background: #0f172a;
+            border-color: #1e293b;
+            opacity: 0.35;
+            cursor: default;
+            pointer-events: none;
+        }
+
+        /* ── Calendar icon ── */
+        .cal-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 10px;
+            background: #1e293b;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .month-card:hover .cal-icon {
+            background: #263548;
+        }
+
+        .cal-top {
+            background: #3b82f6;
+            height: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .cal-ring {
+            width: 3px;
+            height: 6px;
+            background: white;
+            border-radius: 1px;
+            margin-top: -3px;
+        }
+
+        .cal-body {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #e2e8f0;
+            line-height: 1;
+        }
+
+        .month-card.inactive .cal-top {
+            background: #334155;
+        }
+
+        .month-name {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #cbd5e1;
+            text-align: center;
+        }
+
+        .month-card.inactive .month-name {
+            color: #475569;
+        }
+
+        /* ── Responsive: 3 cols on narrow ── */
+        @media (max-width: 480px) {
+            .grid { grid-template-columns: repeat(3, 1fr); }
+        }
     </style>
-  <title>Boxes</title>
 </head>
 <body>
-  <div class="grid-container">
-    <button class="button button1">1</button>
-    <button class="button button2">2</button>
-    <button class="button button3">3</button>
-    <button class="button button4">4</button>
-    <button class="button button5">5</button>
-    <button class="button button6">6</button>
-    <button class="button button7">7</button>
-    <button class="button button8">8</button>
-    <button class="button button9">9</button>
-    <button class="button button10">10</button>
-    <button class="button button11">11</button>
-  </div>
+
+    <h1>🗺️ Route Archive</h1>
+    <p class="subtitle">Monthly route animations — click a month to explore</p>
+
+    <div class="year-label">2026</div>
+    <div class="grid" id="grid"></div>
+
+    <script>
+        // ============================================================
+        // CONFIGURATION
+        // Change these file name patterns if your pages use a different
+        // naming convention, e.g. 'routes/march-2026.html'
+        // ============================================================
+        function pageUrl(monthIndex) {
+            // monthIndex: 0 = January, 11 = December
+            const names = ['january','february','march','april','may','june',
+                           'july','august','september','october','november','december'];
+            return `${names[monthIndex]}-2026.html`;
+        }
+        // ============================================================
+
+        const MONTHS = [
+            'January','February','March','April','May','June',
+            'July','August','September','October','November','December'
+        ];
+
+        // A month is "complete" if it has fully passed relative to today.
+        // April 10 2026 → Jan, Feb, Mar are complete; Apr onwards are not.
+        const today = new Date();
+        const currentYear  = today.getFullYear();
+        const currentMonth = today.getMonth(); // 0-indexed
+
+        const grid = document.getElementById('grid');
+
+        MONTHS.forEach((name, i) => {
+            // Active only for months in 2026 that have fully completed
+            // (i.e. month index < current month, assuming current year is 2026)
+            const isActive = (currentYear === 2026) && (i < currentMonth);
+
+            const card = document.createElement(isActive ? 'a' : 'div');
+            card.className = 'month-card' + (isActive ? '' : ' inactive');
+            if (isActive) {
+                card.href = pageUrl(i);
+            }
+
+            // Day number to show in calendar body — just use the month number (1-12)
+            const monthNum = String(i + 1).padStart(2, '0');
+
+            card.innerHTML = `
+                <div class="cal-icon">
+                    <div class="cal-top">
+                        <div class="cal-ring"></div>
+                        <div class="cal-ring"></div>
+                    </div>
+                    <div class="cal-body">${monthNum}</div>
+                </div>
+                <div class="month-name">${name}</div>
+            `;
+
+            grid.appendChild(card);
+        });
+    </script>
+
 </body>
 </html>
