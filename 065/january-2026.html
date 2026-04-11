@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Route Animator — Hardcoded</title>
+    <title>Route Animator</title>
     <script src="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.js"></script>
     <link href="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.css" rel="stylesheet" />
     <style>
@@ -33,15 +33,23 @@
             font-size: 0.9rem;
         }
 
-        #mapContainer {
+        /* ── Side-by-side stage ── */
+        #stage {
             width: 100%;
             max-width: 900px;
             height: 520px;
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        /* Map takes remaining width */
+        #mapContainer {
+            flex: 1;
             border-radius: 12px;
             overflow: hidden;
-            margin-bottom: 16px;
-            display: block;
             position: relative;
+            min-width: 0;
         }
 
         #map { width: 100%; height: 100%; }
@@ -73,18 +81,64 @@
             line-height: 1.8;
             pointer-events: none;
         }
-        .legend-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .legend-swatch {
-            width: 24px;
-            height: 4px;
-            border-radius: 2px;
+        .legend-row { display: flex; align-items: center; gap: 8px; }
+        .legend-swatch { width: 24px; height: 4px; border-radius: 2px; flex-shrink: 0; }
+
+        /* Video panel — fixed width to suit vertical video */
+        #videoContainer {
+            width: 200px;
             flex-shrink: 0;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #0f172a;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
         }
 
+        #videoEl {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* Shown when no video file is configured */
+        #videoPlaceholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            color: #334155;
+            font-size: 0.8rem;
+            text-align: center;
+            padding: 20px;
+            height: 100%;
+        }
+
+        #videoPlaceholder svg {
+            opacity: 0.3;
+        }
+
+        /* Day label overlay at bottom of video */
+        #dayLabel {
+            position: absolute;
+            bottom: 10px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: rgba(255,255,255,0.7);
+            pointer-events: none;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+            display: none;
+        }
+
+        /* ── Controls ── */
         #controls {
             background: #0f172a;
             border-radius: 12px;
@@ -139,16 +193,12 @@
             font-weight: 600;
             transition: all 0.2s;
         }
-        #playBtn   { background: #3b82f6; color: white; min-width: 90px; }
+        #playBtn  { background: #3b82f6; color: white; min-width: 90px; }
         #playBtn:hover { background: #2563eb; }
-        #resetBtn  { background: #475569; color: white; }
+        #resetBtn { background: #475569; color: white; }
         #resetBtn:hover { background: #334155; }
-        .speed-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-left: auto;
-        }
+
+        .speed-group { display: flex; align-items: center; gap: 8px; margin-left: auto; }
         .speed-group label { font-size: 0.85rem; color: #94a3b8; }
 
         select {
@@ -180,6 +230,13 @@
             max-width: 900px;
             display: none;
         }
+
+        /* ── Responsive: stack vertically on narrow screens ── */
+        @media (max-width: 600px) {
+            #stage { flex-direction: column; height: auto; }
+            #mapContainer { height: 340px; }
+            #videoContainer { width: 100%; height: 300px; }
+        }
     </style>
 </head>
 <body>
@@ -188,9 +245,10 @@
          CONFIGURATION — edit these values for each copy of this page
          ============================================================ -->
     <script>
-        const JSON_FILE     = 'location-history_filtered_2026-01-01_to_2026-01-31.json'; // path to your JSON file
-        const PAGE_TITLE    = '🗺️ Route Animator (Jan 2026)';
-        const PAGE_SUBTITLE = '';              // e.g. 'March 2025'
+        const JSON_FILE     = 'january.json';   // Google Timeline JSON
+        const VIDEO_FILE    = 'january-2026.mp4'; // Monthly video — set to '' to hide panel
+        const PAGE_TITLE    = '🗺️ Route Animator';
+        const PAGE_SUBTITLE = 'January 2026';
         const AUTOPLAY      = false;
     </script>
     <!-- ============================================================ -->
@@ -199,15 +257,33 @@
     <p class="subtitle" id="pageSubtitle"></p>
     <p id="errorMsg"></p>
 
-    <div id="mapContainer">
-        <div id="map"></div>
-        <div id="statsBar">
-            <div><strong id="statActivities">—</strong> activity segments</div>
-            <div><strong id="statDistance">—</strong> km total distance</div>
-            <div><strong id="statDates">—</strong></div>
-            <div style="margin-top:6px;">Showing: <strong id="statProgress">0%</strong></div>
+    <div id="stage">
+
+        <!-- Map -->
+        <div id="mapContainer">
+            <div id="map"></div>
+            <div id="statsBar">
+                <div><strong id="statActivities">—</strong> activity segments</div>
+                <div><strong id="statDistance">—</strong> km total distance</div>
+                <div><strong id="statDates">—</strong></div>
+                <div style="margin-top:6px;">Showing: <strong id="statProgress">0%</strong></div>
+            </div>
+            <div id="legend"></div>
         </div>
-        <div id="legend"></div>
+
+        <!-- Video -->
+        <div id="videoContainer">
+            <video id="videoEl" src="" preload="auto" playsinline muted></video>
+            <div id="videoPlaceholder">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <rect x="2" y="4" width="20" height="16" rx="2"/>
+                    <path d="M10 9l5 3-5 3V9z"/>
+                </svg>
+                <span>No video configured</span>
+            </div>
+            <div id="dayLabel"></div>
+        </div>
+
     </div>
 
     <div id="controls">
@@ -240,17 +316,16 @@
         // ── Config ──────────────────────────────────────────────────
         const GIST_URL = 'https://gist.githubusercontent.com/jdbrigham/bf6dad70ca495a6193770d6558f04efb/raw/mapbox-config.json';
 
-        // Activity type → display label + color
         const ACTIVITY_STYLES = {
-            'walking':              { label: 'Walking',    color: '#22c55e' },
-            'running':              { label: 'Running',    color: '#ef4444' },
-            'cycling':              { label: 'Cycling',    color: '#f59e0b' },
-            'in_vehicle':           { label: 'In vehicle', color: '#3b82f6' },
-            'in_passenger_vehicle': { label: 'In vehicle', color: '#3b82f6' },
+            'walking':              { label: 'Walking',      color: '#22c55e' },
+            'running':              { label: 'Running',      color: '#ef4444' },
+            'cycling':              { label: 'Cycling',      color: '#f59e0b' },
+            'in_vehicle':           { label: 'In vehicle',   color: '#3b82f6' },
+            'in_passenger_vehicle': { label: 'In vehicle',   color: '#3b82f6' },
             'motorcycling':         { label: 'Motorcycling', color: '#8b5cf6' },
-            'flying':               { label: 'Flying',    color: '#06b6d4' },
-            'sailing':              { label: 'Sailing',   color: '#0ea5e9' },
-            'skiing':               { label: 'Skiing',    color: '#bae6fd' },
+            'flying':               { label: 'Flying',       color: '#06b6d4' },
+            'sailing':              { label: 'Sailing',      color: '#0ea5e9' },
+            'skiing':               { label: 'Skiing',       color: '#bae6fd' },
         };
         const FALLBACK_COLOR = '#94a3b8';
 
@@ -260,14 +335,44 @@
 
         // ── State ───────────────────────────────────────────────────
         let map = null;
-        // allSegments: [ { start: [lng,lat], end: [lng,lat], type: string }, ... ]
         let allSegments = [];
         let progress = 0;
         let playing = false;
         let animFrame = null;
         let lastTime = null;
 
-        // ── Apply config & load JSON ────────────────────────────────
+        // ── Video setup ─────────────────────────────────────────────
+        const videoEl          = document.getElementById('videoEl');
+        const videoContainer   = document.getElementById('videoContainer');
+        const videoPlaceholder = document.getElementById('videoPlaceholder');
+        const dayLabel         = document.getElementById('dayLabel');
+        let videoReady = false;
+
+        if (VIDEO_FILE && VIDEO_FILE.trim() !== '') {
+            videoEl.src = VIDEO_FILE;
+            videoEl.style.display = 'block';
+            videoPlaceholder.style.display = 'none';
+            dayLabel.style.display = 'block';
+            videoEl.addEventListener('canplay', () => { videoReady = true; });
+            videoEl.load();
+        } else {
+            videoEl.style.display = 'none';
+            videoPlaceholder.style.display = 'flex';
+        }
+
+        function syncVideo() {
+            if (!videoReady || !videoEl.duration) return;
+            const targetTime = progress * videoEl.duration;
+            // Only seek if meaningfully out of sync to avoid jitter during playback
+            if (Math.abs(videoEl.currentTime - targetTime) > 0.1) {
+                videoEl.currentTime = targetTime;
+            }
+            // Update day label: which second of video = which day
+            const day = Math.floor(progress * videoEl.duration) + 1;
+            dayLabel.textContent = `Day ${day}`;
+        }
+
+        // ── Apply config & load JSON ─────────────────────────────────
         document.getElementById('pageTitle').textContent    = PAGE_TITLE;
         document.getElementById('pageSubtitle').textContent = PAGE_SUBTITLE;
 
@@ -282,10 +387,11 @@
             })
             .catch(err => showError(err.message + ' — make sure the JSON file is in the same folder and you are running from a local server.'));
 
+        // ── Parse timeline ───────────────────────────────────────────
         function parseGeo(geoStr) {
             const m = geoStr.match(/geo:([-\d.]+),([-\d.]+)/);
             if (!m) return null;
-            return [parseFloat(m[2]), parseFloat(m[1])]; // [lng, lat] for Mapbox
+            return [parseFloat(m[2]), parseFloat(m[1])];
         }
 
         function normalizeType(raw) {
@@ -295,7 +401,6 @@
 
         function processTimeline(data) {
             const activities = data.filter(e => e.activity && e.activity.start && e.activity.end);
-
             if (activities.length === 0) {
                 showError('No activity segments with start/end coordinates found in this file.');
                 return;
@@ -308,8 +413,7 @@
                 const start = parseGeo(act.activity.start);
                 const end   = parseGeo(act.activity.end);
                 if (!start || !end) continue;
-                const type = normalizeType(act.activity.topCandidate?.type);
-                segments.push({ start, end, type });
+                segments.push({ start, end, type: normalizeType(act.activity.topCandidate?.type) });
             }
 
             if (segments.length < 1) {
@@ -319,7 +423,6 @@
 
             allSegments = segments;
 
-            // Stats
             const totalKm   = activities.reduce((s, a) => s + (parseFloat(a.activity.distanceMeters) || 0), 0) / 1000;
             const dateStart = new Date(activities[0].startTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
             const dateEnd   = new Date(activities[activities.length-1].endTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -333,7 +436,6 @@
         }
 
         function buildLegend(segments) {
-            // Only show types actually present in the data, in order of first appearance
             const seen = new Map();
             for (const seg of segments) {
                 if (!seen.has(seg.type)) seen.set(seg.type, typeColor(seg.type));
@@ -349,7 +451,7 @@
             }
         }
 
-        // ── Mapbox ──────────────────────────────────────────────────
+        // ── Mapbox ───────────────────────────────────────────────────
         async function initMap() {
             try {
                 const resp = await fetch(GIST_URL + '?t=' + Date.now());
@@ -375,9 +477,8 @@
                     map.setLayoutProperty(layer.id, 'visibility', 'none');
                 });
 
-                // Map style
                 map.addLayer({ id: 'bg', type: 'background', paint: { 'background-color': '#f4f1ea' } });
-                map.addLayer({ id: 'major-water', type: 'fill', source: 'composite', 'source-layer': 'water', paint: { 'fill-color': '#bbdefb' } });
+                map.addLayer({ id: 'water', type: 'fill', source: 'composite', 'source-layer': 'water', paint: { 'fill-color': '#bbdefb' } });
                 map.addLayer({ id: 'waterways', type: 'line', source: 'composite', 'source-layer': 'waterway', paint: { 'line-color': '#bbdefb', 'line-width': 1 } });
                 map.addLayer({
                     id: 'major-roads', type: 'line', source: 'composite', 'source-layer': 'road',
@@ -392,12 +493,10 @@
                 map.addLayer({ id: 'buildings', type: 'fill', source: 'composite', 'source-layer': 'building', paint: { 'fill-color': '#d9d9d9', 'fill-opacity': 0.6 } });
                 map.addLayer({ id: 'parks', type: 'fill', source: 'composite', 'source-layer': 'landuse', filter: ['==', ['get', 'class'], 'park'], paint: { 'fill-color': '#99d8c9', 'fill-opacity': 0.7 } });
 
-                // Route: FeatureCollection of per-segment LineStrings with activityType property
                 map.addSource('route', {
                     type: 'geojson',
                     data: { type: 'FeatureCollection', features: [] }
                 });
-
                 map.addLayer({
                     id: 'route-line',
                     type: 'line',
@@ -421,12 +520,10 @@
                     }
                 });
 
-                // Dot at current tip — white with dark stroke so it's visible over any color
                 map.addSource('dot', {
                     type: 'geojson',
                     data: { type: 'Feature', geometry: { type: 'Point', coordinates: allSegments[0].start } }
                 });
-
                 map.addLayer({
                     id: 'route-dot',
                     type: 'circle',
@@ -444,19 +541,17 @@
             });
         }
 
-        // ── Animation ───────────────────────────────────────────────
+        // ── Animation ────────────────────────────────────────────────
         function buildVisibleGeoJSON(p) {
             const total = allSegments.length;
             const drawn = p * total;
             const fullCount = Math.floor(drawn);
             const partial = drawn - fullCount;
-
             const features = [];
 
             for (let i = 0; i < fullCount && i < total; i++) {
                 features.push(makeFeature(allSegments[i].start, allSegments[i].end, allSegments[i].type));
             }
-
             if (fullCount < total && partial > 0) {
                 const seg = allSegments[fullCount];
                 const interp = [
@@ -465,7 +560,6 @@
                 ];
                 features.push(makeFeature(seg.start, interp, seg.type));
             }
-
             return { type: 'FeatureCollection', features };
         }
 
@@ -504,6 +598,9 @@
             document.getElementById('progressHandle').style.left = pct + '%';
             document.getElementById('timeDisplay').textContent   = pct + '% complete';
             document.getElementById('statProgress').textContent  = pct + '%';
+
+            // ── Sync video ──
+            syncVideo();
         }
 
         function animate(ts) {
@@ -520,28 +617,47 @@
                 playing = false;
                 document.getElementById('playBtn').textContent = '▶ Play';
                 lastTime = null;
+                if (videoReady) videoEl.pause();
             }
 
             updateDisplay();
             if (playing) animFrame = requestAnimationFrame(animate);
         }
 
-        // ── Controls ────────────────────────────────────────────────
+        // ── Controls ─────────────────────────────────────────────────
         document.getElementById('playBtn').addEventListener('click', () => {
             if (!map || allSegments.length === 0) return;
             if (progress >= 1) { progress = 0; updateDisplay(); }
             playing = !playing;
             document.getElementById('playBtn').textContent = playing ? '⏸ Pause' : '▶ Play';
-            if (playing) { lastTime = null; animFrame = requestAnimationFrame(animate); }
-            else { cancelAnimationFrame(animFrame); lastTime = null; }
+            if (playing) {
+                lastTime = null;
+                if (videoReady) {
+                    const speed = parseFloat(document.getElementById('speedSelect').value);
+                    videoEl.playbackRate = speed;
+                    videoEl.play();
+                }
+                animFrame = requestAnimationFrame(animate);
+            } else {
+                cancelAnimationFrame(animFrame);
+                lastTime = null;
+                if (videoReady) videoEl.pause();
+            }
         });
 
         document.getElementById('resetBtn').addEventListener('click', () => {
             playing = false;
             cancelAnimationFrame(animFrame);
-            lastTime = null; progress = 0;
+            lastTime = null;
+            progress = 0;
             document.getElementById('playBtn').textContent = '▶ Play';
+            if (videoReady) { videoEl.pause(); videoEl.currentTime = 0; }
             updateDisplay();
+        });
+
+        // Speed change also updates video playback rate
+        document.getElementById('speedSelect').addEventListener('change', e => {
+            if (videoReady && playing) videoEl.playbackRate = parseFloat(e.target.value);
         });
 
         const progressBar = document.getElementById('progressBar');
