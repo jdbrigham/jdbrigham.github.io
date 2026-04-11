@@ -57,11 +57,11 @@ body {
 	font-family: 'Roboto'; 
 }
 
+
 .box-button {
-    display: inline-flex;          /* keeps text centered */
-    align-items: center;           /* vertical centering */
-    justify-content: center;       /* horizontal centering */
-    padding: 12px 24px;            /* adjust size */
+
+    padding: 20px 0; /* 20px top/bottom, 0px left/right */
+    text-align: center;
     border: 1px solid white;       /* white rectangular outline */
     color: white;                  /* text color */
     text-decoration: none;         /* remove underline */
@@ -71,7 +71,7 @@ body {
 
     background: transparent;       /* transparent fill */
     transition: background 0.2s, color 0.2s;
-    margin: 22px;
+
 }
 
 .box-button:hover {
