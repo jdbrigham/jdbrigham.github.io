@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Card Capture</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:      #0e0f11;
+    --surface: #16181c;
+    --surface2:#1e2026;
+    --border:  #2a2d35;
+    --text:    #f0f0f0;
+    --muted:   #7a7f8e;
+    --accent:  #e8ff47;
+    --accent2: #47c8ff;
+    --red:     #f87171;
+    --green:   #4ade80;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── HEADER ── */
+  header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+  .header-top {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 2px;
+  }
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.15rem;
+    letter-spacing: -0.02em;
+    color: var(--text);
+  }
+  .logo span { color: var(--accent); }
+  .header-sub {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* ── MAIN FORM AREA ── */
+  main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* ── FIELD ── */
+  .field { display: flex; flex-direction: column; gap: 7px; }
+
+  .field-label {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .field input,
+  .field textarea,
+  .field select {
+    width: 100%;
+    padding: 14px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1rem;
+    font-weight: 400;
+    outline: none;
+    transition: border-color 0.18s;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+  .field input:focus,
+  .field textarea:focus,
+  .field select:focus {
+    border-color: var(--accent2);
+  }
+  .field textarea {
+    min-height: 100px;
+    resize: none;
+    line-height: 1.5;
+  }
+  .field input::placeholder,
+  .field textarea::placeholder { color: var(--muted); opacity: 1; }
+
+  /* select wrapper for custom arrow */
+  .select-wrap { position: relative; }
+  .select-wrap::after {
+    content: '';
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0; height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 6px solid var(--muted);
+    pointer-events: none;
+  }
+  .select-wrap select { padding-right: 40px; cursor: pointer; }
+  .select-wrap select option { background: var(--surface2); color: var(--text); }
+
+  /* ── PROJECT COLOR DOT ── */
+  .project-preview {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--surface2);
+    border-radius: 8px;
+    margin-top: 4px;
+    min-height: 36px;
+  }
+  .proj-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: background 0.2s;
+  }
+  .proj-name {
+    font-size: 0.82rem;
+    color: var(--muted);
+    font-style: italic;
+  }
+
+  /* ── CARD QUEUE ── */
+  .queue-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .queue-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .queue-count {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  .queue-empty {
+    text-align: center;
+    padding: 20px;
+    color: var(--muted);
+    font-size: 0.82rem;
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+  }
+
+  .queue-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 8px;
+    animation: slideIn 0.2s ease both;
+  }
+  @keyframes slideIn {
+    from { opacity:0; transform:translateY(-6px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+  .queue-card-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 5px;
+  }
+  .queue-card-body { flex: 1; min-width: 0; }
+  .queue-card-title {
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .queue-card-meta {
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  .queue-card-delete {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    padding: 2px 4px;
+    font-size: 1.1rem;
+    line-height: 1;
+    flex-shrink: 0;
+    opacity: 0.6;
+  }
+  .queue-card-delete:hover { color: var(--red); opacity: 1; }
+
+  /* ── DIVIDER ── */
+  .divider {
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── BUTTONS ── */
+  .btn-row {
+    display: flex;
+    gap: 10px;
+  }
+  .btn {
+    flex: 1;
+    padding: 16px;
+    border-radius: 10px;
+    border: none;
+    font-family: 'Syne', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: all 0.18s;
+  }
+  .btn-add {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .btn-add:hover { border-color: var(--accent2); color: var(--accent2); }
+  .btn-add:active { transform: scale(0.97); }
+
+  .btn-download {
+    background: var(--accent);
+    color: #0e0f11;
+  }
+  .btn-download:hover { background: #d4e83d; }
+  .btn-download:active { transform: scale(0.97); }
+  .btn-download:disabled {
+    background: var(--surface2);
+    color: var(--muted);
+    border: 1px solid var(--border);
+    cursor: not-allowed;
+  }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-size: 0.82rem;
+    color: var(--text);
+    opacity: 0;
+    transition: all 0.25s ease;
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 99;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  .toast.success { border-color: var(--green); color: var(--green); }
+  .toast.error   { border-color: var(--red);   color: var(--red);   }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div class="logo">sprint<span>.</span>capture</div>
+  </div>
+  <div class="header-sub">New card queue</div>
+</header>
+
+<main>
+
+  <!-- TITLE -->
+  <div class="field">
+    <label class="field-label" for="titleInput">Card Title</label>
+    <input type="text" id="titleInput" placeholder="What needs doing?" autocomplete="off" autocorrect="on" spellcheck="true">
+  </div>
+
+  <!-- PROJECT -->
+  <div class="field">
+    <label class="field-label" for="projectInput">Project</label>
+    <div class="select-wrap">
+      <select id="projectInput" onchange="updateProjectPreview()">
+        <option value="">— choose project —</option>
+      </select>
+    </div>
+    <div class="project-preview" id="projectPreview">
+      <div class="proj-dot" id="projDot" style="background:var(--border)"></div>
+      <span class="proj-name" id="projName">No project selected</span>
+    </div>
+  </div>
+
+  <!-- NOTES -->
+  <div class="field">
+    <label class="field-label" for="notesInput">Notes <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--border)">optional</span></label>
+    <textarea id="notesInput" placeholder="Any extra context…"></textarea>
+  </div>
+
+  <!-- ADD BUTTON -->
+  <div class="btn-row">
+    <button class="btn btn-add" onclick="addCard()">+ Add to Queue</button>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- QUEUE -->
+  <div>
+    <div class="queue-header">
+      <span class="queue-title">Queue</span>
+      <span class="queue-count" id="queueCount"></span>
+    </div>
+    <div id="queueList">
+      <div class="queue-empty" id="queueEmpty">No cards yet — add one above</div>
+    </div>
+  </div>
+
+  <!-- DOWNLOAD -->
+  <div class="btn-row">
+    <button class="btn btn-download" id="downloadBtn" onclick="downloadJson()" disabled>
+      Download JSON
+    </button>
+  </div>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── PROJECTS ─────────────────────────────────
+// Keep in sync with sprintProjects in your kanban board
+const sprintProjects = [
+  { id: 'p1', label: '002 - Wall Grid',        color: '#90caf9' },
+  { id: 'p2', label: '009 - FS Day Long',       color: '#ce93d8' },
+  { id: 'p3', label: '028 - Time Lapse Calc',   color: '#81c784' },
+  { id: 'p4', label: '033 - Lake Compass',      color: '#ffb74d' },
+  { id: 'p5', label: '038 - This',              color: '#f48fb1' },
+];
+
+// ── STATE ─────────────────────────────────────
+let queue = [];
+
+// ── INIT ──────────────────────────────────────
+function init() {
+  const sel = document.getElementById('projectInput');
+  sprintProjects.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = p.label;
+    sel.appendChild(opt);
+  });
+}
+
+function updateProjectPreview() {
+  const sel   = document.getElementById('projectInput');
+  const dot   = document.getElementById('projDot');
+  const name  = document.getElementById('projName');
+  const proj  = sprintProjects.find(p => p.id === sel.value);
+  if (proj) {
+    dot.style.background = proj.color;
+    name.textContent = proj.label;
+    name.style.fontStyle = 'normal';
+    name.style.color = 'var(--text)';
+  } else {
+    dot.style.background = 'var(--border)';
+    name.textContent = 'No project selected';
+    name.style.fontStyle = 'italic';
+    name.style.color = 'var(--muted)';
+  }
+}
+
+// ── ADD CARD ──────────────────────────────────
+function addCard() {
+  const title     = document.getElementById('titleInput').value.trim();
+  const projectId = document.getElementById('projectInput').value;
+  const notes     = document.getElementById('notesInput').value.trim();
+
+  if (!title)     { showToast('Please enter a title', 'error'); return; }
+  if (!projectId) { showToast('Please choose a project', 'error'); return; }
+
+  const card = {
+    id:        'm' + Date.now(),
+    title,
+    projectId,
+    notes,
+    column:    'todo',
+  };
+
+  queue.unshift(card);
+  renderQueue();
+
+  // Clear form
+  document.getElementById('titleInput').value  = '';
+  document.getElementById('notesInput').value  = '';
+  document.getElementById('projectInput').value = '';
+  updateProjectPreview();
+  document.getElementById('titleInput').focus();
+
+  showToast('Card added', 'success');
+}
+
+// ── REMOVE CARD ───────────────────────────────
+function removeCard(id) {
+  queue = queue.filter(c => c.id !== id);
+  renderQueue();
+}
+
+// ── RENDER QUEUE ──────────────────────────────
+function renderQueue() {
+  const list    = document.getElementById('queueList');
+  const empty   = document.getElementById('queueEmpty');
+  const count   = document.getElementById('queueCount');
+  const dlBtn   = document.getElementById('downloadBtn');
+
+  count.textContent = queue.length ? `${queue.length} card${queue.length > 1 ? 's' : ''}` : '';
+  dlBtn.disabled    = queue.length === 0;
+
+  if (queue.length === 0) {
+    list.innerHTML = '';
+    list.appendChild(empty);
+    return;
+  }
+
+  list.innerHTML = '';
+  queue.forEach(card => {
+    const proj  = sprintProjects.find(p => p.id === card.projectId);
+    const color = proj ? proj.color : 'var(--muted)';
+    const label = proj ? proj.label : card.projectId;
+
+    const el = document.createElement('div');
+    el.className = 'queue-card';
+    el.innerHTML = `
+      <div class="queue-card-dot" style="background:${color}"></div>
+      <div class="queue-card-body">
+        <div class="queue-card-title">${escHtml(card.title)}</div>
+        <div class="queue-card-meta">${escHtml(label)}${card.notes ? ' · has notes' : ''}</div>
+      </div>
+      <button class="queue-card-delete" onclick="removeCard('${card.id}')" aria-label="Remove">×</button>
+    `;
+    list.appendChild(el);
+  });
+}
+
+// ── DOWNLOAD JSON ─────────────────────────────
+function downloadJson() {
+  if (queue.length === 0) return;
+
+  const payload = JSON.stringify({ cards: queue }, null, 2);
+  const blob    = new Blob([payload], { type: 'application/json' });
+  const url     = URL.createObjectURL(blob);
+  const a       = document.createElement('a');
+  const date    = new Date().toISOString().slice(0, 10);
+  a.href        = url;
+  a.download    = `sprint-capture-${date}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+
+  showToast(`Downloaded ${queue.length} card${queue.length > 1 ? 's' : ''}`, 'success');
+}
+
+// ── TOAST ─────────────────────────────────────
+let toastTimer;
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  clearTimeout(toastTimer);
+  t.textContent = msg;
+  t.className   = 'toast show' + (type ? ' ' + type : '');
+  toastTimer    = setTimeout(() => { t.className = 'toast'; }, 2200);
+}
+
+// ── UTILS ─────────────────────────────────────
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── ENTER KEY on title ────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  init();
+  renderQueue();
+  document.getElementById('titleInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); addCard(); }
+  });
+});
+</script>
+</body>
+</html>
