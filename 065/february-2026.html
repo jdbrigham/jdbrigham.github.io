@@ -453,6 +453,8 @@
 
         // ── Mapbox ───────────────────────────────────────────────────
         async function initMap() {
+            if (map) { map.remove(); map = null; }  // ← add this line
+            // ... rest of initMap
             try {
                 const resp = await fetch(GIST_URL + '?t=' + Date.now());
                 const config = await resp.json();
