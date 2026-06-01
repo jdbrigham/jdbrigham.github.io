@@ -33,6 +33,28 @@
             font-size: 0.9rem;
         }
 
+        #homeBtn {
+            position: fixed;
+            top: 16px;
+            left: 16px;
+            width: 36px;
+            height: 36px;
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+            text-decoration: none;
+            transition: background 0.2s, border-color 0.2s, color 0.2s;
+        }
+        #homeBtn:hover {
+            background: #1e293b;
+            border-color: #3b82f6;
+            color: #e2e8f0;
+        }
+
         /* ── Side-by-side stage ── */
         #stage {
             width: 100%;
@@ -252,6 +274,13 @@
         const AUTOPLAY      = false;
     </script>
     <!-- ============================================================ -->
+
+    <a id="homeBtn" href="index.html" title="Back to archive">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z"/>
+            <path d="M9 21V12h6v9"/>
+        </svg>
+    </a>
 
     <h1 id="pageTitle"></h1>
     <p class="subtitle" id="pageSubtitle"></p>
@@ -479,21 +508,21 @@
                     map.setLayoutProperty(layer.id, 'visibility', 'none');
                 });
 
-                map.addLayer({ id: 'bg', type: 'background', paint: { 'background-color': '#f4f1ea' } });
-                map.addLayer({ id: 'water', type: 'fill', source: 'composite', 'source-layer': 'water', paint: { 'fill-color': '#bbdefb' } });
-                map.addLayer({ id: 'waterways', type: 'line', source: 'composite', 'source-layer': 'waterway', paint: { 'line-color': '#bbdefb', 'line-width': 1 } });
+                map.addLayer({ id: 'custom-bg', type: 'background', paint: { 'background-color': '#f4f1ea' } });
+                map.addLayer({ id: 'custom-water', type: 'fill', source: 'composite', 'source-layer': 'water', paint: { 'fill-color': '#bbdefb' } });
+                map.addLayer({ id: 'custom-waterways', type: 'line', source: 'composite', 'source-layer': 'waterway', paint: { 'line-color': '#bbdefb', 'line-width': 1 } });
                 map.addLayer({
-                    id: 'major-roads', type: 'line', source: 'composite', 'source-layer': 'road',
+                    id: 'custom-major-roads', type: 'line', source: 'composite', 'source-layer': 'road',
                     filter: ['any', ['==', ['get', 'class'], 'primary'], ['==', ['get', 'class'], 'secondary'], ['==', ['get', 'structure'], 'bridge']],
                     paint: { 'line-color': '#888888', 'line-width': ['interpolate', ['linear'], ['zoom'], 12, 0.5, 15, 2] }
                 });
                 map.addLayer({
-                    id: 'minor-roads', type: 'line', source: 'composite', 'source-layer': 'road',
+                    id: 'custom-minor-roads', type: 'line', source: 'composite', 'source-layer': 'road',
                     filter: ['any', ['==', ['get', 'class'], 'tertiary'], ['==', ['get', 'class'], 'street'], ['==', ['get', 'class'], 'secondary_link'], ['==', ['get', 'class'], 'primary_link']],
                     paint: { 'line-color': '#aaaaaa', 'line-width': ['interpolate', ['linear'], ['zoom'], 12, 0.3, 15, 1] }
                 });
-                map.addLayer({ id: 'buildings', type: 'fill', source: 'composite', 'source-layer': 'building', paint: { 'fill-color': '#d9d9d9', 'fill-opacity': 0.6 } });
-                map.addLayer({ id: 'parks', type: 'fill', source: 'composite', 'source-layer': 'landuse', filter: ['==', ['get', 'class'], 'park'], paint: { 'fill-color': '#99d8c9', 'fill-opacity': 0.7 } });
+                map.addLayer({ id: 'custom-buildings', type: 'fill', source: 'composite', 'source-layer': 'building', paint: { 'fill-color': '#d9d9d9', 'fill-opacity': 0.6 } });
+                map.addLayer({ id: 'custom-parks', type: 'fill', source: 'composite', 'source-layer': 'landuse', filter: ['==', ['get', 'class'], 'park'], paint: { 'fill-color': '#99d8c9', 'fill-opacity': 0.7 } });
 
                 map.addSource('route', {
                     type: 'geojson',
