@@ -51,6 +51,28 @@
             margin-bottom: 48px;
         }
 
+        #homeBtn {
+            position: fixed;
+            top: 16px;
+            left: 16px;
+            width: 36px;
+            height: 36px;
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+            text-decoration: none;
+            transition: background 0.2s, border-color 0.2s, color 0.2s;
+        }
+        #homeBtn:hover {
+            background: #1e293b;
+            border-color: #3b82f6;
+            color: #e2e8f0;
+        }
+
         /* ── Active month card ── */
         .month-card {
             background: #0f172a;
@@ -167,6 +189,29 @@
             color: #e2e8f0;
         }
 
+        ol ol {
+            margin-top: 6px;
+            color: #94a3b8;
+        }
+
+        ol ol li::marker {
+            color: #475569;
+        }
+
+        a {
+            color: #3b82f6;
+            text-decoration: none;
+        }
+
+        a:hover {
+            color: #93c5fd;
+            text-decoration: underline;
+        }
+
+        a:visited {
+            color: #818cf8;
+        }
+
         /* ── Responsive: 3 cols on narrow ── */
         @media (max-width: 480px) {
             .grid { grid-template-columns: repeat(3, 1fr); }
@@ -176,10 +221,29 @@
 <body>
 
     <h1>🗺️ Route Animator - Prep Instructions</h1>
-    
+    <h2>Requires local server to test local files</h2>
+    <a id="homeBtn" href="index.html" title="Back to archive">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z"/>
+            <path d="M9 21V12h6v9"/>
+        </svg>
+    </a>
     <ol>
-        <li>On iPhone, in Google Maps go to settings and export entire timeline</li>
-        <li>Open the full timeline in <a href='https://jbrigham.com/048/' target="_blank">JSON editor</a>></a></li>
+        <li>On iPhone, in Google Maps go to 
+            <ol>
+                <li>Profile photo</li>
+                <li>Settings</li>
+                <li>Location & Privacy</li>
+                <li>Export timeline data</li>
+            </ol>
+        </li>
+        <li>Open the full timeline in <a href='https://jbrigham.com/048/' target="_blank">JSON editor</a></li>
+        <li>Use date range filters to edit to a single month</li>
+        <li>Export filtered results and rename to month-year.json</li>
+        <li>On iPhone, in the LeapSecond app, click on the month name and save the video</li>
+        <li>Use Handbrake to create a video named month-year.mp4</li>
+        <li>Duplicate a month-year.html file and edit lines 270, 271 and 273</li>
+        <li>Add all new files to directory</li>
 
     </ol>
 

@@ -31,6 +31,14 @@
             font-size: 0.9rem;
         }
 
+        p.instructions {
+            position: fixed;
+            bottom: 50px;
+            right: 100px;
+            font-size: 0.7rem;
+            color: #475569;
+        }
+
         .year-label {
             font-size: 0.75rem;
             font-weight: 700;
@@ -145,6 +153,20 @@
             color: #475569;
         }
 
+        a {
+            color: #475569;
+            text-decoration: none;
+        }
+
+        a:hover {
+            color: #93c5fd;
+            text-decoration: underline;
+        }
+
+        a:visited {
+            color: #475569;
+        }
+
         /* ── Responsive: 3 cols on narrow ── */
         @media (max-width: 480px) {
             .grid { grid-template-columns: repeat(3, 1fr); }
@@ -155,6 +177,7 @@
 
     <h1>🗺️ Route Archive</h1>
     <p class="subtitle">Monthly route animations — click a month to explore</p>
+    <p class="instructions"><a href="instructions.html">Instructions for creating new month files</a></p>
 
     <div class="year-label">2026</div>
     <div class="grid" id="grid"></div>
