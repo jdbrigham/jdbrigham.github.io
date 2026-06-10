@@ -53,7 +53,7 @@
 
 var ctx = document.getElementById('myChart').getContext("2d");
 
-var myLabels = ["1/6","1/13","1/20","1/27","2/3","2/10","2/17","2/24","3/3","3/10","3/17","3/24","3/31","4/7","4/14","4/21","4/28","5/5","5/12","5/19","5/26","6/2","6/9","6/16","6/23","6/30","7/7","7/14","7/21","7/28","8/4","8/11","8/18","8/25","9/1","9/8","9/15","9/22","9/29","10/6","10/13","10/20","10/27","11/3","11/10","11/17","11/24","12/1","12/8","12/15","12/22","12/29"]
+var myLabels = ["1/5","1/12","1/19","1/26","2/2","2/9","2/16","2/23","3/2","3/9","3/16","3/23","3/30","4/6","4/13","4/20","4/27","5/4","5/11","5/18","5/25","6/1","6/8","6/15","6/22","6/29","7/6","7/13","7/20","7/27","8/3","8/10","8/17","8/24","8/31","9/7","9/14","9/21","9/28","10/5","10/12","10/19","10/26","11/2","11/9","11/16","11/23","11/30","12/7","12/14","12/21","12/28"]
 
 // hard code the weeknumber value (record number) from the list of labels - update each week
 var myWeekNum = myLabels [16];
@@ -233,58 +233,58 @@ document.getElementById('footnote').innerHTML ="Updated on Mondays (closest Mond
 // now that I know whether to use the coming or the previous Monday, I use an if loop to set a variable for the dot itself
 
 // I used a Numbers file to generate the if statements
-if (myNextMonday == '1/6') myW = w1;
-else if (myNextMonday == '1/13') myW = w2;
-else if (myNextMonday == '1/20') myW = w3;
-else if (myNextMonday == '1/27') myW = w4;
-else if (myNextMonday == '2/3') myW = w5;
-else if (myNextMonday == '2/10') myW = w6;
-else if (myNextMonday == '2/17') myW = w7;
-else if (myNextMonday == '2/24') myW = w8;
-else if (myNextMonday == '3/3') myW = w9;
-else if (myNextMonday == '3/10') myW = w10;
-else if (myNextMonday == '3/17') myW = w11;
-else if (myNextMonday == '3/24') myW = w12;
-else if (myNextMonday == '3/31') myW = w13;
-else if (myNextMonday == '4/7') myW = w14;
-else if (myNextMonday == '4/14') myW = w15;
-else if (myNextMonday == '4/21') myW = w16;
-else if (myNextMonday == '4/28') myW = w17;
-else if (myNextMonday == '5/5') myW = w18;
-else if (myNextMonday == '5/12') myW = w19;
-else if (myNextMonday == '5/19') myW = w20;
-else if (myNextMonday == '5/26') myW = w21;
-else if (myNextMonday == '6/2') myW = w22;
-else if (myNextMonday == '6/9') myW = w23;
-else if (myNextMonday == '6/16') myW = w24;
-else if (myNextMonday == '6/23') myW = w25;
-else if (myNextMonday == '6/30') myW = w26;
-else if (myNextMonday == '7/7') myW = w27;
-else if (myNextMonday == '7/14') myW = w28;
-else if (myNextMonday == '7/21') myW = w29;
-else if (myNextMonday == '7/28') myW = w30;
-else if (myNextMonday == '8/4') myW = w31;
-else if (myNextMonday == '8/11') myW = w32;
-else if (myNextMonday == '8/18') myW = w33;
-else if (myNextMonday == '8/25') myW = w34;
-else if (myNextMonday == '9/1') myW = w35;
-else if (myNextMonday == '9/8') myW = w36;
-else if (myNextMonday == '9/15') myW = w37;
-else if (myNextMonday == '9/22') myW = w38;
-else if (myNextMonday == '9/29') myW = w39;
-else if (myNextMonday == '10/6') myW = w40;
-else if (myNextMonday == '10/13') myW = w41;
-else if (myNextMonday == '10/20') myW = w42;
-else if (myNextMonday == '10/27') myW = w43;
-else if (myNextMonday == '11/3') myW = w44;
-else if (myNextMonday == '11/10') myW = w45;
-else if (myNextMonday == '11/17') myW = w46;
-else if (myNextMonday == '11/24') myW = w47;
-else if (myNextMonday == '12/1') myW = w48;
-else if (myNextMonday == '12/8') myW = w49;
-else if (myNextMonday == '12/15') myW = w50;
-else if (myNextMonday == '12/22') myW = w51;
-else if (myNextMonday == '12/29') myW = w52;
+if (myNextMonday == '1/5') myW = w1;
+else if (myNextMonday == '1/12') myW = w2;
+else if (myNextMonday == '1/19') myW = w3;
+else if (myNextMonday == '1/26') myW = w4;
+else if (myNextMonday == '2/2') myW = w5;
+else if (myNextMonday == '2/9') myW = w6;
+else if (myNextMonday == '2/16') myW = w7;
+else if (myNextMonday == '2/23') myW = w8;
+else if (myNextMonday == '3/2') myW = w9;
+else if (myNextMonday == '3/9') myW = w10;
+else if (myNextMonday == '3/16') myW = w11;
+else if (myNextMonday == '3/23') myW = w12;
+else if (myNextMonday == '3/30') myW = w13;
+else if (myNextMonday == '4/6') myW = w14;
+else if (myNextMonday == '4/13') myW = w15;
+else if (myNextMonday == '4/20') myW = w16;
+else if (myNextMonday == '4/27') myW = w17;
+else if (myNextMonday == '5/4') myW = w18;
+else if (myNextMonday == '5/11') myW = w19;
+else if (myNextMonday == '5/18') myW = w20;
+else if (myNextMonday == '5/25') myW = w21;
+else if (myNextMonday == '6/1') myW = w22;
+else if (myNextMonday == '6/8') myW = w23;
+else if (myNextMonday == '6/15') myW = w24;
+else if (myNextMonday == '6/22') myW = w25;
+else if (myNextMonday == '6/29') myW = w26;
+else if (myNextMonday == '7/6') myW = w27;
+else if (myNextMonday == '7/13') myW = w28;
+else if (myNextMonday == '7/20') myW = w29;
+else if (myNextMonday == '7/27') myW = w30;
+else if (myNextMonday == '8/3') myW = w31;
+else if (myNextMonday == '8/10') myW = w32;
+else if (myNextMonday == '8/17') myW = w33;
+else if (myNextMonday == '8/24') myW = w34;
+else if (myNextMonday == '8/31') myW = w35;
+else if (myNextMonday == '9/7') myW = w36;
+else if (myNextMonday == '9/14') myW = w37;
+else if (myNextMonday == '9/21') myW = w38;
+else if (myNextMonday == '9/28') myW = w39;
+else if (myNextMonday == '10/5') myW = w40;
+else if (myNextMonday == '10/12') myW = w41;
+else if (myNextMonday == '10/19') myW = w42;
+else if (myNextMonday == '10/26') myW = w43;
+else if (myNextMonday == '11/2') myW = w44;
+else if (myNextMonday == '11/9') myW = w45;
+else if (myNextMonday == '11/16') myW = w46;
+else if (myNextMonday == '11/23') myW = w47;
+else if (myNextMonday == '11/30') myW = w48;
+else if (myNextMonday == '12/7') myW = w49;
+else if (myNextMonday == '12/14') myW = w50;
+else if (myNextMonday == '12/21') myW = w51;
+else if (myNextMonday == '12/28') myW = w52;
 else
   document.write("<p>none of the conditions were met</p>");
 
