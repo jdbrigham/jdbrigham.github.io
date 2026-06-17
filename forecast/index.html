@@ -3,440 +3,387 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NWS Forecast</title>
+<title>Weather</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
-
-  :root {
-    --sky-clear:   #3A7BD5;
-    --sky-mid:     #6FAEE8;
-    --sky-pale:    #EAF3FC;
-    --cloud:       #BDD8F0;
-    --ink:         #1A2535;
-    --ink-mid:     #4A5A6E;
-    --ink-light:   #8A9BB0;
-    --surface:     #FFFFFF;
-    --bg:          #F2F7FC;
-    --warn:        #E07B3A;
-    --radius:      14px;
-  }
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,200;0,9..40,300;0,9..40,400;0,9..40,700;0,9..40,800;1,9..40,200;1,9..40,700&display=swap');
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
     font-family: 'DM Sans', system-ui, sans-serif;
-    background: var(--bg);
-    color: var(--ink);
+    background: #0a1018;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 32px 16px 64px;
+    padding: 20px 16px 56px;
+    gap: 2px;
   }
 
-  header {
-    text-align: center;
+  /* ── Main card ───────────────────────────── */
+  .main-card {
+    width: 100%;
+    max-width: 420px;
+    border-radius: 28px;
+    padding: 32px 28px 30px;
+    position: relative;
+    background: linear-gradient(160deg, #1a3a6a 0%, #0f2040 100%);
+    transition: background 1.4s ease;
+  }
+
+  /* ── Temp + wind row ─────────────────────── */
+  .meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
     margin-bottom: 28px;
   }
 
-  header h1 {
-    font-size: 1.1rem;
-    font-weight: 500;
-    color: var(--ink-mid);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-
-  .location-row {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    margin-top: 4px;
-  }
-
-  .location-name {
-    font-size: 1.6rem;
-    font-weight: 600;
-    color: var(--ink);
-  }
-
-  .refresh-btn {
-    background: none;
-    border: 1.5px solid var(--cloud);
-    border-radius: 8px;
-    width: 34px; height: 34px;
-    cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    color: var(--sky-clear);
-    transition: background 0.15s, border-color 0.15s;
-  }
-  .refresh-btn:hover { background: var(--sky-pale); border-color: var(--sky-mid); }
-  .refresh-btn svg { width: 16px; height: 16px; }
-
-  .updated {
-    font-size: 0.78rem;
-    color: var(--ink-light);
-    font-family: 'DM Mono', monospace;
-    margin-top: 2px;
-  }
-
-  /* Config panel */
-  .config {
-    background: var(--surface);
-    border: 1.5px solid var(--cloud);
-    border-radius: var(--radius);
-    padding: 18px 20px;
-    width: 100%;
-    max-width: 480px;
-    margin-bottom: 24px;
-  }
-
-  .config summary {
-    cursor: pointer;
-    font-size: 0.82rem;
-    font-weight: 500;
-    color: var(--sky-clear);
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    list-style: none;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .config summary::-webkit-details-marker { display: none; }
-  .config summary::before { content: '›'; font-size: 1rem; transition: transform 0.2s; }
-  .config[open] summary::before { transform: rotate(90deg); }
-
-  .config-fields {
-    margin-top: 14px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .field-row {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .field-row label {
-    font-size: 0.78rem;
-    font-weight: 500;
-    color: var(--ink-mid);
-  }
-
-  .field-row input {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.88rem;
-    padding: 8px 12px;
-    border: 1.5px solid var(--cloud);
-    border-radius: 8px;
-    color: var(--ink);
-    background: var(--bg);
-    outline: none;
-    transition: border-color 0.15s;
-  }
-  .field-row input:focus { border-color: var(--sky-clear); }
-
-  .coord-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-  }
-
-  .apply-btn {
-    background: var(--sky-clear);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    padding: 9px 20px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.88rem;
-    font-weight: 500;
-    cursor: pointer;
-    align-self: flex-start;
-    transition: background 0.15s;
-  }
-  .apply-btn:hover { background: #2d69bd; }
-
-  /* Forecast cards */
-  .cards {
-    width: 100%;
-    max-width: 480px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .card {
-    background: var(--surface);
-    border-radius: var(--radius);
-    border: 1.5px solid var(--cloud);
-    padding: 18px 20px;
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 10px;
-    align-items: start;
-  }
-
-  .card.today {
-    border-color: var(--sky-clear);
-    background: linear-gradient(135deg, var(--surface) 60%, var(--sky-pale));
-  }
-
-  .period-name {
-    font-size: 0.72rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--sky-clear);
-    margin-bottom: 4px;
-  }
-
-  .card.today .period-name { color: var(--sky-clear); }
-
-  .short-forecast {
-    font-size: 1.05rem;
-    font-weight: 500;
-    color: var(--ink);
-    line-height: 1.35;
-    margin-bottom: 6px;
-  }
-
-  .detail-forecast {
-    font-size: 0.82rem;
-    color: var(--ink-mid);
-    line-height: 1.5;
-  }
-
-  .temp-block {
-    text-align: right;
-    flex-shrink: 0;
-  }
-
-  .temp-value {
-    font-size: 2rem;
-    font-weight: 300;
-    color: var(--ink);
+  .temp {
+    font-size: 4.2rem;
+    font-weight: 200;
+    font-style: italic;
+    color: rgba(255,255,255,0.90);
+    letter-spacing: -0.04em;
     line-height: 1;
   }
 
-  .temp-unit {
-    font-size: 0.9rem;
-    color: var(--ink-light);
+  .temp-deg {
+    font-size: 1.8rem;
+    vertical-align: super;
+    font-weight: 200;
+  }
+
+  .wind-block {
+    text-align: right;
+  }
+
+  .wind-dir {
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.32);
+    margin-bottom: 2px;
+  }
+
+  .wind-speed {
+    font-size: 1.5rem;
+    font-weight: 200;
+    color: rgba(255,255,255,0.70);
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+
+  .wind-mph {
+    font-size: 0.62rem;
+    color: rgba(255,255,255,0.30);
+    display: block;
+    margin-top: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  /* ── Headline ────────────────────────────── */
+  .headline {
+    font-size: 2.6rem;
+    font-weight: 800;
+    color: rgba(255,255,255,0.95);
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    margin-bottom: 20px;
+  }
+
+  /* ── Divider ─────────────────────────────── */
+  .divider {
+    width: 32px;
+    height: 2px;
+    background: rgba(255,255,255,0.18);
+    border-radius: 2px;
+    margin-bottom: 20px;
+  }
+
+  /* ── Detail text ─────────────────────────── */
+  .detail {
+    font-size: 1.15rem;
     font-weight: 400;
+    color: rgba(255,255,255,0.60);
+    line-height: 1.65;
   }
 
-  .wind-line {
+  /* ── Footer ──────────────────────────────── */
+  .card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 32px;
+  }
+
+  .footer-left {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .location {
     font-size: 0.72rem;
-    color: var(--ink-light);
-    font-family: 'DM Mono', monospace;
-    margin-top: 4px;
-    white-space: nowrap;
+    font-weight: 500;
+    color: rgba(255,255,255,0.32);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
   }
 
-  /* Status / error */
-  .status {
-    text-align: center;
-    padding: 40px 20px;
-    color: var(--ink-light);
-    font-size: 0.9rem;
+  .period-label {
+    font-size: 0.65rem;
+    color: rgba(255,255,255,0.22);
+    letter-spacing: 0.04em;
   }
 
-  .error-msg {
-    background: #FEF3EC;
-    border: 1.5px solid #F0C8A0;
-    border-radius: var(--radius);
-    padding: 16px 20px;
-    color: var(--warn);
-    font-size: 0.88rem;
-    max-width: 480px;
-    width: 100%;
-    text-align: center;
+  .footer-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
 
+  .updated {
+    font-size: 0.65rem;
+    color: rgba(255,255,255,0.22);
+  }
+
+  .refresh-btn {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+    border: none;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: rgba(255,255,255,0.40);
+    transition: background 0.2s, color 0.2s;
+  }
+  .refresh-btn:hover { background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.7); }
+  .refresh-btn svg { width: 13px; height: 13px; }
+
+  /* loading */
+  .load-overlay {
+    position: absolute;
+    inset: 0;
+    border-radius: 28px;
+    background: rgba(8,14,22,0.70);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 10px;
+  }
   .spinner {
-    display: inline-block;
-    width: 20px; height: 20px;
-    border: 2.5px solid var(--cloud);
-    border-top-color: var(--sky-clear);
+    width: 18px; height: 18px;
+    border: 1.5px solid rgba(255,255,255,0.12);
+    border-top-color: rgba(255,255,255,0.55);
     border-radius: 50%;
     animation: spin 0.7s linear infinite;
-    margin-bottom: 10px;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
+  .load-text { font-size: 0.75rem; color: rgba(255,255,255,0.30); }
 
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #111820;
-      --surface: #1A2535;
-      --ink: #E8F0F8;
-      --ink-mid: #8A9BB0;
-      --ink-light: #5A6A7E;
-      --cloud: #2A3A50;
-      --sky-pale: #1A2D45;
-    }
-    .field-row input { background: #0E1620; }
+  .error-pill {
+    background: rgba(140,35,25,0.30);
+    border: 1px solid rgba(170,55,40,0.40);
+    color: rgba(255,125,105,0.95);
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-size: 0.78rem;
+    max-width: 250px;
+    text-align: center;
+    line-height: 1.5;
+  }
+
+  /* ── Upcoming ────────────────────────────── */
+  .upcoming {
+    width: 100%;
+    max-width: 420px;
+    padding: 4px 0;
+  }
+
+  .up-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    align-items: baseline;
+    gap: 8px;
+    padding: 11px 4px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .up-row:last-child { border-bottom: none; }
+
+  .up-period {
+    font-size: 0.82rem;
+    font-weight: 400;
+    color: rgba(255,255,255,0.38);
+  }
+
+  .up-short {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: rgba(255,255,255,0.55);
+  }
+
+  .up-temp {
+    font-size: 1rem;
+    font-weight: 300;
+    font-style: italic;
+    color: rgba(255,255,255,0.75);
+    text-align: right;
+    letter-spacing: -0.02em;
   }
 </style>
 </head>
 <body>
 
-<header>
-  <h1>NWS Forecast</h1>
-  <div class="location-row">
-    <span class="location-name" id="loc-name">Charlestown, MA</span>
-    <button class="refresh-btn" id="refresh-btn" title="Refresh">
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M13.5 8A5.5 5.5 0 1 1 10 3.1"/>
-        <polyline points="10 1 10 4 13 4"/>
-      </svg>
-    </button>
-  </div>
-  <div class="updated" id="updated-time"></div>
-</header>
+<div class="main-card" id="main-card">
 
-<details class="config" id="config-panel">
-  <summary>Location settings</summary>
-  <div class="config-fields">
-    <div class="field-row">
-      <label>Display name</label>
-      <input type="text" id="cfg-name" value="Charlestown, MA" placeholder="e.g. Charlestown, MA">
+  <div class="meta-row">
+    <div class="temp" id="temp">—<span class="temp-deg">°</span></div>
+    <div class="wind-block">
+      <div class="wind-dir" id="wind-dir">Wind</div>
+      <div class="wind-speed" id="wind-speed">—</div>
+      <span class="wind-mph">mph</span>
     </div>
-    <div class="coord-row">
-      <div class="field-row">
-        <label>Latitude</label>
-        <input type="text" id="cfg-lat" value="42.3776" placeholder="42.3776">
-      </div>
-      <div class="field-row">
-        <label>Longitude</label>
-        <input type="text" id="cfg-lon" value="-71.0602" placeholder="-71.0602">
-      </div>
-    </div>
-    <button class="apply-btn" id="apply-btn">Apply & fetch</button>
   </div>
-</details>
 
-<div class="cards" id="cards"></div>
+  <div class="headline" id="headline">—</div>
+  <div class="divider"></div>
+  <div class="detail" id="detail">—</div>
+
+  <div class="card-footer">
+    <div class="footer-left">
+      <div class="location">Charlestown, MA</div>
+      <div class="period-label" id="period-label">—</div>
+    </div>
+    <div class="footer-right">
+      <div class="updated" id="updated">—</div>
+      <button class="refresh-btn" id="refresh-btn" aria-label="Refresh">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M13.5 8A5.5 5.5 0 1 1 10 3.1"/>
+          <polyline points="10 1 10 4 13 4"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="load-overlay" id="load-overlay">
+    <div class="spinner"></div>
+    <div class="load-text">Fetching forecast…</div>
+  </div>
+</div>
+
+<div class="upcoming" id="upcoming"></div>
 
 <script>
-const AGENT = 'nws-forecast-widget/1.0 (weather-viewer)';
+const AGENT = 'nws-forecast-mobile/1.0';
+const LAT = 42.3776, LON = -71.0602;
+let gridCache = null;
 
-let gridCache = null; // { office, x, y } keyed by lat/lon
+// Background gradients keyed by condition
+const GRADIENTS = {
+  'clear-day':   ['#1d4e9a', '#0c2448'],
+  'clear-night': ['#080c14', '#04080f'],
+  'partly':      ['#1a4480', '#0d2040'],
+  'overcast':    ['#252e3a', '#111820'],
+  'rain':        ['#162030', '#0a1218'],
+  'fog':         ['#202c38', '#111c24'],
+  'snow':        ['#1e2e46', '#0e1828'],
+  'thunder':     ['#10181e', '#060c10'],
+};
 
-function fmt(date) {
-  return date.toLocaleString('en-US', {
-    month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit'
-  });
+function classify(text, isDay) {
+  const t = text.toLowerCase();
+  if (t.includes('thunder'))                                    return 'thunder';
+  if (t.includes('snow') || t.includes('blizzard'))            return 'snow';
+  if (t.includes('rain') || t.includes('shower') || t.includes('drizzle')) return 'rain';
+  if (t.includes('fog') || t.includes('mist') || t.includes('haze'))       return 'fog';
+  if (t.includes('overcast') || t.includes('mostly cloudy'))   return 'overcast';
+  if (t.includes('partly') || t.includes('mostly sunny'))      return 'partly';
+  if (t.includes('sunny') || t.includes('clear'))              return isDay ? 'clear-day' : 'clear-night';
+  if (t.includes('cloud'))                                      return 'overcast';
+  return isDay ? 'partly' : 'clear-night';
 }
 
-function windIcon(dir) {
-  const dirs = { N:'↓', NNE:'↙', NE:'↙', ENE:'←', E:'←', ESE:'↖', SE:'↖',
-                 SSE:'↑', S:'↑', SSW:'↗', SW:'↗', WSW:'→', W:'→', WNW:'↘',
-                 NW:'↘', NNW:'↓' };
-  return dirs[dir] || '·';
+// Pull the short forecast apart: strip trailing "then ..." clauses for cleaner headline
+function makeHeadline(short) {
+  // "Mostly Cloudy then Sunny" → "Mostly Cloudy"
+  return short.replace(/\s+then\b.*/i, '').trim();
 }
 
-function setStatus(html) {
-  document.getElementById('cards').innerHTML =
-    `<div class="status">${html}</div>`;
+function parseWind(ws) {
+  if (!ws) return '—';
+  const m = ws.match(/(\d+)/g);
+  return m ? m[m.length - 1] : '—';
 }
 
-function setError(msg) {
-  document.getElementById('cards').innerHTML =
-    `<div class="error-msg">${msg}</div>`;
-}
-
-async function fetchGridPoint(lat, lon) {
-  const key = `${lat},${lon}`;
-  if (gridCache && gridCache.key === key) return gridCache;
-  const r = await fetch(`https://api.weather.gov/points/${lat},${lon}`, {
-    headers: { 'User-Agent': AGENT }
-  });
+async function fetchGrid() {
+  if (gridCache) return gridCache;
+  const r = await fetch(`https://api.weather.gov/points/${LAT},${LON}`,
+    { headers: { 'User-Agent': AGENT } });
   if (!r.ok) throw new Error(`Points lookup failed (${r.status})`);
-  const d = await r.json();
-  const { gridId, gridX, gridY, relativeLocation } = d.properties;
-  gridCache = {
-    key,
-    office: gridId,
-    x: gridX,
-    y: gridY,
-    city: relativeLocation?.properties?.city,
-    state: relativeLocation?.properties?.state
-  };
-  return gridCache;
-}
-
-async function fetchForecast(lat, lon) {
-  const grid = await fetchGridPoint(lat, lon);
-  const r = await fetch(
-    `https://api.weather.gov/gridpoints/${grid.office}/${grid.x},${grid.y}/forecast`,
-    { headers: { 'User-Agent': AGENT } }
-  );
-  if (!r.ok) throw new Error(`Forecast fetch failed (${r.status})`);
-  const d = await r.json();
-  return d.properties.periods;
-}
-
-function renderCards(periods, locationName) {
-  const cards = document.getElementById('cards');
-  cards.innerHTML = '';
-
-  // Show first 8 periods (4 days of day/night)
-  periods.slice(0, 8).forEach((p, i) => {
-    const isToday = i === 0;
-    const card = document.createElement('div');
-    card.className = `card${isToday ? ' today' : ''}`;
-
-    const tempLabel = p.temperatureUnit === 'F' ? '°F' : '°C';
-    const windStr = p.windDirection
-      ? `${windIcon(p.windDirection)} ${p.windDirection} ${p.windSpeed}`
-      : p.windSpeed || '';
-
-    card.innerHTML = `
-      <div>
-        <div class="period-name">${p.name}</div>
-        <div class="short-forecast">${p.shortForecast}</div>
-        <div class="detail-forecast">${p.detailedForecast}</div>
-      </div>
-      <div class="temp-block">
-        <div class="temp-value">${p.temperature}<span class="temp-unit">${tempLabel}</span></div>
-        ${windStr ? `<div class="wind-line">${windStr}</div>` : ''}
-      </div>
-    `;
-    cards.appendChild(card);
-  });
-
-  document.getElementById('updated-time').textContent = `Updated ${fmt(new Date())}`;
+  const { properties: { gridId, gridX, gridY } } = await r.json();
+  return gridCache = { office: gridId, x: gridX, y: gridY };
 }
 
 async function load() {
-  const lat = document.getElementById('cfg-lat').value.trim();
-  const lon = document.getElementById('cfg-lon').value.trim();
-  const name = document.getElementById('cfg-name').value.trim();
-
-  document.getElementById('loc-name').textContent = name || 'My Location';
-  document.getElementById('updated-time').textContent = '';
-  setStatus('<div class="spinner"></div><br>Fetching forecast…');
+  const overlay = document.getElementById('load-overlay');
+  overlay.innerHTML = '<div class="spinner"></div><div class="load-text">Fetching forecast…</div>';
+  overlay.style.display = 'flex';
+  document.getElementById('upcoming').innerHTML = '';
 
   try {
-    const periods = await fetchForecast(lat, lon);
-    renderCards(periods, name);
-  } catch (e) {
-    setError(`⚠ ${e.message}<br><small>Check your coordinates or try again.</small>`);
+    const g = await fetchGrid();
+    const r = await fetch(
+      `https://api.weather.gov/gridpoints/${g.office}/${g.x},${g.y}/forecast`,
+      { headers: { 'User-Agent': AGENT } });
+    if (!r.ok) throw new Error(`Forecast failed (${r.status})`);
+    const { properties: { periods } } = await r.json();
+    render(periods);
+    overlay.style.display = 'none';
+  } catch(e) {
+    overlay.innerHTML = `<div class="error-pill">⚠ ${e.message}<br><small>Tap refresh to try again</small></div>`;
   }
 }
 
-document.getElementById('refresh-btn').addEventListener('click', load);
-document.getElementById('apply-btn').addEventListener('click', () => {
-  gridCache = null; // bust cache on coord change
-  load();
+function render(periods) {
+  const p = periods[0];
+  const isDay = p.isDaytime !== false;
+  const cond = classify(p.shortForecast, isDay);
+  const [c1, c2] = GRADIENTS[cond] || GRADIENTS['partly'];
+
+  document.getElementById('main-card').style.background =
+    `linear-gradient(155deg, ${c1} 0%, ${c2} 100%)`;
+
+  document.getElementById('temp').innerHTML =
+    `${p.temperature}<span class="temp-deg">°</span>`;
+  document.getElementById('wind-dir').textContent =
+    p.windDirection ? `${p.windDirection} wind` : 'Wind';
+  document.getElementById('wind-speed').textContent = parseWind(p.windSpeed);
+  document.getElementById('headline').textContent = makeHeadline(p.shortForecast);
+  document.getElementById('detail').textContent = p.detailedForecast;
+  document.getElementById('period-label').textContent = p.name;
+  document.getElementById('updated').textContent =
+    new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+  const list = document.getElementById('upcoming');
+  periods.slice(1, 8).forEach(q => {
+    const row = document.createElement('div');
+    row.className = 'up-row';
+    row.innerHTML = `
+      <div class="up-period">${q.name}</div>
+      <div class="up-short">${makeHeadline(q.shortForecast)}</div>
+      <div class="up-temp">${q.temperature}°</div>
+    `;
+    list.appendChild(row);
+  });
+}
+
+document.getElementById('refresh-btn').addEventListener('click', () => {
+  gridCache = null; load();
 });
 
-// Load on startup
 load();
 </script>
 </body>
