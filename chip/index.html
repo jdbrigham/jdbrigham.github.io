@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <title>Responsive Audio Player</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="https://public.codepenassets.com/css/reset-2.0.min.css">
+<link rel='stylesheet' href='https://cdn.plyr.io/3.6.2/plyr.css'><link rel="stylesheet" href="./style.css">
+<script src="https://public.codepenassets.com/js/prefixfree-1.0.7.min.js"></script>
+
+  </head>
+    
+  <body>
+  <div class="container">
+    <h1>Pneumonia Throat by Chip Hayden</h1>
+    <div class="column add-bottom">
+        <div id="mainwrap">
+            <div id="nowPlay">
+                <span id="npAction">Paused...</span><span id="npTitle"></span>
+            </div>
+            <div id="audiowrap">
+                <div id="audio0">
+                    <audio id="audio1" preload controls>Your browser does not support HTML5 Audio! 😢</audio>
+                </div>
+                <div id="tracks">
+                    <a id="btnPrev">&larr;</a><a id="btnNext">&rarr;</a>
+                </div>
+            </div>
+            <div id="plwrap">
+                <ul id="plList"></ul>
+            </div>
+        </div>
+    </div>
+    <div class="column add-bottom center">
+        <p>Music performed by Chip Hayden</p>
+        <p>Download Pneumonia Throat: <a href="PneumonaThroat.zip">(full album zip)</a></p>
+    </div>
+</div>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script src='//cdnjs.cloudflare.com/ajax/libs/html5media/1.1.8/html5media.min.js'></script>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/plyr/3.6.8/plyr.min.js'></script><script  src="./script.js"></script>
+
+  </body>
+  
+</html>
