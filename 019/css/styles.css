@@ -17,7 +17,19 @@ body {
 /* Add a container wrapper to constrain both navigation and calendar */
 .container {
     width: 100%;
-    max-width: 800px;  /* Match your calendar-page max-width */
+    max-width: 540px;  /* Match your calendar-page max-width */
+}
+
+.calendar-page {
+    background: white;
+    width: 100%;
+    max-width: 540px;
+    aspect-ratio: 4 / 5;      /* portrait, like a tear-off calendar page */
+    display: flex;
+    flex-direction: column;   /* grows taller if content overflows the ratio */
+    padding: 40px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: 24px solid lightblue;
 }
 
 .navigation {
@@ -54,56 +66,43 @@ button:disabled {
     font-size: 14px;
 }
 
-.calendar-page {
-    background: white;
-    width: 100%;
-    max-width: 800px;
-    padding: 20px 50px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    border: 30px solid lightblue;
-}
-
 .date-info {
     width: 100%;
     display: flex;
+    align-items: stretch;        /* rule runs the full height of the number */
+    gap: 24px;
+    padding-bottom: 24px;
     border-bottom: 1px solid #ddd;
 }
 
 .left {
-    flex: 1;
+    flex: 0 0 auto;              /* hug the upper-left, don't stretch */
 }
 
 .right {
     flex: 1;
+    border-left: 1px solid #ccc; /* the vertical rule */
+    padding-left: 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* spread lines to match number height */
 }
 
 .date-number {
-    font-size: 120px;
+    font-size: 110px;
     font-weight: normal;
-    line-height: 1;
-    text-align: center;
-    margin-bottom: 10px;
-    flex: 1;
+    line-height: 0.85;           /* trim serif whitespace so top aligns */
+    text-align: left;
 }
 
-.day-of-week {
-    font-size: 24px;
-    font-weight: normal;
-    margin-bottom: 5px;
-}
-
-.month {
-    font-size: 24px;
-    font-weight: normal;
-    margin-bottom: 10px;
-}
-
+.day-of-week,
+.month,
 .year {
-    font-size: 24px;
+    font-size: 26px;
     font-weight: normal;
-    margin-bottom: 50px;
-    padding-bottom: 30px;
-    
+    line-height: 1.1;
+    margin: 0;
+    padding: 0;
 }
 
 .word-section {
@@ -145,10 +144,39 @@ button:disabled {
     background-color: cadetblue;
 }
 
-img {
+#image-background {
+    background-color: #f7cbbb;
+}
+
+#image-background img {
     width: 200px;
+    margin: 0 auto;
+    display: block;
 }
 
 .hidden {
     display: none;
+}
+
+/* Mobile: the whole background becomes the calendar-border blue,
+   extending behind the iPhone notch / status bar */
+@media (max-width: 600px) {
+    html,
+    body {
+        background-color: slategray;
+    }
+
+    body {
+        /* keep content clear of the notch and home indicator,
+           especially in landscape */
+        padding: max(16px, env(safe-area-inset-top))
+                 max(16px, env(safe-area-inset-right))
+                 max(16px, env(safe-area-inset-bottom))
+                 max(16px, env(safe-area-inset-left));
+    }
+
+    .calendar-page {
+       /* border: none;        the background is the border now */
+       /* box-shadow: none;    shadow reads as a smudge on solid blue */
+    }
 }

@@ -1,6 +1,19 @@
 let wordEntries = [];
 let currentIndex = 0;
-let startDate = new Date();
+
+// Anchor date: entry 0 in the CSV corresponds to this day.
+// Each following day advances one entry, wrapping around at the end.
+const EPOCH = new Date(2026, 6, 3); // months are 0-indexed: 6 = July
+
+function getTodayIndex() {
+    // Normalize both dates to local midnight so DST shifts and
+    // time-of-day never cause an off-by-one.
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const daysElapsed = Math.round((today - EPOCH) / 86400000);
+    // Double-modulo keeps the index positive even if today is before EPOCH
+    return ((daysElapsed % wordEntries.length) + wordEntries.length) % wordEntries.length;
+}
 
 // Path to your CSV file
 const CSV_FILE_PATH = 'new-words-2.csv';
@@ -89,10 +102,10 @@ function parseCSV(text) {
     console.log('Total entries parsed:', wordEntries.length);
 
     if (wordEntries.length > 0) {
-        currentIndex = 0;
+        currentIndex = getTodayIndex();
         $('#uploadSection').addClass('hidden');
         $('#navigation').removeClass('hidden');
-        displayEntry(0);
+        displayEntry(currentIndex);
     } else {
         alert('No valid entries found in CSV');
     }
@@ -102,8 +115,7 @@ function displayEntry(index) {
     if (index < 0 || index >= wordEntries.length) return;
 
     const entry = wordEntries[index];
-    const date = new Date(startDate);
-    date.setDate(date.getDate() + index);
+    const date = new Date(); // always show today's actual date
 
     // Update date
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
