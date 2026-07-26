@@ -345,8 +345,9 @@
     // ═══════════════════════════════════════════════════════
     //  CONFIG
     // ═══════════════════════════════════════════════════════
-    const GAMMA_MIN       = -40;   // gyro: left-tilt → left edge
-    const GAMMA_MAX       =  40;   // gyro: right-tilt → right edge
+    const GAMMA_MIN       = -40;   // gyro: raw sensor range used for the pan sweep
+    const GAMMA_MAX       =  40;
+    const GYRO_INVERT     = true;  // true = rotate right → pan right (heading increases)
     const SMOOTHING       = 0.07;  // 0.04 buttery · 0.15 snappy
     const SCROLL_HEIGHT   = 3000;  // desktop: px of scroll travel = full pan
     let   COMPASS_START   = 0;     // set from EXIF GPSImgDirection on load; = camera facing direction
@@ -504,7 +505,8 @@
     function rafLoop() {
       if (mode === 'gyro') {
         const clamped = Math.max(GAMMA_MIN, Math.min(GAMMA_MAX, latestGamma));
-        targetPct = ((clamped - GAMMA_MIN) / (GAMMA_MAX - GAMMA_MIN)) * 100;
+        const t = (clamped - GAMMA_MIN) / (GAMMA_MAX - GAMMA_MIN);
+        targetPct = (GYRO_INVERT ? 1 - t : t) * 100;
       }
 
       currentPct += (targetPct - currentPct) * SMOOTHING;
