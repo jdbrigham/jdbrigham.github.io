@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Vermont Astrophotography Planner V4</title>
+
+    <style>
+        body {
+            font-family: Segoe UI, Arial, sans-serif;
+            background: #0b1220;
+            color: #eef4ff;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1,
+        h2,
+        h3 {
+            margin-top: 0;
+        }
+
+        .card {
+            background: #16213d;
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 20px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 18px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            opacity: .92;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        th {
+            background: #1d2f57;
+        }
+
+        th,
+        td {
+            padding: 8px;
+            border-bottom: 1px solid #31446d;
+            text-align: left;
+        }
+
+        .good {
+            color: #7ae8a3;
+            font-weight: bold;
+        }
+
+        .fair {
+            color: #facc15;
+            font-weight: bold;
+        }
+
+        .poor {
+            color: #f87171;
+            font-weight: bold;
+        }
+
+        .best {
+            background: #17344f;
+        }
+
+        .small {
+            opacity: .8;
+        }
+
+        .na {
+            opacity: .5;
+        }
+
+        .moonup {
+            color: #facc15;
+            font-size: 18px;
+        }
+
+        .moondown {
+            color: #60a5fa;
+            font-size: 18px;
+        }
+
+        th {
+            cursor: pointer;
+        }
+
+        th:hover {
+            background: #274172;
+        }
+
+        #calendarGrid {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(auto-fit, minmax(220px, 1fr));
+
+            gap: 12px;
+
+        }
+
+        .calendar-card {
+
+            border-radius: 12px;
+
+            padding: 12px;
+
+            min-height: 150px;
+
+            box-shadow:
+                0 2px 4px rgba(0, 0, 0, .25);
+
+        }
+
+        .calendar-green {
+            background: #8bcea6;
+        }
+
+        .calendar-yellow {
+            background: #854d0e;
+        }
+
+        .calendar-orange {
+            background: #9a3412;
+        }
+
+        .calendar-red {
+            background: #7f1d1d;
+        }
+
+        .calendar-best {
+
+            border: 3px solid gold;
+
+        }
+
+        .calendar-date {
+
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+
+        }
+
+        a {
+            color: #6db3f2;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+
+        a:hover,
+        a:focus {
+            color: #fff;
+        }
+
+        a:active {
+            color: #ffcc66;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>🌌 Vermont Astrophotography Planner V4</h1>
+
+    <div class="card">
+
+        <p>
+            <strong>Location</strong><br>
+            43.4667° N<br>
+            73.2133° W
+        </p>
+
+        <p>
+            Trip Dates: Sep 4 - Sep 7, 2026
+        </p>
+
+        <button onclick="loadData()">
+            Refresh
+        </button>
+
+        <p id="status" class="small">
+            Ready
+        </p>
+        <p><a href="planner-4b_October.html">Oct2026</a></p>
+
+    </div>
+
+    <div class="grid">
+
+        <div class="card">
+            <h2>⭐ Best Astronomical Night</h2>
+            <div id="bestAstronomy">Loading...</div>
+        </div>
+
+        <div class="card">
+            <h2>☁️ Best Forecast Night</h2>
+            <div id="bestWeather">Loading...</div>
+        </div>
+
+    </div>
+
+    <div style="margin-bottom:15px;">
+
+            <button onclick="showTableView()">
+                📋 Table View
+            </button>
+
+            <button onclick="showCalendarView()">
+                📅 Calendar View
+            </button>
+
+        </div>
+
+    <div id="tableView" class="card">
+
+        <h2>Night Rankings</h2>
+        
+        <div style="margin-bottom:15px;display:flex;gap:20px;flex-wrap:wrap;align-items:center;">
+
+            <label>
+                <input type="checkbox" id="forecastOnly" onchange="renderTable()">
+                Forecast Only
+            </label>
+
+            <label>
+                <input type="checkbox" id="moonlessOnly" onchange="renderTable()">
+                Moonless Evenings
+            </label>
+
+            <label>
+                Astro Score:
+                <select id="minAstro" onchange="renderTable()">
+                    <option value="0">Any</option>
+                    <option value="70">70+</option>
+                    <option value="80">80+</option>
+                    <option value="90">90+</option>
+                </select>
+            </label>
+
+            <label>
+                Moon Illumination:
+                <select id="maxMoon" onchange="renderTable()">
+                    <option value="100">Any</option>
+                    <option value="50">≤50%</option>
+                    <option value="25">≤25%</option>
+                    <option value="10">≤10%</option>
+                </select>
+            </label>
+
+            <button onclick="bestMilkyWay()">
+                Best Milky Way Nights
+            </button>
+
+        </div>
+
+        <table>
+
+            <thead>
+                <tr>
+
+                    <th onclick="sortBy('date')">Date</th>
+                    <th onclick="sortBy('astroScore')">
+                        Astro
+                    </th>
+
+                    <th onclick="sortBy('weatherScore')">
+                        Weather
+                    </th>
+
+                    <th onclick="sortBy('cloud')">
+                        Cloud
+                    </th>
+
+                    <th onclick="sortBy('illumination')">
+                        Moon%
+                    </th>
+
+                    <th onclick="sortBy('moonrise')">
+                        Moonrise
+                    </th>
+
+                    <th onclick="sortBy('moonset')">
+                        Moonset
+                    </th>
+
+                    <th>8PM</th>
+                    <th>9PM</th>
+                    <th>10PM</th>
+                    <th>11PM</th>
+                    <th>12AM</th>
+
+                </tr>
+            </thead>
+
+            <tbody id="results"></tbody>
+
+        </table>
+
+    </div>
+    <div id="heatMap" style="margin-bottom:15px;">
+    </div>
+    ``
+    <div id="calendarView" class="card" style="display:none;">
+
+        <h2>📅 Trip Calendar</h2>
+
+        <div id="calendarGrid"></div>
+
+    </div>
+
+    <script>
+
+        const LAT = 43.4667;
+        const LON = -73.2133;
+
+        const START = new Date("2026-09-04");
+        const END = new Date("2026-09-07");
+
+        let allRows = [];
+
+        let currentSort = {
+            column: "astroScore",
+            direction: "desc"
+        };
+
+        function createVacationDates() {
+
+            const dates = [];
+
+            for (
+                let d = new Date(START);
+                d <= END;
+                d.setDate(d.getDate() + 1)
+            ) {
+
+                dates.push(
+                    d.toISOString().substring(0, 10)
+                );
+
+            }
+
+            return dates;
+
+        }
+
+        function sortBy(column) {
+
+            if (currentSort.column === column) {
+
+                currentSort.direction =
+                    currentSort.direction === "asc"
+                        ? "desc"
+                        : "asc";
+
+            } else {
+
+                currentSort.column = column;
+                currentSort.direction = "asc";
+
+            }
+
+            renderTable();
+
+        }
+        function scoreClass(score) {
+
+            if (score >= 85) return "good";
+            if (score >= 65) return "fair";
+            return "poor";
+
+        }
+
+        function bestMilkyWay() {
+
+            document.getElementById(
+                "forecastOnly"
+            ).checked = true;
+
+            document.getElementById(
+                "moonlessOnly"
+            ).checked = true;
+
+            document.getElementById(
+                "minAstro"
+            ).value = "80";
+
+            document.getElementById(
+                "maxMoon"
+            ).value = "25";
+
+            renderTable();
+
+        }
+
+        function moonIlluminationEstimate(dateString) {
+
+            const date =
+                new Date(dateString);
+
+            const knownNewMoon =
+                new Date("2000-01-06T18:14:00Z");
+
+            const synodicMonth =
+                29.53058867;
+
+            const days =
+                (date - knownNewMoon) /
+                (1000 * 60 * 60 * 24);
+
+            const phase =
+                ((days % synodicMonth)
+                    + synodicMonth)
+                % synodicMonth;
+
+            return Math.round(
+                ((1 - Math.cos(
+                    2 * Math.PI * phase / synodicMonth
+                )) / 2) * 100
+            );
+
+        }
+
+        function astronomyScore(
+            moonHours,
+            illumination
+        ) {
+
+            const darkness =
+
+                100
+                - (moonHours * 12)
+                - (illumination * 0.4);
+
+            return Math.max(
+                0,
+                Math.round(darkness)
+            );
+
+        }
+
+        function weatherScore(
+            astro,
+            cloud
+        ) {
+
+            if (cloud == null)
+                return null;
+
+            return Math.round(
+                astro *
+                ((100 - cloud) / 100)
+            );
+
+        }
+
+        function parseHour(timeString) {
+
+            if (!timeString)
+                return null;
+
+            const pieces =
+                timeString.split("T");
+
+            const time =
+                pieces.length > 1
+                    ? pieces[1]
+                    : pieces[0];
+
+            return parseInt(
+                time.substring(0, 2),
+                10
+            );
+
+        }
+
+        function timelineStatus(
+            moonriseHour,
+            moonsetHour
+        ) {
+
+            const timeline = [];
+
+            if (
+                moonriseHour == null ||
+                moonsetHour == null
+            ) {
+
+                return [
+                    "🌑", "🌑", "🌑", "🌑", "🌑"
+                ];
+
+            }
+
+            const hours =
+                [20, 21, 22, 23, 24];
+
+            hours.forEach(hour => {
+
+                let visible = false;
+
+                if (
+                    moonriseHour <
+                    moonsetHour
+                ) {
+
+                    visible =
+                        hour >= moonriseHour &&
+                        hour < moonsetHour;
+
+                } else {
+
+                    visible =
+                        hour >= moonriseHour ||
+                        hour < moonsetHour;
+
+                }
+
+                timeline.push(
+                    visible ? "🌙" : "🌑"
+                );
+
+            });
+
+            return timeline;
+
+        }
+
+        function calculateMoonHours(
+            timeline
+        ) {
+
+            return timeline.filter(
+                x => x === "🌙"
+            ).length;
+
+        }
+
+        function renderTable() {
+
+            let rows = [...allRows];
+
+            const forecastOnly =
+                document.getElementById(
+                    "forecastOnly"
+                )?.checked;
+
+            const moonlessOnly =
+                document.getElementById(
+                    "moonlessOnly"
+                )?.checked;
+
+            const minAstro =
+                Number(
+                    document.getElementById(
+                        "minAstro"
+                    )?.value || 0
+                );
+
+            const maxMoon =
+                Number(
+                    document.getElementById(
+                        "maxMoon"
+                    )?.value || 100
+                );
+
+            if (forecastOnly) {
+
+                rows = rows.filter(
+                    r =>
+                        r.weatherScore !== null
+                );
+
+            }
+
+            if (moonlessOnly) {
+
+                rows = rows.filter(
+                    r =>
+                        r.timeline.every(
+                            t => t === "🌑"
+                        )
+                );
+
+            }
+
+            rows = rows.filter(
+                r =>
+                    r.astroScore >= minAstro
+            );
+
+            rows = rows.filter(
+                r =>
+                    r.illumination <= maxMoon
+            );
+
+            rows.sort((a, b) => {
+
+                let valueA =
+                    a[currentSort.column];
+
+                let valueB =
+                    b[currentSort.column];
+
+                if (valueA === null)
+                    valueA = -999999;
+
+                if (valueB === null)
+                    valueB = -999999;
+
+                if (currentSort.column === "date") {
+
+                    valueA =
+                        new Date(a.date);
+
+                    valueB =
+                        new Date(b.date);
+
+                }
+
+                if (valueA < valueB) {
+
+                    return currentSort.direction === "asc"
+                        ? -1
+                        : 1;
+
+                }
+
+                if (valueA > valueB) {
+
+                    return currentSort.direction === "asc"
+                        ? 1
+                        : -1;
+
+                }
+
+                return 0;
+
+            });
+
+            const tbody =
+                document.getElementById(
+                    "results"
+                );
+
+            tbody.innerHTML = "";
+
+            let highlightedDate = null;
+
+            if (rows.length) {
+
+                highlightedDate =
+                    rows.reduce(
+                        (best, row) =>
+                            row.astroScore >
+                                best.astroScore
+                                ? row
+                                : best
+                    ).date;
+
+            }
+
+            rows.forEach(row => {
+
+                const tr =
+                    document.createElement("tr");
+
+                if (row.date === highlightedDate) {
+
+                    tr.classList.add("best");
+
+                }
+
+                tr.innerHTML = `
+
+<td>${row.date}</td>
+
+<td class="${scoreClass(row.astroScore)}">
+${row.astroScore}
+</td>
+
+<td>
+${row.weatherScore !== null
+                        ? row.weatherScore
+                        : '<span class="na">N/A</span>'
+                    }
+</td>
+
+<td>
+${row.cloud != null
+                        ? Math.round(row.cloud) + '%'
+                        : '<span class="na">N/A</span>'
+                    }
+</td>
+
+<td>${row.illumination}%</td>
+
+<td>${row.moonrise || '-'}</td>
+
+<td>${row.moonset || '-'}</td>
+
+<td>${row.timeline[0]}</td>
+<td>${row.timeline[1]}</td>
+<td>${row.timeline[2]}</td>
+<td>${row.timeline[3]}</td>
+<td>${row.timeline[4]}</td>
+
+`;
+
+                tbody.appendChild(tr);
+
+            });
+
+        }
+
+        function showTableView() {
+
+            document.getElementById(
+                "tableView"
+            ).style.display = "block";
+
+            document.getElementById(
+                "calendarView"
+            ).style.display = "none";
+
+        }
+
+        function showCalendarView() {
+
+            document.getElementById(
+                "tableView"
+            ).style.display = "none";
+
+            document.getElementById(
+                "calendarView"
+            ).style.display = "block";
+
+            renderCalendar();
+
+        }
+
+        function getCalendarClass(score) {
+
+            if (score >= 85)
+                return "calendar-green";
+
+            if (score >= 70)
+                return "calendar-yellow";
+
+            if (score >= 55)
+                return "calendar-orange";
+
+            return "calendar-red";
+
+        }
+
+        function moonSummary(row) {
+
+            const moonUpHours =
+                row.timeline.filter(
+                    t => t === "🌙"
+                ).length;
+
+            if (moonUpHours === 0) {
+
+                return "🌑 Dark Evening";
+
+            }
+
+            if (moonUpHours <= 2) {
+
+                return "🌓 Partial Moon";
+
+            }
+
+            return "🌙 Moon Up";
+
+        }
+
+        function renderHeatMap() {
+
+            const heat =
+                document.getElementById(
+                    "heatMap"
+                );
+
+            heat.innerHTML = "";
+
+            let html = "";
+
+            allRows.forEach(row => {
+
+                let color;
+
+                if (row.astroScore >= 85)
+                    color = "#22c55e";
+                else if (row.astroScore >= 70)
+                    color = "#eab308";
+                else if (row.astroScore >= 55)
+                    color = "#f97316";
+                else
+                    color = "#ef4444";
+
+                const day =
+                    row.date.substring(8);
+
+                html += `
+            <span
+              title="${row.date}: ${row.astroScore}"
+              style="
+                display:inline-block;
+                width:24px;
+                height:24px;
+                background:${color};
+                margin-right:3px;
+                text-align:center;
+                color:black;
+                font-size:12px;
+                line-height:24px;
+                border-radius:4px;
+              ">
+              ${day}
+            </span>
+        `;
+
+            });
+
+            heat.innerHTML = html;
+
+        }
+
+        function renderCalendar() {
+
+            const container =
+                document.getElementById(
+                    "calendarGrid"
+                );
+            renderHeatMap();
+
+            container.innerHTML = "";
+
+            let rows = [...allRows];
+
+            rows.sort((a, b) =>
+                new Date(a.date) -
+                new Date(b.date)
+            );
+
+            const bestAstronomy =
+                rows.reduce(
+                    (best, row) =>
+                        row.astroScore >
+                            best.astroScore
+                            ? row
+                            : best
+                );
+
+            rows.forEach(row => {
+
+                const card =
+                    document.createElement("div");
+
+                card.className =
+                    "calendar-card " +
+                    getCalendarClass(
+                        row.astroScore
+                    );
+
+                if (
+                    row.date ===
+                    bestAstronomy.date
+                ) {
+
+                    card.classList.add(
+                        "calendar-best"
+                    );
+
+                }
+
+                card.innerHTML = `
+
+<div class="calendar-date">
+
+${row.date}
+
+${row.date === bestAstronomy.date
+                        ? " 🏆"
+                        : ""
+                    }
+
+</div>
+
+<div>
+⭐ Astro:
+<strong>
+${row.astroScore}
+</strong>
+</div>
+
+<div>
+☁ Weather:
+${row.weatherScore !== null
+                        ? row.weatherScore
+                        : "N/A"
+                    }
+</div>
+
+<div>
+Cloud:
+${row.cloud != null
+                        ? Math.round(row.cloud) + "%"
+                        : "—"
+                    }
+</div>
+
+<div>
+🌙 Moon:
+${row.illumination}%
+</div>
+
+<div>
+${moonSummary(row)}
+</div>
+
+<hr>
+
+<div>
+
+8 ${row.timeline[0]}
+&nbsp;
+
+9 ${row.timeline[1]}
+&nbsp;
+
+10 ${row.timeline[2]}
+
+</div>
+
+<div>
+
+11 ${row.timeline[3]}
+&nbsp;
+
+12 ${row.timeline[4]}
+
+</div>
+
+`;
+
+                container.appendChild(
+                    card
+                );
+
+            });
+
+        }
+        async function loadWeather() {
+
+            try {
+
+                const url =
+                    `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&daily=cloud_cover_mean&timezone=America/New_York`;
+
+                const response =
+                    await fetch(url);
+
+                const data =
+                    await response.json();
+
+                const map = {};
+
+                if (data.daily) {
+
+                    data.daily.time.forEach(
+                        (date, index) => {
+
+                            map[date] = {
+
+                                cloud:
+                                    data.daily
+                                        .cloud_cover_mean[index]
+
+                            };
+
+                        }
+                    );
+
+                }
+
+                return map;
+
+            }
+            catch (ex) {
+
+                console.log(ex);
+
+                return {};
+
+            }
+
+        }
+
+        async function loadAstronomy() {
+
+            try {
+
+                const url =
+                    `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&daily=moonrise,moonset&timezone=America/New_York`;
+
+                const response =
+                    await fetch(url);
+
+                return await response.json();
+
+            }
+            catch (ex) {
+
+                console.log(ex);
+
+                return null;
+
+            }
+
+        }
+
+        async function loadData() {
+
+            document.getElementById(
+                "status"
+            ).innerText = "Loading...";
+
+            const vacationDates =
+                createVacationDates();
+
+            const weatherMap =
+                await loadWeather();
+
+            const astronomy =
+                await loadAstronomy();
+
+            const rows = [];
+
+            vacationDates.forEach(date => {
+
+                let moonrise = null;
+                let moonset = null;
+
+                if (
+                    astronomy &&
+                    astronomy.daily
+                ) {
+
+                    const index =
+                        astronomy.daily.time
+                            .indexOf(date);
+
+                    if (index >= 0) {
+
+                        moonrise =
+                            astronomy.daily.moonrise[index];
+
+                        moonset =
+                            astronomy.daily.moonset[index];
+
+                    }
+
+                }
+
+                const moonriseHour =
+                    parseHour(moonrise);
+
+                const moonsetHour =
+                    parseHour(moonset);
+
+                const timeline =
+                    timelineStatus(
+                        moonriseHour,
+                        moonsetHour
+                    );
+
+                const moonHours =
+                    calculateMoonHours(
+                        timeline
+                    );
+
+                const darkHours =
+                    5 - moonHours;
+
+                const illumination =
+                    moonIlluminationEstimate(
+                        date
+                    );
+
+                const astroScore =
+                    astronomyScore(
+                        moonHours,
+                        illumination
+                    );
+
+                const weather =
+                    weatherMap[date];
+
+                const cloud =
+                    weather
+                        ? weather.cloud
+                        : null;
+
+                const adjusted =
+                    weatherScore(
+                        astroScore,
+                        cloud
+                    );
+
+                rows.push({
+
+                    date,
+
+                    cloud,
+
+                    moonrise,
+
+                    moonset,
+
+                    illumination,
+
+                    astroScore,
+
+                    weatherScore:
+                        adjusted,
+
+                    timeline
+
+                });
+
+            });
+
+            rows.sort(
+                (a, b) =>
+                    b.astroScore -
+                    a.astroScore
+            );
+
+            const bestAstronomy =
+                rows[0];
+
+            const weatherRows =
+                rows.filter(
+                    r =>
+                        r.weatherScore !== null
+                );
+
+            const bestWeather =
+                weatherRows.length
+                    ? weatherRows.sort(
+                        (a, b) =>
+                            b.weatherScore -
+                            a.weatherScore
+                    )[0]
+                    : null;
+
+            document.getElementById(
+                "bestAstronomy"
+            ).innerHTML = `
+
+        <strong>${bestAstronomy.date}</strong><br><br>
+
+        Astronomy Score:
+        <strong>${bestAstronomy.astroScore}</strong><br>
+
+        Moon Illumination:
+        ${bestAstronomy.illumination}%<br>
+
+        Timeline:<br>
+
+        ${bestAstronomy.timeline.join(" ")}
+
+    `;
+
+            document.getElementById(
+                "bestWeather"
+            ).innerHTML = bestWeather
+                    ? `
+        <strong>${bestWeather.date}</strong><br><br>
+
+        Weather Score:
+        <strong>${bestWeather.weatherScore}</strong><br>
+
+        Cloud:
+        ${Math.round(bestWeather.cloud)}%
+      `
+                    : `
+        Forecast not yet available
+      `;
+
+            allRows = rows;
+
+            renderTable();
+
+            document.getElementById(
+                "status"
+            ).innerText =
+                "Updated: " +
+                new Date()
+                    .toLocaleString();
+
+        }
+
+        loadData();
+
+    </script>
+
+</body>
+
+</html>
