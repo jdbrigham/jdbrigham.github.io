@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Night Photography Workflow</title>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #080000;
+            color: #ff6666;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+
+            min-height: 100vh;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .phase {
+            text-align: center;
+
+            background: #220000;
+            border: 2px solid #662222;
+
+            border-radius: 12px;
+
+            padding: 12px;
+
+            font-weight: bold;
+            letter-spacing: 2px;
+
+            margin-bottom: 16px;
+        }
+
+        .counter {
+            text-align: center;
+            color: #ff9999;
+            margin-bottom: 16px;
+        }
+
+        .card {
+
+            position: relative;
+
+            background: #110000;
+            border: 2px solid #662222;
+
+            border-radius: 18px;
+
+            padding: 24px;
+        }
+
+        .card.completed {
+            border-color: #ff4444;
+        }
+
+        .card.completed::after {
+
+            content: "✓";
+
+            position: absolute;
+
+            top: 50%;
+            left: 50%;
+
+            transform: translate(-50%, -50%);
+
+            font-size: 14rem;
+            font-weight: bold;
+
+            color: rgba(255, 100, 100, .15);
+
+            pointer-events: none;
+        }
+
+        .completed-badge {
+
+            background: #330000;
+
+            border: 2px solid #ff4444;
+
+            color: #ffaaaa;
+
+            border-radius: 10px;
+
+            padding: 10px;
+
+            margin-bottom: 18px;
+
+            text-align: center;
+
+            font-weight: bold;
+
+            letter-spacing: 2px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .card-header {
+
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            margin-bottom: 12px;
+        }
+
+        .card-id {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #ff8888;
+        }
+
+        .card-file {
+            font-family: monospace;
+            font-size: 1.3rem;
+            color: #ffcccc;
+        }
+
+        .card-divider {
+            height: 1px;
+            background: #662222;
+            margin-bottom: 16px;
+        }
+
+        .card-subtitle {
+
+            text-align: center;
+
+            color: #aa6666;
+
+            text-transform: uppercase;
+
+            letter-spacing: 2px;
+
+            margin-bottom: 24px;
+        }
+
+        .iso-section {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .iso-value {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #ffdddd;
+        }
+
+        .exposure-row {
+            display: flex;
+            gap: 20px;
+        }
+
+        .exposure-item {
+            flex: 1;
+            text-align: center;
+        }
+
+        .setting-label {
+            color: #aa6666;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+
+        .setting-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #ffdddd;
+        }
+
+        .progress-container {
+
+            height: 10px;
+
+            background: #220000;
+
+            border-radius: 10px;
+
+            overflow: hidden;
+
+            margin: 20px 0;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: #ff4444;
+            width: 0%;
+        }
+
+        .button {
+
+            width: 100%;
+
+            border: none;
+
+            border-radius: 14px;
+
+            padding: 18px;
+
+            margin-top: 12px;
+
+            background: #440000;
+
+            color: white;
+
+            font-size: 1.1rem;
+
+            font-weight: bold;
+        }
+
+        .nav {
+            display: flex;
+            gap: 12px;
+        }
+
+        .nav .button {
+            flex: 1;
+        }
+
+        .complete-screen {
+            text-align: center;
+        }
+
+        .complete-screen h2 {
+            color: #ff9999;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+
+        <div id="workflow">
+
+            <div id="phase" class="phase"></div>
+
+            <div id="counter" class="counter"></div>
+
+            <div class="card" id="exposureCard">
+
+                <div id="completedBadge" class="completed-badge hidden">
+
+                    ✓ SHOT CAPTURED
+
+                </div>
+
+                <div class="card-header">
+
+                    <div id="testId" class="card-id"></div>
+
+                    <div id="filename" class="card-file"></div>
+
+                </div>
+
+                <div class="card-divider"></div>
+
+                <div class="card-subtitle">
+                    Exposure Details
+                </div>
+
+                <div class="iso-section">
+
+                    <div class="setting-label">
+                        ⚙ ISO
+                    </div>
+
+                    <div id="iso" class="iso-value"></div>
+
+                </div>
+
+                <div class="exposure-row">
+
+                    <div class="exposure-item">
+
+                        <div class="setting-label">
+                            🕒 Shutter
+                        </div>
+
+                        <div id="shutter" class="setting-value"></div>
+
+                    </div>
+
+                    <div class="exposure-item">
+
+                        <div class="setting-label">
+                            ◉ Aperture
+                        </div>
+
+                        <div id="aperture" class="setting-value"></div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="progress-container">
+                <div id="progressBar" class="progress-bar"></div>
+            </div>
+
+            <button class="button" onclick="markComplete()">
+                ✅ SHOT TAKEN
+            </button>
+
+            <div class="nav">
+
+                <button class="button" onclick="previousTest()">
+                    ◀ Previous
+                </button>
+
+                <button class="button" onclick="nextTest()">
+                    Next ▶
+                </button>
+
+            </div>
+
+            <button class="button" onclick="exportResults()">
+                📄 Export Log
+            </button>
+
+        </div>
+
+        <div id="done" class="complete-screen hidden">
+
+            <h2>
+                ✅ All Tests Complete
+            </h2>
+
+            <button class="button" onclick="restartWorkflow()">
+                Restart Workflow
+            </button>
+
+        </div>
+
+    </div>
+
+    <script>
+
+        const imagePrefix = "DSC_";
+        const startImageNumber = 1100;
+
+        const equivalentTests = [
+
+            {
+                id: "T000",
+                iso: "3200",
+                aperture: "f/2.8",
+                shutter: "20s"
+            },
+
+            {
+                id: "T001",
+                iso: "800",
+                aperture: "f/2.8",
+                shutter: "80s"
+            }
+
+        ];
+
+        const bracketingTests = [
+
+            {
+                id: "B000",
+                iso: "1600",
+                aperture: "f/2.8",
+                shutter: "20s"
+            },
+
+            {
+                id: "B001",
+                iso: "1600",
+                aperture: "f/2.8",
+                shutter: "40s"
+            },
+
+            {
+                id: "B002",
+                iso: "1600",
+                aperture: "f/2.8",
+                shutter: "80s"
+            }
+
+        ];
+
+        const workflow = [
+
+            ...equivalentTests.map(
+                x => ({ ...x, phase: "Equivalent Exposure" })
+            ),
+
+            ...bracketingTests.map(
+                x => ({ ...x, phase: "Bracketing" })
+            )
+
+        ];
+
+        workflow.forEach((test, index) => {
+
+            test.filename =
+                `${imagePrefix}${startImageNumber + index}`;
+
+        });
+
+        const savedWorkflow =
+            localStorage.getItem("workflowData");
+
+        if (savedWorkflow) {
+
+            const saved =
+                JSON.parse(savedWorkflow);
+
+            saved.forEach((savedItem, i) => {
+
+                if (workflow[i]) {
+
+                    workflow[i].completed =
+                        savedItem.completed;
+
+                    workflow[i].captureTime =
+                        savedItem.captureTime;
+                }
+            });
+        }
+
+        let currentIndex =
+            parseInt(
+                localStorage.getItem("currentIndex") || "0"
+            );
+
+        function render() {
+
+            if (currentIndex >= workflow.length) {
+
+                document
+                    .getElementById("workflow")
+                    .classList.add("hidden");
+
+                document
+                    .getElementById("done")
+                    .classList.remove("hidden");
+
+                return;
+            }
+
+            const t = workflow[currentIndex];
+
+            document.getElementById("phase")
+                .textContent =
+                "🔴 " + t.phase;
+
+            document.getElementById("counter")
+                .textContent =
+                `Test ${currentIndex + 1} of ${workflow.length}`;
+
+            document.getElementById("testId")
+                .textContent = t.id;
+
+            document.getElementById("filename")
+                .textContent = t.filename;
+
+            document.getElementById("iso")
+                .textContent = t.iso;
+
+            document.getElementById("aperture")
+                .textContent = t.aperture;
+
+            document.getElementById("shutter")
+                .textContent = t.shutter;
+
+            const badge =
+                document.getElementById("completedBadge");
+
+            const card =
+                document.getElementById("exposureCard");
+
+            if (t.completed) {
+
+                badge.classList.remove("hidden");
+                card.classList.add("completed");
+
+            } else {
+
+                badge.classList.add("hidden");
+                card.classList.remove("completed");
+            }
+
+            document.getElementById("progressBar")
+                .style.width =
+                ((currentIndex) / workflow.length * 100) + "%";
+        }
+
+        function markComplete() {
+
+            const t = workflow[currentIndex];
+
+            t.completed = true;
+
+            t.captureTime =
+                new Date().toISOString();
+
+            localStorage.setItem(
+                "workflowData",
+                JSON.stringify(workflow)
+            );
+
+            currentIndex++;
+
+            localStorage.setItem(
+                "currentIndex",
+                currentIndex
+            );
+
+            render();
+        }
+
+        function nextTest() {
+
+            if (currentIndex < workflow.length - 1) {
+
+                currentIndex++;
+
+                localStorage.setItem(
+                    "currentIndex",
+                    currentIndex
+                );
+
+                render();
+            }
+        }
+
+        function previousTest() {
+
+            if (currentIndex > 0) {
+
+                currentIndex--;
+
+                localStorage.setItem(
+                    "currentIndex",
+                    currentIndex
+                );
+
+                render();
+            }
+        }
+
+        function restartWorkflow() {
+
+            localStorage.removeItem("workflowData");
+            localStorage.removeItem("currentIndex");
+
+            location.reload();
+        }
+
+        function exportResults() {
+
+            const rows = [];
+
+            rows.push(
+                "TestID,Filename,Phase,ISO,Aperture,Shutter,CaptureTime,Completed"
+            );
+
+            workflow.forEach(t => {
+
+                rows.push([
+                    t.id,
+                    t.filename,
+                    t.phase,
+                    t.iso,
+                    t.aperture,
+                    t.shutter,
+                    t.captureTime || "",
+                    t.completed || false
+                ].join(","));
+
+            });
+
+            const csv = rows.join("\n");
+
+            const blob =
+                new Blob(
+                    [csv],
+                    { type: "text/csv" }
+                );
+
+            const url =
+                URL.createObjectURL(blob);
+
+            const a =
+                document.createElement("a");
+
+            a.href = url;
+            a.download =
+                "night-photography-log.csv";
+
+            document.body.appendChild(a);
+
+            a.click();
+
+            document.body.removeChild(a);
+
+            URL.revokeObjectURL(url);
+        }
+
+        render();
+
+    </script>
+
+</body>
+
+</html>
