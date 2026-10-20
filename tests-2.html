@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Night Photography Tests</title>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 16px;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #080000;
+            color: #ff6666;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .title {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .title-icon {
+            width: 32px;
+            height: 32px;
+        }
+
+        .progress {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #ff9999;
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        .test-item {
+            display: grid;
+            grid-template-columns: 1fr 1.4fr 1fr 1fr 1fr;
+
+            text-align: center;
+
+            background: #110000;
+            border: 2px solid #662222;
+            border-radius: 14px;
+
+            padding: 22px 10px;
+            margin-bottom: 12px;
+
+            cursor: pointer;
+            font-size: 1.15rem;
+        }
+
+        .test-item.checked {
+            background: #220000;
+            border-color: #aa3333;
+            color: #885555;
+            text-decoration: line-through;
+        }
+
+        .id {
+            font-weight: bold;
+        }
+
+        .button {
+            width: 100%;
+            background: #440000;
+            color: #ffcccc;
+
+            border: none;
+            border-radius: 14px;
+
+            font-size: 1.2rem;
+
+            padding: 18px;
+            margin-top: 20px;
+
+            cursor: pointer;
+        }
+
+        .button:active {
+            opacity: .8;
+        }
+
+        .header {
+            display: grid;
+            grid-template-columns: 1fr 1.4fr 1fr 1fr 1fr;
+            text-align: center;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #ff9999;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 16px;
+            font-size: 1.2rem;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- SCREEN 1 -->
+
+    <div id="screen1" class="screen active">
+
+        <h1 class="title">
+            <img src="noun_DSLR_5803338.svg" class="title-icon" alt="">
+            Exposure Tests
+        </h1>
+
+        <div class="section-title">
+            Equivalent Exposure Tests
+        </div>
+
+        <div class="progress" id="equivProgress">
+            0 / 0 Complete
+        </div>
+
+        <div class="header">
+            <div>ID</div>
+            <div>File</div>
+            <div>ISO</div>
+            <div>f-stop</div>
+            <div>Shutter</div>
+        </div>
+
+        <div id="equivalent-list">
+
+            <div class="test-item" data-id="T000">
+                <div class="id">T000</div>
+                <div class="filename"></div>
+                <div>3200</div>
+                <div>f/2.8</div>
+                <div>20s</div>
+            </div>
+
+            <div class="test-item" data-id="T001">
+                <div class="id">T001</div>
+                <div class="filename"></div>
+                <div>800</div>
+                <div>f/2.8</div>
+                <div>80s</div>
+            </div>
+
+        </div>
+
+        <button class="button" onclick="showScreen('screen2')">
+            Next ➜ Bracketing Tests
+        </button>
+
+    </div>
+
+    <!-- SCREEN 2 -->
+
+    <div id="screen2" class="screen">
+
+        <h1>📷 Exposure Tests</h1>
+
+        <div class="section-title">
+            Bracketing Tests
+        </div>
+
+        <div class="progress" id="bracketProgress">
+            0 / 0 Complete
+        </div>
+
+        <div class="header">
+            <div>ID</div>
+            <div>File</div>
+            <div>ISO</div>
+            <div>f-stop</div>
+            <div>Shutter</div>
+        </div>
+
+        <div id="bracket-list">
+
+            <div class="test-item" data-id="B000">
+                <div class="id">B000</div>
+                <div class="filename"></div>
+                <div>1600</div>
+                <div>f/2.8</div>
+                <div>20s</div>
+            </div>
+
+            <div class="test-item" data-id="B001">
+                <div class="id">B001</div>
+                <div class="filename"></div>
+                <div>1600</div>
+                <div>f/2.8</div>
+                <div>40s</div>
+            </div>
+
+            <div class="test-item" data-id="B002">
+                <div class="id">B002</div>
+                <div class="filename"></div>
+                <div>1600</div>
+                <div>f/2.8</div>
+                <div>80s</div>
+            </div>
+
+        </div>
+
+        <button class="button" onclick="showScreen('screen1')">
+            ⬅ Back
+        </button>
+        <button class="button" onclick="exportResults()">
+            Export Log
+        </button>
+
+    </div>
+
+    <script>
+
+        // ========================================
+        // Configuration
+        // ========================================
+
+        const imagePrefix = "DSC_";
+        const startImageNumber = 1100;
+
+        // ========================================
+        // Screen Navigation
+        // ========================================
+
+        function showScreen(screenId) {
+
+            document
+                .querySelectorAll('.screen')
+                .forEach(screen =>
+                    screen.classList.remove('active'));
+
+            document
+                .getElementById(screenId)
+                .classList.add('active');
+        }
+
+        // ========================================
+        // Filename Assignment
+        // ========================================
+
+        function assignFilenames() {
+
+            document
+                .querySelectorAll('.test-item')
+                .forEach((item, index) => {
+
+                    const filename =
+                        `${imagePrefix}${startImageNumber + index}`;
+
+                    item
+                        .querySelector('.filename')
+                        .textContent = filename;
+                });
+        }
+
+        // ========================================
+        // Progress Counters
+        // ========================================
+
+        function updateProgress() {
+
+            const equivTotal =
+                document.querySelectorAll(
+                    '#equivalent-list .test-item'
+                ).length;
+
+            const equivDone =
+                document.querySelectorAll(
+                    '#equivalent-list .checked'
+                ).length;
+
+            document.getElementById('equivProgress')
+                .textContent =
+                `${equivDone} / ${equivTotal} Complete`;
+
+            const bracketTotal =
+                document.querySelectorAll(
+                    '#bracket-list .test-item'
+                ).length;
+
+            const bracketDone =
+                document.querySelectorAll(
+                    '#bracket-list .checked'
+                ).length;
+
+            document.getElementById('bracketProgress')
+                .textContent =
+                `${bracketDone} / ${bracketTotal} Complete`;
+        }
+
+        // ========================================
+        // Item Click Handling
+        // ========================================
+
+        document
+            .querySelectorAll('.test-item')
+            .forEach(item => {
+
+                const testId = item.dataset.id;
+
+                // Restore previously completed items
+
+                if (localStorage.getItem(testId) === 'checked') {
+                    item.classList.add('checked');
+                }
+
+                item.addEventListener('click', () => {
+
+                    item.classList.toggle('checked');
+
+                    if (item.classList.contains('checked')) {
+
+                        localStorage.setItem(
+                            testId,
+                            'checked'
+                        );
+
+                        const captureTime =
+                            new Date().toLocaleTimeString();
+
+                        localStorage.setItem(
+                            `${testId}_time`,
+                            captureTime
+                        );
+
+                    } else {
+
+                        localStorage.removeItem(
+                            testId
+                        );
+
+                        localStorage.removeItem(
+                            `${testId}_time`
+                        );
+                    }
+
+                    updateProgress();
+                });
+
+            });
+
+        // ========================================
+        // CSV Export
+        // ========================================
+
+        function exportResults() {
+
+            const rows = [];
+
+            rows.push([
+                "TestID",
+                "Filename",
+                "ISO",
+                "Aperture",
+                "Shutter",
+                "CaptureTime",
+                "Completed"
+            ].join(","));
+
+            document
+                .querySelectorAll(".test-item")
+                .forEach(item => {
+
+                    const values =
+                        item.querySelectorAll("div");
+
+                    const id =
+                        values[0].textContent;
+
+                    const filename =
+                        values[1].textContent;
+
+                    const iso =
+                        values[2].textContent;
+
+                    const aperture =
+                        values[3].textContent;
+
+                    const shutter =
+                        values[4].textContent;
+
+                    const captureTime =
+                        localStorage.getItem(
+                            `${id}_time`
+                        ) || "";
+
+                    const completed =
+                        item.classList.contains(
+                            "checked"
+                        );
+
+                    rows.push([
+                        id,
+                        filename,
+                        iso,
+                        aperture,
+                        shutter,
+                        captureTime,
+                        completed
+                    ].join(","));
+
+                });
+
+            const csv =
+                rows.join("\n");
+
+            const blob =
+                new Blob(
+                    [csv],
+                    { type: "text/csv" }
+                );
+
+            const link =
+                document.createElement("a");
+
+            link.href =
+                URL.createObjectURL(blob);
+
+            link.download =
+                "night-photo-test-log.csv";
+
+            document.body.appendChild(link);
+
+            link.click();
+
+            document.body.removeChild(link);
+
+            URL.revokeObjectURL(link.href);
+        }
+
+        // ========================================
+        // Startup
+        // ========================================
+
+        assignFilenames();
+        updateProgress();
+
+    </script>
+
+</body>
+
+</html>
