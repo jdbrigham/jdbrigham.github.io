@@ -1,0 +1,616 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style></head><body><title>93 North Eats</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="theme-color" content="#101412">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass:wght@600;700;800&family=Space+Grotesk:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: one column for a phone in the car. Sticky filter bar, then exits in driving order, each led by a green highway exit tab. Dark only, for night driving. */
+:root{
+  --bg:#101412; --row:#171c19; --line:#26302b; --fg:#eef0ec; --dim:#98a39c; --faint:#5f6a64;
+  --sign:#0b6b3a; --sign-fg:#ffffff; --accent:#ffb454; --accent-ink:#1d1405; --warn:#ef7a6c;
+  --c-burger:#ffb454; --c-chicken:#f08a5d; --c-mexican:#7fd18b; --c-pizza:#e86a6a; --c-subs:#7fb8e8; --c-coffee:#b49b82; --c-other:#c7a3e8;
+  --sign-font:"Overpass","Highway Gothic","Arial Narrow",system-ui,sans-serif;
+  --body:"Space Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--fg)}
+body{font-family:var(--body);font-size:16px;line-height:1.35;-webkit-tap-highlight-color:transparent}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.pad{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.app{max-width:560px;margin:0 auto}
+
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding-block:12px 10px;display:flex;flex-direction:column;gap:10px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+h1{margin:0;font-family:var(--sign-font);font-weight:800;font-size:1.2rem;white-space:nowrap;letter-spacing:.01em;display:flex;align-items:center;gap:8px}
+.shield{display:inline-grid;place-items:center;width:30px;height:32px;background:var(--sign);border-radius:4px 4px 12px 12px;font-size:.85rem;color:#fff;position:relative;overflow:hidden;padding-top:6px}
+.shield::before{content:"";position:absolute;inset:0 0 auto;height:8px;background:#c8323a}
+.shield{background:#1f4fa8}
+.sub{font-size:.8rem;color:var(--dim)}
+.editbtn{font:inherit;font-size:.85rem;font-weight:600;background:none;color:var(--dim);border:1px solid var(--line);border-radius:999px;padding:7px 14px;min-height:36px}
+.editbtn[aria-pressed="true"]{color:var(--accent-ink);background:var(--accent);border-color:var(--accent)}
+.chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin-inline:-4px;padding-inline:4px}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;font:inherit;font-size:.88rem;font-weight:600;color:var(--dim);background:var(--row);border:1px solid var(--line);border-radius:999px;padding:8px 14px;min-height:40px;display:flex;align-items:center;gap:7px}
+.chip i{width:9px;height:9px;border-radius:50%;background:var(--c);opacity:.45}
+.chip[aria-pressed="true"]{color:var(--fg);border-color:var(--c)}
+.chip[aria-pressed="true"] i{opacity:1}
+
+main{display:flex;flex-direction:column;padding-block:6px 32px}
+.exit{display:flex;flex-direction:column;border-bottom:1px solid var(--line);padding-block:14px 6px}
+.exit-h{display:flex;align-items:center;gap:12px;margin-bottom:6px;width:100%;font:inherit;color:inherit;text-align:left;background:none;border:none;padding:0;cursor:pointer;min-height:48px}
+.exit-h .where{flex:1}
+.cnt{flex:0 0 auto;display:none;flex-direction:column;align-items:flex-end;font-size:.8rem;color:var(--dim)}
+.cnt span{font-family:var(--mono);font-size:.78rem;color:var(--accent)}
+.chev{flex:0 0 auto;width:10px;height:10px;border-right:2px solid var(--dim);border-bottom:2px solid var(--dim);transform:rotate(45deg);margin:0 4px 4px 2px}
+.exit.col .chev{transform:rotate(-45deg);margin-bottom:0}
+.exit.col .cnt{display:flex}
+.exit.col .spots{display:none}
+.exit.col{padding-block:10px 4px}
+@media (prefers-reduced-motion:no-preference){.chev{transition:transform .15s}}
+.tab{flex:0 0 auto;background:var(--sign);color:var(--sign-fg);font-family:var(--sign-font);font-weight:700;border:2px solid #e9efe9;border-radius:6px;padding:5px 9px 3px;display:flex;flex-direction:column;align-items:center;line-height:1;min-width:64px}
+.tab small{font-size:.58rem;letter-spacing:.12em}
+.tab b{font-size:1.45rem;font-weight:800}
+.tab.rest{background:#1f4fa8}
+.exit-h .where{min-width:0}
+.exit-h .road{font-family:var(--sign-font);font-weight:700;font-size:1.02rem}
+.exit-h .old{font-family:var(--mono);font-size:.72rem;color:var(--faint)}
+
+.spot{display:flex;align-items:center;gap:12px;min-height:58px;padding:8px 0;text-decoration:none;color:inherit;border-top:1px solid rgba(255,255,255,.04)}
+.spot:first-of-type{border-top:none}
+.dot{flex:0 0 auto;width:12px;height:12px;border-radius:50%;background:var(--c)}
+.spot .info{flex:1;min-width:0}
+.spot .nm{font-weight:600;font-size:1.05rem}
+.spot .ad{font-size:.8rem;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tag{display:inline-block;font-size:.68rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--warn);border:1px solid currentColor;border-radius:4px;padding:0 4px;margin-left:6px;vertical-align:2px}
+.tag.mine{color:var(--accent)}
+.dist{flex:0 0 auto;text-align:right;font-family:var(--mono);font-size:.9rem;font-variant-numeric:tabular-nums;display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.dist .side{font-family:var(--body);font-size:.75rem;color:var(--dim)}
+.spot.closed{opacity:.4}
+.stoprow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.seg{display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;max-width:100%}
+.seg button{font:inherit;font-size:.8rem;font-weight:600;color:var(--dim);background:none;border:none;padding:7px 11px;min-height:36px;white-space:nowrap}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.add{font-family:var(--mono);font-size:1.05rem;font-weight:500;color:var(--accent);font-variant-numeric:tabular-nums}
+.dist .mi{font-size:.75rem;color:var(--dim)}
+.hwy{display:flex;align-items:center;gap:12px;padding-block:22px 4px;border-bottom:1px solid var(--line)}
+.hwy .road{font-family:var(--sign-font);font-weight:800;font-size:1.15rem}
+.ishield{display:inline-grid;place-items:center;width:38px;height:40px;border-radius:5px 5px 16px 16px;background:#1f4fa8;color:#fff;font-family:var(--sign-font);font-weight:800;font-size:1rem;position:relative;overflow:hidden;padding-top:8px;flex:0 0 auto}
+.ishield::before{content:"";position:absolute;inset:0 0 auto;height:10px;background:#c8323a}
+.vt{display:inline-grid;place-items:center;width:40px;height:40px;border-radius:6px;background:var(--sign);border:2px solid #e9efe9;color:#fff;font-family:var(--sign-font);font-weight:800;font-size:.85rem;flex:0 0 auto}
+.spot:active{background:var(--row)}
+a.spot:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.hide{flex:0 0 auto;font:inherit;font-size:1.1rem;width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--row);color:var(--warn)}
+
+.end{display:flex;align-items:center;gap:12px;padding-block:18px 8px}
+.end .tab{background:#1f4fa8}
+.empty{color:var(--dim);font-size:.9rem;padding:24px 0}
+
+.panel{display:flex;flex-direction:column;gap:12px;background:var(--row);border:1px solid var(--line);border-radius:12px;padding:16px;margin-block:8px 24px}
+.panel h2{margin:0;font-family:var(--sign-font);font-size:1.05rem}
+.panel label{display:flex;flex-direction:column;gap:5px;font-size:.78rem;color:var(--dim);min-width:0;flex:1 1 130px}
+.panel input,.panel select{font:inherit;font-size:16px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;min-height:44px;width:100%}
+.frow{display:flex;gap:10px;flex-wrap:wrap}
+.btn{font:inherit;font-weight:600;font-size:.95rem;min-height:44px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);padding:0 16px}
+.btn.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.note{font-size:.78rem;color:var(--dim)}
+textarea{font-family:var(--mono);font-size:12px;width:100%;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:8px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--accent);color:var(--accent-ink);font-weight:600;padding:10px 18px;border-radius:999px;font-size:.9rem;z-index:20}
+.top-r{display:flex;gap:6px;align-items:center}
+.top>div:first-child{min-width:0}
+.ctl{display:flex;flex-direction:column;gap:10px;padding-block:12px 4px;border-bottom:1px solid var(--line)}
+.editbtn{padding:7px 11px}
+.view{display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.view button{font:inherit;font-size:.85rem;font-weight:600;color:var(--dim);background:none;border:none;padding:7px 11px;min-height:36px}
+.view button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
+.win{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:.85rem;color:var(--dim)}
+.win select,.win input{font:inherit;font-size:16px;color:var(--fg);background:var(--row);border:1px solid var(--line);border-radius:8px;padding:5px 8px;min-height:38px;min-width:0}
+.win select{flex:1 1 100%;max-width:100%}
+.win input[type=time]{flex:1 1 6rem;width:auto;font-family:var(--mono);font-size:15px}
+.win .reset{font:inherit;font-size:.8rem;font-weight:600;color:var(--accent);background:none;border:1px solid var(--line);border-radius:999px;padding:6px 10px;min-height:36px}
+.eta{font-family:var(--mono);color:var(--accent)}
+.gpsline{font-size:.82rem;color:var(--dim);display:flex;align-items:center;gap:8px}
+.gpsline::before{content:"";flex:0 0 auto;width:8px;height:8px;border-radius:50%;background:var(--gc,var(--faint))}
+.exit.out{opacity:.45}
+.outbtn{font:inherit;font-size:.9rem;font-weight:600;color:var(--dim);background:var(--row);border:1px dashed var(--line);border-radius:10px;padding:12px;margin-top:14px;min-height:46px;width:100%}
+.mapwrap{position:relative;margin-top:10px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#0c100e;height:min(62vh,560px);min-height:360px}
+#map{display:block;width:100%;height:100%;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}
+#map text{font-family:var(--sign-font);pointer-events:none}
+.mapctl{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:6px}
+.mapctl button{font:inherit;font-weight:700;font-size:1.1rem;width:42px;height:42px;border-radius:10px;border:1px solid var(--line);background:rgba(23,28,25,.92);color:var(--fg)}
+.mapctl button.wide{font-size:.7rem;letter-spacing:.04em}
+.legend{position:absolute;left:10px;bottom:10px;display:flex;gap:10px;flex-wrap:wrap;font-size:.72rem;color:var(--dim);background:rgba(16,20,18,.85);padding:6px 9px;border-radius:8px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:-1px}
+.sheet{margin-top:4px}
+.sheet .hint{color:var(--dim);font-size:.88rem;padding:14px 0}
+</style>
+
+<div class="app">
+  <header class="pad">
+    <div class="top">
+      <div>
+        <h1><span class="shield">93</span>93 North Eats</h1>
+        <div class="sub" id="sub">Woburn to the US 4 exit</div>
+      </div>
+      <div class="top-r">
+        <div class="view" role="group" aria-label="View"><button id="vList" aria-pressed="true">List</button><button id="vMap" aria-pressed="false">Map</button></div>
+        <button class="editbtn" id="editBtn" aria-pressed="false">Edit</button>
+      </div>
+    </div>
+    <div class="chips" id="chips" role="group" aria-label="Filter by food type"></div>
+  </header>
+  <div class="pad ctl">
+    <div class="win">
+      <select id="pos" aria-label="Where you are now"></select>
+      <span>Eat</span>
+      <input type="time" id="w0" aria-label="Window start">
+      <span>–</span>
+      <input type="time" id="w1" aria-label="Window end">
+      <button class="reset" id="wReset">Next hour</button>
+    </div>
+    <div class="gpsline" id="gpsline" hidden></div>
+    <div class="stoprow"><span class="sub">Time added includes</span><div class="seg" id="seg" role="group" aria-label="Stop type"></div></div>
+  </div>
+
+  <main class="pad" id="main"></main>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+/* Exits in northbound order. min = typical minutes from downtown Boston with free-flowing traffic. lat/lon = interchange. */
+const EXITS=[
+ {id:'27',  old:'36',  road:'Montvale Ave',            town:'Woburn · Stoneham',   min:14, ll:[42.4795,-71.1235]},
+ {id:'30',  old:'37C', road:'Commerce Way',            town:'Woburn',              min:16, ll:[42.5095,-71.1385]},
+ {id:'31',  old:'38',  road:'Rte 129 · Lowell St',     town:'Wilmington',          min:19, ll:[42.5470,-71.1595]},
+ {id:'33',  old:'39',  road:'Concord St',              town:'Wilmington',          min:21, ll:[42.5685,-71.1640]},
+ {id:'34',  old:'40',  road:'Rte 62',                  town:'Wilmington',          min:22, ll:[42.5820,-71.1650]},
+ {id:'35',  old:'41',  road:'Rte 125 · Ballardvale St',town:'Wilmington',          min:24, ll:[42.6115,-71.1650]},
+ {id:'38',  old:'42',  road:'Dascomb Rd',              town:'Andover · Tewksbury', min:27, ll:[42.6385,-71.1825]},
+ {id:'42',  old:'45',  road:'River Rd',                town:'Andover',             min:30, ll:[42.6880,-71.1900]},
+ {id:'43',  old:'46',  road:'Rtes 110 / 113',          town:'Methuen',             min:32, ll:[42.7140,-71.1960]},
+ {id:'45',  old:'47',  road:'Pelham St',               town:'Methuen',             min:34, ll:[42.7480,-71.2070]},
+ {id:'NH1', label:'1', road:'Rockingham Park Blvd',    town:'Salem NH',            min:37, ll:[42.7720,-71.2235]},
+ {id:'NH2', label:'2', road:'Pelham Rd',               town:'Salem NH',            min:39, ll:[42.7920,-71.2420]},
+ {id:'NH3', label:'3', road:'NH 111',                  town:'Windham',             min:42, ll:[42.8330,-71.2860]},
+ {id:'NH4', label:'4', road:'NH 102 · Nashua Rd',      town:'Londonderry · Derry', min:45, ll:[42.8780,-71.3285]},
+ {id:'NH5', label:'5', road:'NH 28',                   town:'Londonderry',         min:48, ll:[42.9150,-71.3710]},
+ {id:'NH6', label:'6', road:'Candia Rd · Hanover St',  town:'Manchester',          min:54, ll:[42.9930,-71.4340]},
+ {id:'NH9', label:'9', road:'US 3 · Hooksett Rd',      town:'Manchester · Hooksett',min:58, ll:[43.0420,-71.4400]},
+ {id:'NH10',label:'10',road:'NH 3A',                   town:'Hooksett',            min:61, ll:[43.0820,-71.4560]},
+ {id:'REST',label:'REST',road:'Hooksett rest area',    town:'Northbound side, no exit needed', rest:true, min:63, ll:[43.0960,-71.4630]},
+ {id:'I1', label:'1', hwy:'89',road:'NH 3A',               town:'Bow · Concord',        min:68, ll:[43.1820,-71.5360]},
+ {id:'I6', label:'6', hwy:'89',road:'NH 127',              town:'Contoocook · Hopkinton',min:76, ll:[43.2050,-71.6830]},
+ {id:'I9', label:'9', hwy:'89',road:'NH 103',              town:'Warner',               min:84, ll:[43.2750,-71.8100]},
+ {id:'I11',label:'11',hwy:'89',road:'King Hill Rd',        town:'New London',           min:95, ll:[43.3920,-71.9620]},
+ {id:'I13',label:'13',hwy:'89',road:'NH 10',               town:'Grantham',             min:104,ll:[43.4900,-72.1300]},
+ {id:'I16',label:'16',hwy:'89',road:'Eastman Hill Rd',     town:'Enfield',              min:113,ll:[43.5900,-72.1850]},
+ {id:'I18',label:'18',hwy:'89',road:'NH 120',              town:'Lebanon · Hanover',    min:119,ll:[43.6400,-72.2600]},
+ {id:'I19',label:'19',hwy:'89',road:'US 4 · NH 10',        town:'Lebanon',              min:121,ll:[43.6390,-72.2900]},
+ {id:'I20',label:'20',hwy:'89',road:'NH 12A',              town:'West Lebanon',         min:123,ll:[43.6330,-72.3090]},
+ {id:'V1', label:'1', hwy:'VT',road:'US 4 · Woodstock',    town:'Quechee · White River Jct', vt:true, min:126, ll:[43.6470,-72.3400]},
+];
+const START={id:'START',ll:[42.3601,-71.0589],min:0};
+const US4_END=[43.6450,-72.4250];
+const HWY={'89':{name:'I-89 North',sub:'Concord to West Lebanon, NH'},'VT':{name:'Vermont',sub:'Your exit for US 4 west'}};
+/* Time added = ramp off/on (2 min) + round trip on local roads at ~22 mph + the stop itself */
+const STOPS={dt:{label:'Drive-thru',min:5},grab:{label:'Grab & go',min:12},sit:{label:'Sit down',min:30},none:{label:'Detour only',min:0}};
+const CATS={all:'All food',burger:'Burgers',chicken:'Chicken',mexican:'Mexican',pizza:'Pizza',subs:'Subs',other:'Other',coffee:'Coffee'};
+
+const SEED=[
+ ['cfa-woburn','27','Chick-fil-A','chicken',1.2,'L','375 Washington St, Woburn, MA','Montvale Ave west, right on Washington St · Closed Sun'],
+ ['mcd-montvale','27','McDonald’s','burger',0.2,'L','333 Montvale Ave, Woburn, MA'],
+ ['wendys-montvale','27','Wendy’s','burger',0.4,'L','303 Montvale Ave, Woburn, MA'],
+ ['dd-montvale-e','27','Dunkin’','coffee',0.3,'R','62A Montvale Ave, Stoneham, MA'],
+ ['dd-montvale-w','27','Dunkin’','coffee',0.35,'L','318 Montvale Ave, Woburn, MA'],
+ ['bk-stoneham','27','Burger King','burger',0.9,'R','197 Main St, Stoneham, MA'],
+ ['sub-stoneham','27','Subway','subs',0.9,'R','200B Main St, Stoneham, MA'],
+ ['pg-stoneham','27','Papa Gino’s','pizza',0.95,'R','190 Main St, Stoneham, MA'],
+ ['chip-woburn','30','Chipotle','mexican',0.15,'R','112 Commerce Way, Woburn, MA'],
+ ['sbux-commerce','30','Starbucks','coffee',0.2,'R','99 Commerce Way, Woburn, MA'],
+ ['dd-atlantic','30','Dunkin’','coffee',0.25,'L','100 Atlantic Ave, Woburn, MA'],
+ ['sub-newboston','30','Subway','subs',0.8,'L','150 New Boston St, Woburn, MA'],
+ ['sub-wilm-lowell','31','Subway','subs',0.35,'L','316 Lowell St, Wilmington, MA'],
+ ['dd-wilm-lowell','31','Dunkin’','coffee',0.35,'L','316 Lowell St, Wilmington, MA','Inside the Mobil'],
+ ['bk-wilm','31','Burger King','burger',0.5,'L','280 Lowell St, Wilmington, MA'],
+ ['dd-concord-st','33','Dunkin’','coffee',0.1,'R','66 Concord St, Wilmington, MA'],
+ ['dd-middlesex','34','Dunkin’','coffee',0.9,'L','357 Middlesex Ave, Wilmington, MA'],
+ ['sub-ballard','35','Subway','subs',0.2,'L','206 Ballardvale St, Wilmington, MA'],
+ ['dd-ballard','35','Dunkin’','coffee',0.3,'L','206 Ballardvale St, Wilmington, MA'],
+ ['sbux-ballard','35','Starbucks','coffee',0.3,'L','210 Ballardvale St, Wilmington, MA'],
+ ['dd-east-st','38','Dunkin’','coffee',0.45,'L','5 East St, Tewksbury, MA','Inside the Mobil'],
+ ['dd-keri','38','Dunkin’','coffee',0.55,'L','1699 Shawsheen St, Tewksbury, MA'],
+ ['dd-river','42','Dunkin’','coffee',0.25,'L','139 River Rd, Andover, MA','Inside the Mobil'],
+ ['bk-methuen','43','Burger King','burger',0.25,'R','248 Haverhill St, Methuen, MA'],
+ ['royal-methuen','43','Royal House of Roast Beef','other',0.3,'L','464 Lowell St, Methuen, MA'],
+ ['dd-lowell-methuen','43','Dunkin’','coffee',0.3,'L','464 Lowell St, Methuen, MA'],
+ ['ph-methuen','43','Pizza Hut','pizza',0.35,'R','216 Haverhill St, Methuen, MA'],
+ ['kfc-methuen','43','KFC','chicken',0.35,'R','212 Haverhill St, Methuen, MA'],
+ ['tb-methuen','43','Taco Bell','mexican',0.35,'R','212 Haverhill St, Methuen, MA'],
+ ['mcd-haverhill','43','McDonald’s','burger',0.5,'R','170 Haverhill St, Methuen, MA'],
+ ['dd-haverhill','43','Dunkin’','coffee',0.5,'R','188 Haverhill St, Methuen, MA'],
+ ['mcd-pelham','45','McDonald’s','burger',0.05,'L','147 Pelham St, Methuen, MA'],
+ ['dd-pelham','45','Dunkin’','coffee',0.1,'R','147 Pelham St, Methuen, MA'],
+ ['dd-bway-methuen','45','Dunkin’','coffee',0.75,'R','450 Broadway, Methuen, MA'],
+ ['wendys-bway','45','Wendy’s','burger',0.85,'R','486 Broadway, Methuen, MA'],
+ ['popeyes-salem','45','Popeyes','chicken',1.2,'R','481 S Broadway, Salem, NH'],
+ ['dd-mall','NH1','Dunkin’','coffee',0.1,'L','99 Rockingham Park Blvd, Salem, NH','In the Mall at Rockingham Park'],
+ ['sbux-rpb','NH1','Starbucks','coffee',0.15,'L','85 Rockingham Park Blvd, Salem, NH'],
+ ['sbarro-mall','NH1','Sbarro','pizza',0.15,'L','99 Rockingham Park Blvd, Salem, NH','Mall food court'],
+ ['dq-mall','NH1','Dairy Queen','burger',0.15,'L','99 Rockingham Park Blvd, Salem, NH','Mall food court'],
+ ['kkc-salem','NH1','Krispy Krunchy Chicken','chicken',0.25,'L','120 Pleasant St, Salem, NH'],
+ ['pg-salem','NH1','Papa Gino’s','pizza',0.3,'R','99 Cluff Crossing, Salem, NH'],
+ ['shake-salem','NH1','Shake Shack','burger',0.3,'R','100 Via Toscana, Salem, NH','Tuscan Village'],
+ ['chip-salem','NH1','Chipotle','mexican',0.35,'R','12 S Village Dr, Salem, NH'],
+ ['mcd-salem','NH1','McDonald’s','burger',0.6,'R','225 S Broadway, Salem, NH'],
+ ['dd-stiles','NH2','Dunkin’','coffee',0.45,'L','8 Stiles Rd, Salem, NH'],
+ ['mcd-windham','NH3','McDonald’s','burger',0.2,'R','124 Indian Rock Rd, Windham, NH'],
+ ['dd-range','NH3','Dunkin’','coffee',0.3,'R','43 Range Rd, Windham, NH'],
+ ['bk-lond','NH4','Burger King','burger',0.1,'R','Nashua Rd, Londonderry, NH','Address unconfirmed'],
+ ['dd-nashua-12','NH4','Dunkin’','coffee',0.2,'R','12 Nashua Rd, Londonderry, NH','Inside the Shell'],
+ ['wendys-lond','NH4','Wendy’s','burger',0.25,'L','36 Nashua Rd, Londonderry, NH'],
+ ['pg-lond','NH4','Papa Gino’s','pizza',0.35,'L','44 Nashua Rd, Londonderry, NH'],
+ ['mcd-lond','NH4','McDonald’s','burger',0.4,'L','39 Nashua Rd, Londonderry, NH'],
+ ['jm-lond','NH4','Jersey Mike’s','subs',0.85,'L','4 Orchard View Dr, Londonderry, NH'],
+ ['tb-lond','NH4','Taco Bell','mexican',0.95,'L','68 Nashua Rd, Londonderry, NH'],
+ ['kfc-lond','NH4','KFC','chicken',0.95,'L','68 Nashua Rd, Londonderry, NH'],
+ ['dd-rock-124','NH5','Dunkin’','coffee',0.15,'R','124 Rockingham Rd, Londonderry, NH'],
+ ['sub-perkins','NH5','Subway','subs',0.2,'L','79A Perkins Rd, Londonderry, NH'],
+ ['wendys-candia','NH6','Wendy’s','burger',0.1,'R','860 Candia Rd, Manchester, NH'],
+ ['dd-hanover','NH6','Dunkin’','coffee',0.2,'L','1037 Hanover St, Manchester, NH'],
+ ['mcd-hanover','NH6','McDonald’s','burger',0.4,'L','907 Hanover St, Manchester, NH'],
+ ['dd-bell','NH9','Dunkin’','coffee',0.25,'R','6 Bell Ave, Hooksett, NH','Take the 9N ramp'],
+ ['bk-dwh','NH9','Burger King','burger',0.3,'L','737 Daniel Webster Hwy, Manchester, NH','Take the 9S ramp'],
+ ['mrmacs','NH9','Mr. Mac’s','other',0.5,'L','497 Hooksett Rd, Manchester, NH','Mac & cheese · 9S ramp'],
+ ['tb-hooksett-rd','NH9','Taco Bell','mexican',0.8,'L','525 Hooksett Rd, Manchester, NH','Take the 9S ramp'],
+ ['sbux-quality','NH10','Starbucks','coffee',0.1,'R','100 Quality Dr, Hooksett, NH'],
+ ['wendys-hooksett','NH10','Wendy’s','burger',0.15,'R','206 Quality Dr, Hooksett, NH'],
+ ['dd-wriver','NH10','Dunkin’','coffee',0.2,'R','90 W River Rd, Hooksett, NH'],
+ ['sub-wriver','NH10','Subway','subs',0.25,'R','88 W River Rd, Hooksett, NH'],
+ ['mcd-hooksett','NH10','McDonald’s','burger',1.3,'R','1254 Hooksett Rd, Hooksett, NH'],
+ ['tb-chambers','NH10','Taco Bell','mexican',1.4,'R','4 Chambers Dr, Hooksett, NH'],
+ ['kfc-chambers','NH10','KFC','chicken',1.4,'R','4 Chambers Dr, Hooksett, NH'],
+ ['sub-bow','I1','Subway','subs',0.3,'R','500 NH 3A, Bow, NH'],
+ ['dd-bow','I1','Dunkin\u2019','coffee',0.35,'R','412 S Main St, Concord, NH'],
+ ['dd-hopkinton','I6','Dunkin\u2019','coffee',1.45,'R','54 Park Ave, Hopkinton, NH'],
+ ['sub-warner','I9','Subway','subs',0.1,'R','23 NH 103, Warner, NH'],
+ ['dd-warner-9','I9','Dunkin\u2019','coffee',0.15,'R','9 NH 103, Warner, NH'],
+ ['dd-warner-32','I9','Dunkin\u2019','coffee',0.45,'L','32 NH 103, Warner, NH'],
+ ['mcd-warner','I9','McDonald\u2019s','burger',1.0,'R','4 Nichols Mill Ln, Warner, NH'],
+ ['dd-newlondon','I11','Dunkin\u2019','coffee',1.6,'R','217 Main St, New London, NH'],
+ ['pizzahero-grantham','I13','Pizza Hero','pizza',0.15,'R','NH 10, Grantham, NH','Address unconfirmed'],
+ ['dd-grantham','I13','Dunkin\u2019','coffee',0.3,'L','120 NH 10, Grantham, NH','Sawyer Brook Plaza'],
+ ['dd-enfield','I16','Dunkin\u2019','coffee',0.05,'L','786 Methodist Hill Rd, Enfield, NH'],
+ ['sub-lebanon','I18','Subway','subs',0.4,'L','96 Hanover St, Lebanon, NH'],
+ ['dd-lebanon','I18','Dunkin\u2019','coffee',0.4,'L','96 Hanover St, Lebanon, NH','Inside the Jiffy Mart'],
+ ['phnompenh','I18','Phnom Penh Sandwich Station','other',0.5,'L','1 High St, Lebanon, NH','Banh mi'],
+ ['tacostaco','I18','Taco\u2019s Taco','mexican',0.55,'L','6 S Park St, Lebanon, NH'],
+ ['dd-miracle','I19','Dunkin\u2019','coffee',0.4,'R','388 Miracle Mile, Lebanon, NH'],
+ ['tb-wleb','I20','Taco Bell','mexican',0.05,'R','197 S Main St, West Lebanon, NH'],
+ ['kfc-wleb','I20','KFC','chicken',0.05,'R','197 S Main St, West Lebanon, NH'],
+ ['dd-wleb-main','I20','Dunkin\u2019','coffee',0.05,'R','191 S Main St, West Lebanon, NH'],
+ ['moes-wleb','I20','Moe\u2019s Southwest Grill','mexican',0.15,'L','250 Plainfield Rd, West Lebanon, NH'],
+ ['sub-wleb','I20','Subway','subs',0.15,'R','1 Glenn Rd, West Lebanon, NH'],
+ ['mcd-wleb','I20','McDonald\u2019s','burger',0.2,'L','249 Plainfield Rd, West Lebanon, NH'],
+ ['wendys-wleb','I20','Wendy\u2019s','burger',0.25,'L','258 Plainfield Rd, West Lebanon, NH'],
+ ['fiveguys-wleb','I20','Five Guys','burger',0.3,'L','250 Plainfield Rd, West Lebanon, NH'],
+ ['bk-wleb','I20','Burger King','burger',0.35,'L','253 Plainfield Rd, West Lebanon, NH'],
+ ['jm-wleb','I20','Jersey Mike\u2019s','subs',0.35,'L','254 N Plainfield Rd, West Lebanon, NH'],
+ ['tsc-wleb','I20','Tropical Smoothie Cafe','other',0.35,'L','254 N Plainfield Rd, West Lebanon, NH','Smoothies, wraps'],
+ ['sbux-wleb','I20','Starbucks','coffee',0.4,'L','257 N Plainfield Rd, West Lebanon, NH'],
+ ['sub-quechee','V1','Subway','subs',2.45,'A','6800 Woodstock Rd, Quechee, VT','On US 4 west, on your left'],
+ ['dd-quechee','V1','Dunkin\u2019','coffee',2.55,'A','7024 Woodstock Rd, Quechee, VT','On US 4 west, on your left'],
+ ['cman-roadside','REST','Common Man Roadside','other',0,'O','Hooksett Welcome Center, I-93 North, Hooksett, NH','Deli, pizza, grab-and-go'],
+];
+
+/* ---- State: filters and edits persist on this phone; position and window start fresh each open ---- */
+const KEY='93-north-eats-v1';
+let S={cat:'all',hidden:[],mine:[],maps:'apple',stop:'dt',collapsed:[]};
+try{const s=JSON.parse(localStorage.getItem(KEY)||'null');if(s){delete s.on;S=Object.assign(S,s)}}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+let editing=false, view='list', showOut=false, pos='START', sel=null;
+/* ---- GPS: snap the phone's position onto the route to find how far along you are ---- */
+let gps={on:false,ok:false,min:null,off:null,dir:null,hist:[],ll:null,msg:''},gpsWatch=null,gpsTimer=null;
+const ROUTE=[START].concat(EXITS).concat([{ll:US4_END,min:132}]);
+function locate(lat,lon){
+  let best={d:1e9};
+  for(let i=0;i<ROUTE.length-1;i++){
+    const a=ROUTE[i],b=ROUTE[i+1],c=Math.cos(lat*Math.PI/180);
+    const ax=a.ll[1]*c*69,ay=a.ll[0]*69,bx=b.ll[1]*c*69,by=b.ll[0]*69,px=lon*c*69,py=lat*69;
+    const dx=bx-ax,dy=by-ay;let t=((px-ax)*dx+(py-ay)*dy)/(dx*dx+dy*dy||1);t=Math.max(0,Math.min(1,t));
+    const d=Math.hypot(px-(ax+t*dx),py-(ay+t*dy));
+    if(d<best.d)best={d,min:a.min+t*(b.min-a.min)};
+  }
+  return best;
+}
+function onFix(p){
+  clearTimeout(gpsTimer);
+  const {latitude:lat,longitude:lon,accuracy}=p.coords, r=locate(lat,lon);
+  gps.ll=[lat,lon];gps.off=r.d;
+  if(r.d>3){gps.msg=`You’re ${r.d.toFixed(0)} mi from the route, so exits aren’t being hidden.`;if(gps.min==null)gps.ok=false;render();return}
+  const moved=gps.min==null||Math.abs(r.min-gps.min)>=0.5;
+  gps.ok=true;gps.min=r.min;gps.hist.push(r.min);if(gps.hist.length>6)gps.hist.shift();
+  const d=gps.hist[gps.hist.length-1]-gps.hist[Math.max(0,gps.hist.length-3)];
+  if(d>0.6)gps.dir='north';else if(d<-0.6)gps.dir='south';
+  const near=EXITS.filter(x=>x.min<=gps.min+0.3).pop();
+  gps.msg=gps.dir==='south'?'Heading south, so passed exits stay visible.'
+    :`GPS: ${near?'past '+(near.rest?'the rest area':(near.hwy==='89'?'I-89 ':near.vt?'VT ':'')+'Exit '+(near.label||near.id)):'south of Woburn'}${accuracy>500?' · weak signal':''}. Passed exits are hidden.`;
+  if(moved||!$('gpsline').textContent)render();
+}
+function onFixErr(e){
+  if(gps.ok&&!(e&&e.code===1)){gps.msg='GPS signal lost. Using your last known position.';render();return}
+  clearTimeout(gpsTimer);
+  gps.on=false;gps.ok=false;
+  gps.msg=e&&e.code===1?'Location isn’t allowed here. Pick your exit from the list instead.':'Couldn’t get a location fix. Pick your exit from the list instead.';
+  stopGps(true);render();
+}
+function startGps(){
+  if(!('geolocation' in navigator)){onFixErr();return}
+  gps={on:true,ok:false,min:null,off:null,dir:null,hist:[],ll:null,msg:'Finding your location…'};render();
+  try{gpsWatch=navigator.geolocation.watchPosition(onFix,onFixErr,{enableHighAccuracy:true,maximumAge:15000,timeout:20000})}catch(e){onFixErr()}
+  gpsTimer=setTimeout(()=>{if(!gps.ok)onFixErr({code:1})},25000);
+}
+function stopGps(keepMsg){
+  try{if(gpsWatch!=null)navigator.geolocation.clearWatch(gpsWatch)}catch(e){}
+  gpsWatch=null;clearTimeout(gpsTimer);
+  if(pos==='GPS'){pos='START';if($('pos'))$('pos').value='START'}
+  if(!keepMsg)gps.msg='';
+}
+const meLL=()=>pos==='GPS'&&gps.ll?gps.ll:pos==='GPS'||pos==='START'?START.ll:EXITS.find(e=>e.id===pos).ll;
+const now0=()=>{const d=new Date();return d.getHours()*60+d.getMinutes()};
+let W={a:now0(),b:now0()+60};
+
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const catOn=c=>S.cat==='all'?c!=='coffee':S.cat===c;
+function spots(){
+  const seed=SEED.map(a=>({id:a[0],exit:a[1],name:a[2],cat:a[3],mi:a[4],side:a[5],addr:a[6],note:a[7]||''}));
+  return seed.concat(S.mine.map(m=>Object.assign({mine:true},m)));
+}
+function mapUrl(addr,name){
+  return S.maps==='google'?`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(name+', '+addr)}`
+                         :`https://maps.apple.com/?daddr=${encodeURIComponent(addr)}&dirflg=d`;
+}
+const SIDE={L:'← left',R:'right →',O:'on route',A:'along route'};
+const isSunday=()=>new Date().getDay()===0;
+function driveMin(s){return (s.side==='O'||s.side==='A')?1:2+s.mi*2*60/22}
+function addedMin(s){return Math.round(driveMin(s)+STOPS[S.stop].min)}
+
+/* ---- Timing ---- */
+const posMin=()=>pos==='GPS'?(gps.ok?gps.min:0):pos==='START'?0:EXITS.find(x=>x.id===pos).min;
+const clock=m=>{m=((Math.round(m)%1440)+1440)%1440;let h=Math.floor(m/60),mm=m%60;const ap=h<12?'a':'p';return (h%12||12)+':'+String(mm).padStart(2,'0')+ap};
+const hhmm=m=>{m=((Math.round(m)%1440)+1440)%1440;return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0')};
+function etaOf(x){return now0()+(x.min-posMin())}            // minutes since midnight (may exceed 1440)
+function state(x){
+  const south=pos==='GPS'&&gps.dir==='south';
+  if(!south&&x.min<posMin()-(pos==='GPS'?0.3:0))return'behind';
+  const e=etaOf(x);let a=W.a,b=W.b;if(b<a)b+=1440;
+  const inW=(t)=>t>=a&&t<=b;
+  return (inW(e)||inW(e+1440)||inW(e-1440))?'in':'out';
+}
+
+/* ---- Header controls ---- */
+function renderChips(){
+  $('chips').innerHTML=Object.keys(CATS).map(k=>`<button class="chip" style="--c:${k==='all'?'var(--fg)':'var(--c-'+k+')'}" data-k="${k}" aria-pressed="${S.cat===k}">${k==='all'?'':'<i></i>'}${CATS[k]}</button>`).join('');
+  $('chips').querySelectorAll('.chip').forEach(b=>b.onclick=()=>{const k=b.dataset.k;S.cat=(S.cat===k&&k!=='all')?'all':k;save();render()});
+}
+function renderSeg(){
+  $('seg').innerHTML=Object.keys(STOPS).map(k=>`<button data-s="${k}" aria-pressed="${S.stop===k}">${STOPS[k].label}${STOPS[k].min?' '+STOPS[k].min+'m':''}</button>`).join('');
+  $('seg').querySelectorAll('button').forEach(b=>b.onclick=()=>{S.stop=b.dataset.s;save();render()});
+}
+function initWindow(){
+  $('pos').innerHTML=`<option value="GPS">Use my location</option><option value="START">Leaving Boston now</option>`+EXITS.filter(x=>!x.rest).map(x=>`<option value="${x.id}">Near ${x.hwy==='89'?'89 ':x.vt?'VT ':''}Exit ${x.label||x.id} · ${esc(x.town.split(' · ')[0])}</option>`).join('');
+  $('pos').value=pos;
+  $('w0').value=hhmm(W.a);$('w1').value=hhmm(W.b);
+  $('pos').onchange=()=>{const v=$('pos').value;sel=null;if(v==='GPS'){pos='GPS';startGps()}else{stopGps();pos=v;render()}};
+  try{navigator.permissions&&navigator.permissions.query({name:'geolocation'}).then(r=>{if(r.state==='granted'&&pos==='START'){pos='GPS';$('pos').value='GPS';startGps()}}).catch(()=>{})}catch(e){}
+  const parse=v=>{const[h,m]=v.split(':').map(Number);return h*60+m};
+  $('w0').onchange=()=>{if($('w0').value){const d=W.b-W.a;W.a=parse($('w0').value);if(d>0&&parse($('w1').value)<=W.a){W.b=W.a+d;$('w1').value=hhmm(W.b)}render()}};
+  $('w1').onchange=()=>{if($('w1').value){W.b=parse($('w1').value);render()}};
+  $('wReset').onclick=()=>{W={a:now0(),b:now0()+60};$('w0').value=hhmm(W.a);$('w1').value=hhmm(W.b);render()};
+}
+
+/* ---- Shared row markup ---- */
+function exitHead(x,list,col,st,btn){
+  const num=x.label||x.id, quick=list.length?Math.min(...list.map(addedMin)):0;
+  const eta=st==='behind'?'passed':'~'+clock(etaOf(x));
+  const tag=btn?'button':'div';
+  return `<${tag} class="exit-h" ${btn?`data-x="${x.id}" aria-expanded="${!col}" aria-controls="sp-${x.id}"`:''}>
+      <div class="tab ${x.rest?'rest':''}">${x.rest?'<b style="font-size:1rem;padding-block:4px">REST</b>':`<small>${x.hwy==='89'?'89 · EXIT':x.vt?'VT · EXIT':'EXIT'}</small><b>${num}</b>`}</div>
+      <div class="where"><div class="road">${esc(x.road)}</div><div class="sub"><span class="eta">${eta}</span> · ${esc(x.town)}${x.old?` <span class="old">· old ${x.old}</span>`:''}</div></div>
+      ${btn?`<span class="cnt">${list.length} spot${list.length===1?'':'s'}<span>from +${quick} min</span></span><span class="chev" aria-hidden="true"></span>`:''}</${tag}>`;
+}
+function spotRow(s){
+  const sun=/Closed Sun/.test(s.note)&&isSunday();
+  const hid=S.hidden.includes(s.id);
+  const inner=`<span class="dot" style="--c:var(--c-${s.cat})"></span>
+    <span class="info"><span class="nm">${esc(s.name)}</span>${sun?'<span class="tag">Closed today</span>':''}${s.mine?'<span class="tag mine">Added</span>':''}
+    <span class="ad" style="display:block">${esc(s.note||s.addr)}</span></span>
+    <span class="dist"><span class="add">+${addedMin(s)} min</span><span class="mi">${s.side==='O'?'':s.mi.toFixed(s.mi<1?2:1).replace(/0$/,'')+' mi · '}${SIDE[s.side]||''}</span></span>`;
+  if(editing)return `<div class="spot ${hid?'closed':''}">${inner}<button class="hide" data-h="${s.id}" aria-label="${hid?'Show':'Hide'} ${esc(s.name)}">${hid?'↺':'✕'}</button></div>`;
+  return `<a class="spot ${sun?'closed':''}" href="${mapUrl(s.addr,s.name)}" target="_blank" rel="noopener">${inner}</a>`;
+}
+function visibleSpots(){return spots().filter(s=>catOn(s.cat)&&(editing||!S.hidden.includes(s.id)))}
+
+/* ---- Render ---- */
+function render(){
+  renderChips();renderSeg();
+  const gl=$('gpsline');gl.hidden=!gps.msg;gl.textContent=gps.msg;gl.style.setProperty('--gc',pos==='GPS'&&gps.ok?'var(--c-mexican)':gps.on?'var(--accent)':'var(--warn)');
+  $('vList').setAttribute('aria-pressed',view==='list');$('vMap').setAttribute('aria-pressed',view==='map');
+  const vis=visibleSpots();
+  const inCount=vis.filter(s=>{const x=EXITS.find(e=>e.id===s.exit);return x&&state(x)==='in'&&!S.hidden.includes(s.id)}).length;
+  $('sub').textContent=`${inCount} spot${inCount===1?'':'s'} in your window`;
+  if(view==='map'){renderMap(vis);return}
+  let h='',lastHwy='93',outN=0,anyCol=false,ids=[];
+  EXITS.forEach(x=>{
+    const list=vis.filter(s=>s.exit===x.id).sort((a,b)=>a.mi-b.mi);
+    const hw=x.hwy||'93', st=state(x);
+    if(!list.length||st==='behind')return;
+    if(st==='out'&&!editing){outN++;if(!showOut)return}
+    if(hw!==lastHwy){lastHwy=hw;const H=HWY[hw];
+      h+=`<div class="hwy">${hw==='VT'?'<span class="vt">VT</span>':`<span class="ishield">${hw}</span>`}<div><div class="road">${H.name}</div><div class="sub">${H.sub}</div></div></div>`}
+    const col=S.collapsed.includes(x.id);ids.push(x.id);if(!col)anyCol=true;
+    h+=`<section class="exit ${col?'col':''} ${st==='out'?'out':''}" id="x-${x.id}">${exitHead(x,list,col,st,true)}<div class="spots" id="sp-${x.id}">${list.map(spotRow).join('')}</div></section>`;
+  });
+  if(!h)h=`<div class="empty">No exits with ${S.cat==='all'?'food':CATS[S.cat].toLowerCase()} in your window. Widen the window${S.cat!=='all'?' or tap '+CATS[S.cat]+' again to see everything':''}.</div>`;
+  if(outN&&!editing)h+=`<button class="outbtn" id="outBtn">${showOut?'Hide':'Show'} ${outN} exit${outN===1?'':'s'} outside your window</button>`;
+  if(ids.length)h+=`<button class="outbtn" id="allBtn" style="border-style:solid">${anyCol?'Collapse all':'Expand all'}</button>`;
+  h+=`<div class="end"><div class="tab"><small>US</small><b>4</b></div><div><div class="road" style="font-family:var(--sign-font);font-weight:700">US 4 West</div><div class="sub">Woodstock · Rutland. End of list.</div></div></div>`;
+  if(editing)h+=editPanel();
+  $('main').innerHTML=h;
+  wireRows($('main'));
+  if($('outBtn'))$('outBtn').onclick=()=>{showOut=!showOut;render()};
+  if($('allBtn'))$('allBtn').onclick=()=>{S.collapsed=anyCol?EXITS.map(x=>x.id):[];save();render()};
+  if(editing)wireEdit();
+}
+function wireRows(root){
+  root.querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{const id=b.dataset.x;
+    S.collapsed=S.collapsed.includes(id)?S.collapsed.filter(x=>x!==id):S.collapsed.concat(id);save();
+    const c=S.collapsed.includes(id);b.closest('.exit').classList.toggle('col',c);b.setAttribute('aria-expanded',!c)});
+  root.querySelectorAll('[data-h]').forEach(b=>b.onclick=()=>{const id=b.dataset.h;
+    S.hidden=S.hidden.includes(id)?S.hidden.filter(x=>x!==id):S.hidden.concat(id);
+    const m=S.mine.find(m=>m.id===id); if(m&&S.hidden.includes(id)){S.mine=S.mine.filter(x=>x.id!==id);S.hidden=S.hidden.filter(x=>x!==id);toast('Removed')}
+    save();render()});
+}
+
+/* ---- Map view: drawn from interchange coordinates (no map tiles) ---- */
+const K=Math.cos(43.1*Math.PI/180);
+const P=ll=>[(ll[1]+72.5)*K*1000,(43.75-ll[0])*1000];
+const FULL={x:-40,y:-40,w:(72.5-71.0)*K*1000+80,h:(43.75-42.33)*1000+80};
+let vb=null;
+function fitTo(pts,pad=60){
+  if(!pts.length){vb={...FULL};return}
+  const xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]);
+  let x0=Math.min(...xs)-pad,x1=Math.max(...xs)+pad,y0=Math.min(...ys)-pad,y1=Math.max(...ys)+pad;
+  const el=$('map'),ar=el?el.clientWidth/el.clientHeight:0.8;
+  let w=x1-x0,h=y1-y0;if(w/h<ar){const nw=h*ar;x0-=(nw-w)/2;w=nw}else{const nh=w/ar;y0-=(nh-h)/2;h=nh}
+  vb={x:x0,y:y0,w,h};
+}
+function windowPts(){return EXITS.filter(x=>state(x)==='in').map(x=>P(x.ll)).concat([P(meLL())])}
+function renderMap(vis){
+  if(!$('map')){
+    $('main').innerHTML=`<div class="mapwrap"><svg id="map" role="img" aria-label="Route map with exits"></svg>
+      <div class="mapctl"><button id="zIn" aria-label="Zoom in">+</button><button id="zOut" aria-label="Zoom out">−</button><button class="wide" id="zWin" aria-label="Zoom to your window">WIN</button><button class="wide" id="zAll" aria-label="Show whole route">ALL</button></div>
+      <div class="legend"><span><i style="background:var(--accent)"></i>In window</span><span><i style="background:#5f6a64"></i>Later / earlier</span><span><i style="background:#fff"></i>You</span></div></div>
+      <div class="sheet" id="sheet"></div>`;
+    wireMap();
+    vb=null;
+  }
+  if(!vb)fitTo(windowPts().length>1?windowPts():[]);
+  drawMap(vis);drawSheet(vis);
+}
+function drawMap(vis){
+  const svg=$('map');if(!svg)return;
+  svg.setAttribute('viewBox',`${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
+  const u=vb.w/svg.clientWidth; // user units per screen px
+  const line=pts=>pts.map(p=>P(p).join(',')).join(' ');
+  const i93=[START.ll].concat(EXITS.filter(x=>!x.hwy).map(x=>x.ll)), split=[43.155,-71.515];
+  const i89=[EXITS.find(x=>x.id==='REST').ll,split].concat(EXITS.filter(x=>x.hwy).map(x=>x.ll));
+  const us4=[EXITS.find(x=>x.id==='V1').ll,[43.6440,-72.3800],US4_END];
+  const i93n=[split,[43.30,-71.60],[43.45,-71.66]];
+  const maNh=[[42.70,-71.62],[42.74,-71.30],[42.75,-71.20],[42.80,-71.05],[42.87,-70.82]];
+  const nhVt=[[43.35,-72.40],[43.55,-72.37],[43.64,-72.32],[43.76,-72.22]];
+  let g=`<rect x="${FULL.x-2000}" y="${FULL.y-2000}" width="${FULL.w+4000}" height="${FULL.h+4000}" fill="#0c100e"/>`;
+  g+=`<polyline points="${line(maNh)}" fill="none" stroke="#3a463f" stroke-width="${1.5*u}" stroke-dasharray="${6*u} ${5*u}"/>`;
+  g+=`<polyline points="${line(nhVt)}" fill="none" stroke="#3a463f" stroke-width="${1.5*u}" stroke-dasharray="${6*u} ${5*u}"/>`;
+  const st=(ll,t,dx=0,dy=0)=>{const p=P(ll);return `<text x="${p[0]+dx*u}" y="${p[1]+dy*u}" font-size="${13*u}" fill="#4d5a53" font-weight="800" letter-spacing="${2*u}">${t}</text>`};
+  g+=st([42.62,-71.45],'MA')+st([42.86,-71.55],'NH')+st([43.72,-72.47],'VT');
+  g+=`<polyline points="${line(i93n)}" fill="none" stroke="#2a3a55" stroke-width="${4*u}" stroke-linecap="round"/>`;
+  g+=`<polyline points="${line(i93)}" fill="none" stroke="#3d7be0" stroke-width="${4.5*u}" stroke-linejoin="round" stroke-linecap="round"/>`;
+  g+=`<polyline points="${line(i89)}" fill="none" stroke="#3d7be0" stroke-width="${4.5*u}" stroke-linejoin="round" stroke-linecap="round"/>`;
+  g+=`<polyline points="${line(us4)}" fill="none" stroke="#d8d4ca" stroke-width="${3.5*u}" stroke-linecap="round"/>`;
+  const towns=[[START.ll,'Boston',8,4],[[42.4795,-71.1235],'Woburn',-52,4],[[42.7140,-71.1960],'Methuen',10,4],[[42.9930,-71.4340],'Manchester',12,4],[[43.2070,-71.5370],'Concord',10,-6],[[43.4100,-71.9850],'New London',10,-8],[[43.6420,-72.2520],'Lebanon',-20,-14],[US4_END,'To Woodstock',-12,20]];
+  towns.forEach(([ll,t,dx,dy])=>{const p=P(ll);g+=`<text x="${p[0]+dx*u}" y="${p[1]+dy*u}" font-size="${11.5*u}" fill="#98a39c" font-weight="600">${t}</text>`});
+  const sh=(ll,t,dx,dy)=>{const p=P(ll),x=p[0]+dx*u,y=p[1]+dy*u;return `<g><path d="M${x-9*u} ${y-10*u}h${18*u}v${10*u}c0 ${7*u}-${5*u} ${10*u}-${9*u} ${12*u}c-${4*u}-${2*u}-${9*u}-${5*u}-${9*u}-${12*u}z" fill="#1f4fa8" stroke="#fff" stroke-width="${1*u}"/><text x="${x}" y="${y+2*u}" font-size="${9*u}" fill="#fff" font-weight="800" text-anchor="middle">${t}</text></g>`};
+  g+=sh([42.58,-71.12],'93',22,0)+sh([43.33,-71.84],'89',-4,-18);
+  // markers, drawn behind-first so in-window sit on top
+  const order=EXITS.map(x=>({x,st:state(x),n:vis.filter(s=>s.exit===x.id&&!S.hidden.includes(s.id)).length})).sort((a,b)=>({behind:0,out:1,in:2}[a.st])-({behind:0,out:1,in:2}[b.st]));
+  order.forEach(({x,st,n})=>{
+    const p=P(x.ll), r=(n?11:4)*u, isSel=sel===x.id;
+    const fill=st==='in'?(n?'var(--accent)':'#8a6a3a'):st==='out'?'#3a4440':'#1d2420';
+    const stroke=isSel?'#fff':st==='in'?'#1d1405':'#59655e';
+    g+=`<g data-mx="${x.id}" style="cursor:pointer"><circle cx="${p[0]}" cy="${p[1]}" r="${Math.max(r,14*u)}" fill="transparent"/>
+      <circle cx="${p[0]}" cy="${p[1]}" r="${r}" fill="${fill}" stroke="${stroke}" stroke-width="${(isSel?2.5:1.2)*u}" opacity="${st==='behind'?.5:1}"/>`;
+    if(n)g+=`<text x="${p[0]}" y="${p[1]+4*u}" font-size="${11*u}" text-anchor="middle" font-weight="800" fill="${st==='in'?'#1d1405':'#c9d0cb'}">${n}</text>`;
+    if(n&&(st==='in'||isSel)&&u<0.9)g+=`<text x="${p[0]+15*u}" y="${p[1]+4*u}" font-size="${10.5*u}" fill="#eef0ec" font-weight="700">${x.rest?'Rest':'Exit '+(x.label||x.id)} · ${clock(etaOf(x))}</text>`;
+    g+='</g>';
+  });
+  const me=P(meLL());
+  g+=`<circle cx="${me[0]}" cy="${me[1]}" r="${16*u}" fill="#ffffff" opacity=".12"/><circle cx="${me[0]}" cy="${me[1]}" r="${6*u}" fill="#fff" stroke="#101412" stroke-width="${2*u}"/>`;
+  svg.innerHTML=g;
+}
+function drawSheet(vis){
+  const el=$('sheet');if(!el)return;
+  if(!sel){el.innerHTML=`<div class="hint">Tap a numbered exit to see its spots. Amber exits are the ones you’ll reach between ${clock(W.a)} and ${clock(W.b)}.</div>`;return}
+  const x=EXITS.find(e=>e.id===sel), list=vis.filter(s=>s.exit===sel).sort((a,b)=>a.mi-b.mi), st=state(x);
+  el.innerHTML=`<section class="exit ${st==='out'?'':''}">${exitHead(x,list,false,st,false)}<div class="spots">${list.length?list.map(spotRow).join(''):`<div class="hint">No ${S.cat==='all'?'food':CATS[S.cat].toLowerCase()} at this exit.</div>`}</div></section>`;
+  wireRows(el);
+}
+function wireMap(){
+  const svg=$('map'), pts=new Map(); let moved=0, last=null, pinch=null;
+  const toUser=(cx,cy)=>{const r=svg.getBoundingClientRect();return[vb.x+(cx-r.left)/r.width*vb.w, vb.y+(cy-r.top)/r.height*vb.h]};
+  const zoomAt=(f,cx,cy)=>{const [ux,uy]=toUser(cx,cy);const nw=Math.min(Math.max(vb.w*f,40),FULL.w*2.2);f=nw/vb.w;vb={x:ux-(ux-vb.x)*f,y:uy-(uy-vb.y)*f,w:vb.w*f,h:vb.h*f};drawMap(visibleSpots())};
+  svg.addEventListener('pointerdown',e=>{svg.setPointerCapture(e.pointerId);pts.set(e.pointerId,[e.clientX,e.clientY]);moved=0;last=[e.clientX,e.clientY];
+    if(pts.size===2){const [a,b]=[...pts.values()];pinch={d:Math.hypot(a[0]-b[0],a[1]-b[1])}}});
+  svg.addEventListener('pointermove',e=>{if(!pts.has(e.pointerId))return;const prev=pts.get(e.pointerId);pts.set(e.pointerId,[e.clientX,e.clientY]);
+    if(pts.size===2&&pinch){const [a,b]=[...pts.values()];const d=Math.hypot(a[0]-b[0],a[1]-b[1]);if(d>0){zoomAt(pinch.d/d,(a[0]+b[0])/2,(a[1]+b[1])/2);pinch.d=d}moved+=10;return}
+    const dx=e.clientX-prev[0],dy=e.clientY-prev[1];moved+=Math.abs(dx)+Math.abs(dy);
+    const r=svg.getBoundingClientRect();vb.x-=dx/r.width*vb.w;vb.y-=dy/r.height*vb.h;svg.setAttribute('viewBox',`${vb.x} ${vb.y} ${vb.w} ${vb.h}`)});
+  const end=e=>{pts.delete(e.pointerId);if(pts.size<2)pinch=null;
+    if(pts.size===0&&moved<8){const t=document.elementFromPoint(e.clientX,e.clientY);const m=t&&t.closest('[data-mx]');if(m){sel=m.dataset.mx;const v=visibleSpots();drawMap(v);drawSheet(v);$('sheet').scrollIntoView({behavior:'smooth',block:'nearest'})}}
+    else if(pts.size===0)drawMap(visibleSpots())};
+  svg.addEventListener('pointerup',end);svg.addEventListener('pointercancel',e=>{pts.delete(e.pointerId);pinch=null});
+  svg.addEventListener('wheel',e=>{e.preventDefault();zoomAt(Math.exp(e.deltaY*0.0015),e.clientX,e.clientY)},{passive:false});
+  const ctr=f=>{const r=svg.getBoundingClientRect();zoomAt(f,r.left+r.width/2,r.top+r.height/2)};
+  $('zIn').onclick=()=>ctr(0.6);$('zOut').onclick=()=>ctr(1.6);
+  $('zWin').onclick=()=>{fitTo(windowPts());drawMap(visibleSpots())};
+  $('zAll').onclick=()=>{fitTo([P(START.ll),P(US4_END),P([43.70,-72.0])],95);drawMap(visibleSpots())};
+}
+
+/* ---- Edit panel ---- */
+function editPanel(){
+  const opts=EXITS.map(x=>`<option value="${x.id}">${x.rest?'Rest area':(x.hwy==='89'?'I-89 ':x.vt?'VT ':'I-93 ')+'Exit '+(x.label||x.id)} · ${esc(x.town.split(' · ')[0])}</option>`).join('');
+  const cats=Object.keys(CATS).filter(k=>k!=='all').map(k=>`<option value="${k}">${CATS[k]}</option>`).join('');
+  return `<div class="panel" id="addPanel"><h2>Add a spot</h2>
+    <label>Name<input id="fName" autocomplete="off" placeholder="Chick-fil-A"></label>
+    <div class="frow"><label>Exit<select id="fExit">${opts}</select></label><label>Type<select id="fCat">${cats}</select></label></div>
+    <div class="frow"><label>Miles from exit<input id="fMi" type="number" inputmode="decimal" step="0.05" min="0" value="0.3"></label>
+      <label>Side<select id="fSide"><option value="R">Right</option><option value="L">Left</option><option value="A">Along the route</option><option value="O">At a rest area</option></select></label></div>
+    <label>Address (for directions)<input id="fAddr" autocomplete="off" placeholder="123 Main St, Town, NH"></label>
+    <label>Note (optional)<input id="fNote" autocomplete="off" placeholder="Drive-thru, closed Sundays…"></label>
+    <button class="btn pri" id="fSave">Add spot</button></div>
+  <div class="panel"><h2>Settings</h2>
+    <label>Open directions in<select id="fMaps"><option value="apple">Apple Maps</option><option value="google">Google Maps</option></select></label>
+    <button class="btn" id="fText">Copy as plain text</button>
+    <div class="frow"><button class="btn" id="fExport">Copy my list</button><button class="btn" id="fImport">Paste a list</button></div>
+    <textarea id="fJson" rows="4" hidden placeholder="Paste a copied list here, then tap Paste a list again"></textarea>
+    <div class="note">Tap ✕ to hide a spot, ↺ to bring it back. While editing, every exit shows regardless of your window. Your additions and hidden spots are saved on this phone only. Distances and sides are for the northbound ramp. Time added is an estimate: 2 min for the ramps, the round trip on local roads at about 22 mph, plus the stop type chosen at the top. Arrival times assume free-flowing traffic. Use my location needs the page opened from a regular website (such as your own GitHub Pages copy); inside Claude it isn’t allowed, so pick your exit by hand.</div></div>`;
+}
+function wireEdit(){
+  $('fMaps').value=S.maps;$('fMaps').onchange=()=>{S.maps=$('fMaps').value;save()};
+  $('fSave').onclick=()=>{
+    const name=$('fName').value.trim();if(!name){toast('Add a name first');$('fName').focus();return}
+    const town=(EXITS.find(x=>x.id===$('fExit').value)||{}).town||'';
+    S.mine.push({id:'m'+Date.now(),exit:$('fExit').value,name,cat:$('fCat').value,mi:Math.max(0,parseFloat($('fMi').value)||0),side:$('fSide').value,
+      addr:$('fAddr').value.trim()||name+', '+town.split(' · ')[0],note:$('fNote').value.trim()});
+    save();render();toast('Added '+name)};
+  $('fText').onclick=()=>{const all=spots().filter(s=>catOn(s.cat)&&!S.hidden.includes(s.id));let t='',lh='93';
+    EXITS.forEach(x=>{const l=all.filter(s=>s.exit===x.id).sort((a,b)=>a.mi-b.mi);if((x.hwy||'93')!==lh){lh=x.hwy;t+='\n== '+HWY[lh].name+' ==\n'}if(!l.length)return;
+      t+=`\n${x.rest?'Rest area':'Exit '+(x.label||x.id)} – ${x.road}, ${x.town}\n`;l.forEach(s=>t+=`  ${s.name} (+${addedMin(s)} min) – ${s.side==='O'?'at rest area':s.mi+' mi '+(SIDE[s.side]||'').replace(/[←→]/g,'').trim()} – ${s.addr}\n`)});
+    t=('I-93 N / I-89 N fast food, Woburn to US 4\n'+t).trim();
+    const fb=()=>{const ta=$('fJson');ta.hidden=false;ta.value=t;ta.select();toast('Selected. Copy it now')};
+    try{navigator.clipboard.writeText(t).then(()=>toast('Text list copied'),fb)}catch(e){fb()}};
+  $('fExport').onclick=()=>{const t=JSON.stringify({mine:S.mine,hidden:S.hidden});
+    const fb=()=>{const ta=$('fJson');ta.hidden=false;ta.value=t;ta.select();toast('Selected. Copy it now')};
+    try{navigator.clipboard.writeText(t).then(()=>toast('List copied'),fb)}catch(e){fb()}};
+  $('fImport').onclick=()=>{const ta=$('fJson');if(ta.hidden||!ta.value.trim()||ta.value.trim()===JSON.stringify({mine:S.mine,hidden:S.hidden})){ta.hidden=false;ta.value='';ta.focus();return}
+    try{const d=JSON.parse(ta.value);if(Array.isArray(d.mine))S.mine=d.mine;if(Array.isArray(d.hidden))S.hidden=d.hidden;save();render();toast('List loaded')}catch(e){toast('That text isn’t a copied list')}};
+}
+
+$('vList').onclick=()=>{if(view==='list')return;view='list';render()};
+$('vMap').onclick=()=>{if(editing){editing=false;$('editBtn').setAttribute('aria-pressed',false);$('editBtn').textContent='Edit'}view='map';$('main').innerHTML='';render()};
+$('editBtn').onclick=()=>{editing=!editing;$('editBtn').setAttribute('aria-pressed',editing);$('editBtn').textContent=editing?'Done':'Edit';if(editing&&view==='map'){view='list'}render();if(editing)setTimeout(()=>$('addPanel')?.scrollIntoView({behavior:'smooth'}),50)};
+window.addEventListener('resize',()=>{if(view==='map'&&vb)drawMap(visibleSpots())});
+let tt;function toast(m){const t=$('toast');t.textContent=m;t.hidden=false;clearTimeout(tt);tt=setTimeout(()=>t.hidden=true,1800)}
+initWindow();render();
+</script>
+</body></html>
