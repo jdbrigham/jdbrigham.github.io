@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Spending Dashboard</title>
+
+    <style>
+        :root {
+            --bg: #111827;
+            --card: #1f2937;
+            --row: #374151;
+            --border: #4b5563;
+            --text: #ffffff;
+            --muted: #9ca3af;
+
+            --remaining: #b822c5;
+
+            --cat1: #bbf7d0;
+            --cat2: #86efac;
+            --cat3: #4ade80;
+            --cat4: #22c55e;
+            --cat5: #16a34a;
+            --cat6: #15803d;
+            --cat7: #166534;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: 24px;
+            padding: 20px;
+        }
+
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 22px;
+        }
+
+        .summary-card {
+            background: var(--row);
+            border-radius: 14px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .summary-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .summary-label {
+            font-size: .8rem;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        .donut-wrap {
+            position: relative;
+            width: 280px;
+            height: 280px;
+            margin: 0 auto 20px;
+        }
+
+        .donut {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+        }
+
+        .center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+
+            width: 160px;
+            height: 160px;
+
+            background: var(--card);
+            border-radius: 50%;
+
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .center-value {
+            font-size: 2rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .center-label {
+            margin-top: 8px;
+            color: var(--muted);
+            font-size: .9rem;
+        }
+
+        .divider {
+            height: 1px;
+            background: var(--border);
+            margin: 24px 0 16px;
+        }
+
+        .section-title {
+            font-size: .9rem;
+            letter-spacing: .08em;
+            color: var(--muted);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+        }
+
+        .row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            background: var(--row);
+
+            padding: 14px 16px;
+            margin-bottom: 10px;
+
+            border-radius: 14px;
+        }
+
+        .left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+        }
+
+        .category-name {
+            font-weight: 500;
+        }
+
+        .amount {
+            font-weight: 700;
+            text-align: right;
+        }
+
+        .percent {
+            color: var(--muted);
+            font-size: .85rem;
+        }
+
+        .total-spent-row {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            font-weight: 700;
+        }
+
+        .loading {
+            text-align: center;
+            color: var(--muted);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+
+        <div class="card">
+
+            <div class="summary">
+
+                <div class="summary-card">
+                    <div class="summary-value" id="availableAmount">$0</div>
+                    <div class="summary-label">Available</div>
+                </div>
+
+                <div class="summary-card">
+                    <div class="summary-value" id="spentAmount">$0</div>
+                    <div class="summary-label">Spent</div>
+                </div>
+
+                <div class="summary-card">
+                    <div class="summary-value" id="remainingAmount">$0</div>
+                    <div class="summary-label">Remaining</div>
+                </div>
+
+            </div>
+
+            <div class="donut-wrap">
+
+                <div id="donut" class="donut"></div>
+
+                <div class="center">
+                    <div id="remainingCenter" class="center-value">$0</div>
+                    <div class="center-label">Remaining</div>
+                </div>
+
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="section-title">
+                Spending Breakdown
+            </div>
+
+            <div id="legend">
+                <div class="loading">Loading...</div>
+            </div>
+
+            <div class="total-spent-row">
+                <span>Total Spent</span>
+                <span id="spentFooter">$0</span>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+
+        // CHANGE THIS EACH PERIOD
+        // const AVAILABLE_AMOUNT = 7500;
+
+        const CATEGORY_COLORS = [
+            "#bbf7d0",
+            "#86efac",
+            "#4ade80",
+            "#22c55e",
+            "#16a34a",
+            "#15803d",
+            "#166534"
+        ];
+
+        const REMAINING_COLOR = "crimson";
+
+        async function loadCSV() {
+
+            const response = await fetch("spending.csv");
+            const text = await response.text();
+
+            const rows = text
+                .trim()
+                .split("\n")
+                .slice(1);
+
+            let available = 0;
+            const categories = [];
+
+            rows.forEach(row => {
+
+                const [category, amount] = row.split(",");
+
+                if (category.trim().toLowerCase() === "available") {
+
+                    available = Number(amount);
+
+                } else {
+
+                    categories.push({
+                        category: category.trim(),
+                        amount: Number(amount)
+                    });
+
+                }
+
+            });
+
+            return {
+                available,
+                categories
+            };
+        }
+        function money(value) {
+
+            return value.toLocaleString(
+                "en-US",
+                {
+                    style: "currency",
+                    currency: "USD",
+                    maximumFractionDigits: 0
+                }
+            );
+        }
+
+        function buildDonut(spentCategories, remaining) {
+
+            const spentTotal =
+                spentCategories.reduce(
+                    (sum, item) => sum + item.amount,
+                    0
+                );
+
+            const available =
+                spentTotal + remaining;
+
+            const donutSegments = [];
+
+            let current = 0;
+
+            const remainingPct =
+                (remaining / available) * 100;
+
+            donutSegments.push(
+                `${REMAINING_COLOR} ${current}% ${current + remainingPct}%`
+            );
+
+            current += remainingPct;
+
+            spentCategories.forEach((item, index) => {
+
+                const pct =
+                    (item.amount / available) * 100;
+
+                donutSegments.push(
+                    `${CATEGORY_COLORS[index % CATEGORY_COLORS.length]}
+            ${current}% ${current + pct}%`
+                );
+
+                current += pct;
+
+            });
+
+            return `conic-gradient(${donutSegments.join(",")})`;
+        }
+
+        function renderBreakdown(categories, spentTotal) {
+
+            const container =
+                document.getElementById("legend");
+
+            let html = "";
+
+            categories.forEach((item, index) => {
+
+                const spendingPct =
+                    (item.amount / spentTotal) * 100;
+
+                html += `
+        <div class="row">
+
+            <div class="left">
+                <div
+                    class="dot"
+                    style="
+                        background:
+                        ${CATEGORY_COLORS[index % CATEGORY_COLORS.length]}
+                    "
+                ></div>
+
+                <div class="category-name">
+                    ${item.category}
+                </div>
+            </div>
+
+            <div>
+                <div class="amount">
+                    ${money(item.amount)}
+                </div>
+                <div class="percent">
+                    ${spendingPct.toFixed(1)}% of spending
+                </div>
+            </div>
+
+        </div>
+        `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        async function init() {
+
+            const data =
+                await loadCSV();
+
+            const categories =
+                data.categories;
+
+            const available =
+                data.available;
+
+            categories.sort(
+                (a, b) => b.amount - a.amount
+            );
+
+            const spentTotal =
+                categories.reduce(
+                    (sum, item) => sum + item.amount,
+                    0
+                );
+
+            const remaining =
+                available - spentTotal;
+
+            document.getElementById("availableAmount")
+                .textContent = money(available);
+
+            document.getElementById("spentAmount")
+                .textContent = money(spentTotal);
+
+            document.getElementById("remainingAmount")
+                .textContent = money(remaining);
+
+            document.getElementById("remainingCenter")
+                .textContent = money(remaining);
+
+            document.getElementById("spentFooter")
+                .textContent = money(spentTotal);
+
+            document.getElementById("donut").style.background =
+                buildDonut(
+                    categories,
+                    remaining
+                );
+
+            renderBreakdown(categories, spentTotal);
+        }
+
+        init();
+
+    </script>
+
+</body>
+
+</html>
+``
