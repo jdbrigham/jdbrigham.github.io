@@ -358,17 +358,52 @@
         const equivalentTests = [
 
             {
-                id: "T000",
+                id: "BL",
                 iso: "3200",
                 aperture: "f/2.8",
                 shutter: "20s"
             },
-
             {
-                id: "T001",
+                id: "S1-1",
                 iso: "800",
                 aperture: "f/2.8",
                 shutter: "80s"
+            },
+            {
+                id: "S1-2",
+                iso: "1600",
+                aperture: "f/2.8",
+                shutter: "40s"
+            },
+            {
+                id: "S1-3",
+                iso: "6400",
+                aperture: "f/2.8",
+                shutter: "10s"
+            },
+            {
+                id: "S1-4",
+                iso: "12800",
+                aperture: "f/2.8",
+                shutter: "5s"
+            },
+            {
+                id: "S2-1",
+                iso: "6400",
+                aperture: "f/4",
+                shutter: "20s"
+            },
+            {
+                id: "S2-2",
+                iso: "12800",
+                aperture: "f/5.6",
+                shutter: "20s"
+            },
+            {
+                id: "S2-3",
+                iso: "25600",
+                aperture: "f/8",
+                shutter: "20s"
             }
 
         ];
@@ -376,24 +411,40 @@
         const bracketingTests = [
 
             {
-                id: "B000",
+                id: "S3-1",
+                iso: "400",
+                aperture: "f/2.8",
+                shutter: "20s"
+            },
+            {
+                id: "S3-2",
+                iso: "800",
+                aperture: "f/2.8",
+                shutter: "20s"
+            },
+            {
+                id: "S3-3",
                 iso: "1600",
                 aperture: "f/2.8",
                 shutter: "20s"
             },
-
             {
-                id: "B001",
-                iso: "1600",
+                id: "S3-4",
+                iso: "6400",
                 aperture: "f/2.8",
-                shutter: "40s"
+                shutter: "20s"
             },
-
             {
-                id: "B002",
-                iso: "1600",
+                id: "S3-5",
+                iso: "12800",
                 aperture: "f/2.8",
-                shutter: "80s"
+                shutter: "20s"
+            },
+            {
+                id: "S3-6",
+                iso: "25600",
+                aperture: "f/2.8",
+                shutter: "20s"
             }
 
         ];
@@ -401,11 +452,11 @@
         const workflow = [
 
             ...equivalentTests.map(
-                x => ({ ...x, phase: "Equivalent Exposure" })
+                x => ({...x, phase: "Equivalent Exposure"})
             ),
 
             ...bracketingTests.map(
-                x => ({ ...x, phase: "Bracketing" })
+                x => ({...x, phase: "Bracketing"})
             )
 
         ];
@@ -595,7 +646,7 @@
             const blob =
                 new Blob(
                     [csv],
-                    { type: "text/csv" }
+                    {type: "text/csv"}
                 );
 
             const url =

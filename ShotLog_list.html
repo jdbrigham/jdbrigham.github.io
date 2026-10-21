@@ -30,6 +30,7 @@
         .title-icon {
             width: 32px;
             height: 32px;
+            color: #ff4444;
         }
 
         .progress {
@@ -119,8 +120,16 @@
     <div id="screen1" class="screen active">
 
         <h1 class="title">
-            <img src="noun_DSLR_5803338.svg" class="title-icon" alt="">
+
+            <svg class="title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                <circle cx="12" cy="13" r="4" />
+
+            </svg>
+
             Exposure Tests
+
         </h1>
 
         <div class="section-title">
@@ -141,20 +150,61 @@
 
         <div id="equivalent-list">
 
-            <div class="test-item" data-id="T000">
-                <div class="id">T000</div>
+            <div class="test-item" data-id="BL">
+                <div class="id">BL</div>
                 <div class="filename"></div>
                 <div>3200</div>
                 <div>f/2.8</div>
                 <div>20s</div>
             </div>
-
-            <div class="test-item" data-id="T001">
-                <div class="id">T001</div>
+            <div class="test-item" data-id="S1-1">
+                <div class="id">S1-1</div>
                 <div class="filename"></div>
                 <div>800</div>
                 <div>f/2.8</div>
                 <div>80s</div>
+            </div>
+            <div class="test-item" data-id="S1-2">
+                <div class="id">S1-2</div>
+                <div class="filename"></div>
+                <div>1600</div>
+                <div>f/2.8</div>
+                <div>40s</div>
+            </div>
+            <div class="test-item" data-id="S1-3">
+                <div class="id">S1-3</div>
+                <div class="filename"></div>
+                <div>6400</div>
+                <div>f/2.8</div>
+                <div>10s</div>
+            </div>
+            <div class="test-item" data-id="S1-4">
+                <div class="id">S1-4</div>
+                <div class="filename"></div>
+                <div>12800</div>
+                <div>f/2.8</div>
+                <div>5s</div>
+            </div>
+            <div class="test-item" data-id="S2-1">
+                <div class="id">S2-1</div>
+                <div class="filename"></div>
+                <div>6400</div>
+                <div>f/4</div>
+                <div>20s</div>
+            </div>
+            <div class="test-item" data-id="S2-2">
+                <div class="id">S2-2</div>
+                <div class="filename"></div>
+                <div>12800</div>
+                <div>f/5.6</div>
+                <div>20s</div>
+            </div>
+            <div class="test-item" data-id="S2-3">
+                <div class="id">S2-3</div>
+                <div class="filename"></div>
+                <div>25600</div>
+                <div>f/8</div>
+                <div>20s</div>
             </div>
 
         </div>
@@ -189,28 +239,47 @@
 
         <div id="bracket-list">
 
-            <div class="test-item" data-id="B000">
-                <div class="id">B000</div>
+            <div class="test-item" data-id="S3-1">
+                <div class="id">S3-1</div>
+                <div class="filename"></div>
+                <div>400</div>
+                <div>f/2.8</div>
+                <div>20s</div>
+            </div>
+            <div class="test-item" data-id="S3-2">
+                <div class="id">S3-2</div>
+                <div class="filename"></div>
+                <div>800</div>
+                <div>f/2.8</div>
+                <div>20s</div>
+            </div>
+            <div class="test-item" data-id="S3-3">
+                <div class="id">S3-3</div>
                 <div class="filename"></div>
                 <div>1600</div>
                 <div>f/2.8</div>
                 <div>20s</div>
             </div>
-
-            <div class="test-item" data-id="B001">
-                <div class="id">B001</div>
+            <div class="test-item" data-id="S3-4">
+                <div class="id">S3-4</div>
                 <div class="filename"></div>
-                <div>1600</div>
+                <div>6400</div>
                 <div>f/2.8</div>
-                <div>40s</div>
+                <div>20s</div>
             </div>
-
-            <div class="test-item" data-id="B002">
-                <div class="id">B002</div>
+            <div class="test-item" data-id="S3-5">
+                <div class="id">S3-5</div>
                 <div class="filename"></div>
-                <div>1600</div>
+                <div>12800</div>
                 <div>f/2.8</div>
-                <div>80s</div>
+                <div>20s</div>
+            </div>
+            <div class="test-item" data-id="S3-6">
+                <div class="id">S3-6</div>
+                <div class="filename"></div>
+                <div>25600</div>
+                <div>f/2.8</div>
+                <div>20s</div>
             </div>
 
         </div>
@@ -422,7 +491,7 @@
             const blob =
                 new Blob(
                     [csv],
-                    { type: "text/csv" }
+                    {type: "text/csv"}
                 );
 
             const link =
