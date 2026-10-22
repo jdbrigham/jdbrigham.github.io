@@ -65,7 +65,7 @@
         }
 
         .summary-value {
-            font-size: 1.4rem;
+            font-size: 1.2rem;
             font-weight: 700;
         }
 
@@ -73,6 +73,42 @@
             font-size: .8rem;
             color: var(--muted);
             margin-top: 4px;
+        }
+
+        .updated-date {
+            text-align: center;
+            color: var(--text);
+            font-size: .95rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .period-info {
+            text-align: center;
+            color: var(--muted);
+            font-size: .8rem;
+            margin-bottom: 16px;
+        }
+
+        .view-toggle {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin: 12px 0 18px;
+        }
+
+        .view-toggle button {
+            background: var(--row);
+            border: none;
+            color: white;
+            padding: 10px 18px;
+            border-radius: 999px;
+            font-size: .9rem;
+        }
+
+        .view-toggle button.active {
+            background: var(--remaining);
+            color: white;
         }
 
         .donut-wrap {
@@ -172,7 +208,7 @@
             font-size: .85rem;
         }
 
-        .total-spent-row {
+        /* .total-spent-row {
             margin-top: 16px;
             padding-top: 16px;
             border-top: 1px solid var(--border);
@@ -182,11 +218,89 @@
             align-items: center;
 
             font-weight: 700;
-        }
+        } */
 
         .loading {
             text-align: center;
             color: var(--muted);
+        }
+
+        .breakdown-wrapper {
+            position: relative;
+            background: #374151;
+            border-radius: 14px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .breakdown-fill {
+            position: absolute;
+            inset: 0 auto 0 0;
+
+            border-radius: 14px;
+
+            opacity: .35;
+        }
+
+        .history-period {
+            margin-bottom: 18px;
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+
+            font-size: .85rem;
+            color: var(--muted);
+        }
+
+        .history-bar {
+            display: flex;
+
+            width: 100%;
+            height: 22px;
+
+            border-radius: 999px;
+            overflow: hidden;
+
+            background: #374151;
+        }
+
+        .history-segment {
+            height: 100%;
+        }
+
+        .history-summary {
+            margin-top: 6px;
+
+            font-size: .8rem;
+            color: var(--muted);
+        }
+
+        .history-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+
+            margin-top: 10px;
+            margin-bottom: 16px;
+        }
+
+        .history-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+
+            font-size: .8rem;
+            color: var(--muted);
+        }
+
+        .history-legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
         }
     </style>
 </head>
@@ -196,6 +310,14 @@
     <div class="container">
 
         <div class="card">
+
+            <div class="updated-date" id="updatedDate"></div>
+            <div class="period-info" id="periodInfo"></div>
+
+            <!-- <div class="view-toggle">
+                <button id="totalsBtn" class="active">Totals</button>
+                <button id="averageBtn">Average</button>
+            </div> -->
 
             <div class="summary">
 
@@ -237,9 +359,18 @@
                 <div class="loading">Loading...</div>
             </div>
 
-            <div class="total-spent-row">
+            <!-- <div class="total-spent-row">
                 <span>Total Spent</span>
                 <span id="spentFooter">$0</span>
+            </div> -->
+
+            <div class="divider"></div>
+
+            <div class="section-title">
+                Pay Period History
+            </div>
+
+            <div id="historyChart">
             </div>
 
         </div>
@@ -247,9 +378,6 @@
     </div>
 
     <script>
-
-        // CHANGE THIS EACH PERIOD
-        // const AVAILABLE_AMOUNT = 7500;
 
         const CATEGORY_COLORS = [
             "#bbf7d0",
@@ -268,38 +396,36 @@
             const response = await fetch("spending.csv");
             const text = await response.text();
 
-            const rows = text
-                .trim()
-                .split("\n")
-                .slice(1);
+            const lines = text.trim().split("\n");
 
-            let available = 0;
-            const categories = [];
+            const headers =
+                lines[0]
+                    .split(",")
+                    .map(h => h.trim());
 
-            rows.forEach(row => {
+            const historyRows =
+                lines
+                    .slice(1)
+                    .map(line => {
 
-                const [category, amount] = row.split(",");
+                        const values = line.split(",");
 
-                if (category.trim().toLowerCase() === "available") {
+                        const row = {};
 
-                    available = Number(amount);
+                        headers.forEach((header, index) => {
 
-                } else {
+                            row[header] =
+                                values[index]?.trim() ?? "";
 
-                    categories.push({
-                        category: category.trim(),
-                        amount: Number(amount)
+                        });
+
+                        return row;
+
                     });
 
-                }
-
-            });
-
-            return {
-                available,
-                categories
-            };
+            return historyRows;
         }
+
         function money(value) {
 
             return value.toLocaleString(
@@ -342,8 +468,7 @@
                     (item.amount / available) * 100;
 
                 donutSegments.push(
-                    `${CATEGORY_COLORS[index % CATEGORY_COLORS.length]}
-            ${current}% ${current + pct}%`
+                    `${CATEGORY_COLORS[index % CATEGORY_COLORS.length]} ${current}% ${current + pct}%`
                 );
 
                 current += pct;
@@ -366,29 +491,174 @@
                     (item.amount / spentTotal) * 100;
 
                 html += `
-        <div class="row">
+        <div class="breakdown-wrapper">
 
-            <div class="left">
-                <div
-                    class="dot"
-                    style="
-                        background:
-                        ${CATEGORY_COLORS[index % CATEGORY_COLORS.length]}
-                    "
-                ></div>
+            <div
+                class="breakdown-fill"
+                style="
+                    width:${spendingPct}%;
+                    background:${CATEGORY_COLORS[index % CATEGORY_COLORS.length]};
+                "
+            ></div>
 
-                <div class="category-name">
-                    ${item.category}
+            <div class="row">
+
+                <div class="left">
+
+                    <div
+                        class="dot"
+                        style="
+                            background:${CATEGORY_COLORS[index % CATEGORY_COLORS.length]};
+                        "
+                    ></div>
+
+                    <div class="category-name">
+                        ${item.category}
+                    </div>
+
                 </div>
+
+                <div>
+
+                    <div class="amount">
+                        ${money(item.amount)}
+                    </div>
+
+                    <div class="percent">
+                        ${spendingPct.toFixed(1)}% of spending
+                    </div>
+
+                </div>
+
             </div>
 
-            <div>
-                <div class="amount">
-                    ${money(item.amount)}
-                </div>
-                <div class="percent">
-                    ${spendingPct.toFixed(1)}% of spending
-                </div>
+        </div>
+        `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function renderHistory(historyRows) {
+
+            const container =
+                document.getElementById("historyChart");
+
+            if (!historyRows.length) {
+                container.innerHTML = "";
+                return;
+            }
+
+            const categories =
+                Object.keys(historyRows[0])
+                    .filter(key =>
+                        key !== "PayPeriod" &&
+                        key !== "Available"
+                    );
+
+            let html = `
+        <div class="history-legend">
+    `;
+
+            html += `
+        <div class="history-legend-item">
+            <div
+                class="history-legend-dot"
+                style="background:${REMAINING_COLOR}"
+            ></div>
+            Remaining
+        </div>
+    `;
+
+            categories.forEach((category, index) => {
+
+                html += `
+        <div class="history-legend-item">
+
+            <div
+                class="history-legend-dot"
+                style="
+                    background:
+                    ${CATEGORY_COLORS[index % CATEGORY_COLORS.length]}
+                "
+            ></div>
+
+            ${category}
+
+        </div>
+        `;
+            });
+
+            html += `</div>`;
+
+            historyRows.forEach(row => {
+
+                const available =
+                    Number(row.Available);
+
+                let spent = 0;
+
+                categories.forEach(cat => {
+                    spent += Number(row[cat] || 0);
+                });
+
+                const remaining =
+                    available - spent;
+
+                const spentPct =
+                    (spent / available) * 100;
+
+                html += `
+        <div class="history-period">
+
+            <div class="history-header">
+
+                <span>${row.PayPeriod}</span>
+
+                <span>${spentPct.toFixed(1)}% spent</span>
+
+            </div>
+
+            <div class="history-bar">
+        `;
+
+                const remainingPct =
+                    (remaining / available) * 100;
+
+                html += `
+            <div
+                class="history-segment"
+                style="
+                    width:${remainingPct}%;
+                    background:${REMAINING_COLOR};
+                "
+            ></div>
+        `;
+
+                categories.forEach((cat, index) => {
+
+                    const value =
+                        Number(row[cat] || 0);
+
+                    const pct =
+                        (value / available) * 100;
+
+                    html += `
+                <div
+                    class="history-segment"
+                    style="
+                        width:${pct}%;
+                        background:${CATEGORY_COLORS[index % CATEGORY_COLORS.length]};
+                    "
+                ></div>
+            `;
+                });
+
+                html += `
+            </div>
+
+            <div class="history-summary">
+                Remaining ${money(remaining)}
             </div>
 
         </div>
@@ -400,14 +670,46 @@
 
         async function init() {
 
-            const data =
+            const historyRows =
                 await loadCSV();
 
-            const categories =
-                data.categories;
+            if (!historyRows.length) {
+                return;
+            }
 
-            const available =
-                data.available;
+            const categoryNames =
+                Object.keys(historyRows[0])
+                    .filter(col =>
+                        col !== "PayPeriod" &&
+                        col !== "Available"
+                    );
+
+            let available = 0;
+
+            const categoryTotals = {};
+
+            categoryNames.forEach(cat => {
+                categoryTotals[cat] = 0;
+            });
+
+            historyRows.forEach(row => {
+
+                available += Number(row.Available);
+
+                categoryNames.forEach(cat => {
+
+                    categoryTotals[cat] +=
+                        Number(row[cat] || 0);
+
+                });
+
+            });
+
+            const categories =
+                categoryNames.map(cat => ({
+                    category: cat,
+                    amount: categoryTotals[cat]
+                }));
 
             categories.sort(
                 (a, b) => b.amount - a.amount
@@ -422,6 +724,18 @@
             const remaining =
                 available - spentTotal;
 
+            const latestPeriod =
+                historyRows[historyRows.length - 1]
+                    .PayPeriod;
+
+            document.getElementById("updatedDate")
+                .textContent =
+                `Updated: ${latestPeriod}`;
+
+            document.getElementById("periodInfo")
+                .textContent =
+                `Totals for ${historyRows.length} Pay Periods`;
+
             document.getElementById("availableAmount")
                 .textContent = money(available);
 
@@ -434,16 +748,20 @@
             document.getElementById("remainingCenter")
                 .textContent = money(remaining);
 
-            document.getElementById("spentFooter")
-                .textContent = money(spentTotal);
-
             document.getElementById("donut").style.background =
                 buildDonut(
                     categories,
                     remaining
                 );
 
-            renderBreakdown(categories, spentTotal);
+            renderBreakdown(
+                categories,
+                spentTotal
+            );
+
+            renderHistory(
+                [...historyRows].reverse()
+            );
         }
 
         init();
