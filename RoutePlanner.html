@@ -1,4 +1,5 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style></head><body><title>93 North Eats</title>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>93 North Eats</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="theme-color" content="#101412">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass:wght@600;700;800&family=Space+Grotesk:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
@@ -123,6 +124,12 @@ textarea{font-family:var(--mono);font-size:12px;width:100%;background:var(--bg);
 .legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:-1px}
 .sheet{margin-top:4px}
 .sheet .hint{color:var(--dim);font-size:.88rem;padding:14px 0}
+.tab.us{background:#fff;color:#111;border-color:#111}
+.tab .tn{font-size:.95rem;padding-block:3px 1px}
+.usshield{display:inline-grid;place-items:center;width:38px;height:40px;border-radius:8px;background:#fff;border:2px solid #111;color:#111;font-family:var(--sign-font);font-weight:800;font-size:1.15rem;flex:0 0 auto}
+.dirseg{align-self:flex-start}
+.gpsline[hidden]{display:none}
+.dirseg button{font-size:.88rem;padding:8px 14px;min-height:40px}
 </style>
 
 <div class="app">
@@ -140,6 +147,7 @@ textarea{font-family:var(--mono);font-size:12px;width:100%;background:var(--bg);
     <div class="chips" id="chips" role="group" aria-label="Filter by food type"></div>
   </header>
   <div class="pad ctl">
+    <div class="seg dirseg" id="dirSeg" role="group" aria-label="Direction"></div>
     <div class="win">
       <select id="pos" aria-label="Where you are now"></select>
       <span>Eat</span>
@@ -188,10 +196,17 @@ const EXITS=[
  {id:'I19',label:'19',hwy:'89',road:'US 4 · NH 10',        town:'Lebanon',              min:121,ll:[43.6390,-72.2900]},
  {id:'I20',label:'20',hwy:'89',road:'NH 12A',              town:'West Lebanon',         min:123,ll:[43.6330,-72.3090]},
  {id:'V1', label:'1', hwy:'VT',road:'US 4 · Woodstock',    town:'Quechee · White River Jct', vt:true, min:126, ll:[43.6470,-72.3400]},
+  {id:'WDST',label:'Woodstock',hwy:'US4',us4:true,road:'US 4 · Central St',  town:'Woodstock village', min:138, ll:[43.6240,-72.5185]},
+ {id:'RUT', label:'Rutland',  hwy:'US4',us4:true,road:'US 4 · Woodstock Ave',town:'Entering Rutland',  min:181, ll:[43.6105,-72.9600]},
+ {id:'RUT7',label:'Rutland',  hwy:'US4',us4:true,road:'US 7 · Main St',     town:'Downtown Rutland',  min:183, ll:[43.6080,-72.9745]}
 ];
-const START={id:'START',ll:[42.3601,-71.0589],min:0};
-const US4_END=[43.6450,-72.4250];
-const HWY={'89':{name:'I-89 North',sub:'Concord to West Lebanon, NH'},'VT':{name:'Vermont',sub:'Your exit for US 4 west'}};
+const START={id:'START',ll:[42.3601,-71.0589],min:0};          // Boston
+const RUTLAND={id:'RUTEND',ll:[43.6080,-72.9745],min:184};
+const TOTAL=RUTLAND.min;
+/* Shaping points along US 4 so the map and GPS follow the real road: [lat, lon, route minute] */
+const WAYPTS=[[43.6450,-72.4250,132],[43.6300,-72.4700,135],[43.6200,-72.5650,142],[43.5880,-72.6600,150],[43.5940,-72.7200,154],[43.6370,-72.7700,159],[43.6650,-72.7950,164],[43.6650,-72.8350,169],[43.6400,-72.9000,175]].map(w=>({ll:[w[0],w[1]],min:w[2]}));
+const HWYN={'93':['I-93 North','Woburn to the I-89 split'],'89':['I-89 North','Concord to West Lebanon, NH'],'VT':['Vermont','Your exit for US 4 west'],'US4':['US 4 West','Quechee · Woodstock · Rutland']};
+const HWYS={'US4':['US 4 East','Rutland · Woodstock · Quechee'],'VT':['Vermont','Where US 4 meets I-89'],'89':['I-89 South','West Lebanon to Concord, NH'],'93':['I-93 South','The I-89 split to Woburn']};
 /* Time added = ramp off/on (2 min) + round trip on local roads at ~22 mph + the stop itself */
 const STOPS={dt:{label:'Drive-thru',min:5},grab:{label:'Grab & go',min:12},sit:{label:'Sit down',min:30},none:{label:'Detour only',min:0}};
 const CATS={all:'All food',burger:'Burgers',chicken:'Chicken',mexican:'Mexican',pizza:'Pizza',subs:'Subs',other:'Other',coffee:'Coffee'};
@@ -203,19 +218,14 @@ const SEED=[
  ['dd-montvale-e','27','Dunkin’','coffee',0.3,'R','62A Montvale Ave, Stoneham, MA'],
  ['dd-montvale-w','27','Dunkin’','coffee',0.35,'L','318 Montvale Ave, Woburn, MA'],
  ['bk-stoneham','27','Burger King','burger',0.9,'R','197 Main St, Stoneham, MA'],
- ['sub-stoneham','27','Subway','subs',0.9,'R','200B Main St, Stoneham, MA'],
- ['pg-stoneham','27','Papa Gino’s','pizza',0.95,'R','190 Main St, Stoneham, MA'],
  ['chip-woburn','30','Chipotle','mexican',0.15,'R','112 Commerce Way, Woburn, MA'],
  ['sbux-commerce','30','Starbucks','coffee',0.2,'R','99 Commerce Way, Woburn, MA'],
  ['dd-atlantic','30','Dunkin’','coffee',0.25,'L','100 Atlantic Ave, Woburn, MA'],
- ['sub-newboston','30','Subway','subs',0.8,'L','150 New Boston St, Woburn, MA'],
- ['sub-wilm-lowell','31','Subway','subs',0.35,'L','316 Lowell St, Wilmington, MA'],
- ['dd-wilm-lowell','31','Dunkin’','coffee',0.35,'L','316 Lowell St, Wilmington, MA','Inside the Mobil'],
+['dd-wilm-lowell','31','Dunkin’','coffee',0.35,'L','316 Lowell St, Wilmington, MA','Inside the Mobil'],
  ['bk-wilm','31','Burger King','burger',0.5,'L','280 Lowell St, Wilmington, MA'],
  ['dd-concord-st','33','Dunkin’','coffee',0.1,'R','66 Concord St, Wilmington, MA'],
  ['dd-middlesex','34','Dunkin’','coffee',0.9,'L','357 Middlesex Ave, Wilmington, MA'],
- ['sub-ballard','35','Subway','subs',0.2,'L','206 Ballardvale St, Wilmington, MA'],
- ['dd-ballard','35','Dunkin’','coffee',0.3,'L','206 Ballardvale St, Wilmington, MA'],
+['dd-ballard','35','Dunkin’','coffee',0.3,'L','206 Ballardvale St, Wilmington, MA'],
  ['sbux-ballard','35','Starbucks','coffee',0.3,'L','210 Ballardvale St, Wilmington, MA'],
  ['dd-east-st','38','Dunkin’','coffee',0.45,'L','5 East St, Tewksbury, MA','Inside the Mobil'],
  ['dd-keri','38','Dunkin’','coffee',0.55,'L','1699 Shawsheen St, Tewksbury, MA'],
@@ -235,8 +245,6 @@ const SEED=[
  ['popeyes-salem','45','Popeyes','chicken',1.2,'R','481 S Broadway, Salem, NH'],
  ['dd-mall','NH1','Dunkin’','coffee',0.1,'L','99 Rockingham Park Blvd, Salem, NH','In the Mall at Rockingham Park'],
  ['sbux-rpb','NH1','Starbucks','coffee',0.15,'L','85 Rockingham Park Blvd, Salem, NH'],
- ['sbarro-mall','NH1','Sbarro','pizza',0.15,'L','99 Rockingham Park Blvd, Salem, NH','Mall food court'],
- ['dq-mall','NH1','Dairy Queen','burger',0.15,'L','99 Rockingham Park Blvd, Salem, NH','Mall food court'],
  ['kkc-salem','NH1','Krispy Krunchy Chicken','chicken',0.25,'L','120 Pleasant St, Salem, NH'],
  ['pg-salem','NH1','Papa Gino’s','pizza',0.3,'R','99 Cluff Crossing, Salem, NH'],
  ['shake-salem','NH1','Shake Shack','burger',0.3,'R','100 Via Toscana, Salem, NH','Tuscan Village'],
@@ -250,29 +258,23 @@ const SEED=[
  ['wendys-lond','NH4','Wendy’s','burger',0.25,'L','36 Nashua Rd, Londonderry, NH'],
  ['pg-lond','NH4','Papa Gino’s','pizza',0.35,'L','44 Nashua Rd, Londonderry, NH'],
  ['mcd-lond','NH4','McDonald’s','burger',0.4,'L','39 Nashua Rd, Londonderry, NH'],
- ['jm-lond','NH4','Jersey Mike’s','subs',0.85,'L','4 Orchard View Dr, Londonderry, NH'],
  ['tb-lond','NH4','Taco Bell','mexican',0.95,'L','68 Nashua Rd, Londonderry, NH'],
  ['kfc-lond','NH4','KFC','chicken',0.95,'L','68 Nashua Rd, Londonderry, NH'],
  ['dd-rock-124','NH5','Dunkin’','coffee',0.15,'R','124 Rockingham Rd, Londonderry, NH'],
- ['sub-perkins','NH5','Subway','subs',0.2,'L','79A Perkins Rd, Londonderry, NH'],
  ['wendys-candia','NH6','Wendy’s','burger',0.1,'R','860 Candia Rd, Manchester, NH'],
  ['dd-hanover','NH6','Dunkin’','coffee',0.2,'L','1037 Hanover St, Manchester, NH'],
  ['mcd-hanover','NH6','McDonald’s','burger',0.4,'L','907 Hanover St, Manchester, NH'],
  ['dd-bell','NH9','Dunkin’','coffee',0.25,'R','6 Bell Ave, Hooksett, NH','Take the 9N ramp'],
  ['bk-dwh','NH9','Burger King','burger',0.3,'L','737 Daniel Webster Hwy, Manchester, NH','Take the 9S ramp'],
- ['mrmacs','NH9','Mr. Mac’s','other',0.5,'L','497 Hooksett Rd, Manchester, NH','Mac & cheese · 9S ramp'],
  ['tb-hooksett-rd','NH9','Taco Bell','mexican',0.8,'L','525 Hooksett Rd, Manchester, NH','Take the 9S ramp'],
  ['sbux-quality','NH10','Starbucks','coffee',0.1,'R','100 Quality Dr, Hooksett, NH'],
  ['wendys-hooksett','NH10','Wendy’s','burger',0.15,'R','206 Quality Dr, Hooksett, NH'],
  ['dd-wriver','NH10','Dunkin’','coffee',0.2,'R','90 W River Rd, Hooksett, NH'],
- ['sub-wriver','NH10','Subway','subs',0.25,'R','88 W River Rd, Hooksett, NH'],
  ['mcd-hooksett','NH10','McDonald’s','burger',1.3,'R','1254 Hooksett Rd, Hooksett, NH'],
  ['tb-chambers','NH10','Taco Bell','mexican',1.4,'R','4 Chambers Dr, Hooksett, NH'],
  ['kfc-chambers','NH10','KFC','chicken',1.4,'R','4 Chambers Dr, Hooksett, NH'],
- ['sub-bow','I1','Subway','subs',0.3,'R','500 NH 3A, Bow, NH'],
  ['dd-bow','I1','Dunkin\u2019','coffee',0.35,'R','412 S Main St, Concord, NH'],
  ['dd-hopkinton','I6','Dunkin\u2019','coffee',1.45,'R','54 Park Ave, Hopkinton, NH'],
- ['sub-warner','I9','Subway','subs',0.1,'R','23 NH 103, Warner, NH'],
  ['dd-warner-9','I9','Dunkin\u2019','coffee',0.15,'R','9 NH 103, Warner, NH'],
  ['dd-warner-32','I9','Dunkin\u2019','coffee',0.45,'L','32 NH 103, Warner, NH'],
  ['mcd-warner','I9','McDonald\u2019s','burger',1.0,'R','4 Nichols Mill Ln, Warner, NH'],
@@ -280,16 +282,13 @@ const SEED=[
  ['pizzahero-grantham','I13','Pizza Hero','pizza',0.15,'R','NH 10, Grantham, NH','Address unconfirmed'],
  ['dd-grantham','I13','Dunkin\u2019','coffee',0.3,'L','120 NH 10, Grantham, NH','Sawyer Brook Plaza'],
  ['dd-enfield','I16','Dunkin\u2019','coffee',0.05,'L','786 Methodist Hill Rd, Enfield, NH'],
- ['sub-lebanon','I18','Subway','subs',0.4,'L','96 Hanover St, Lebanon, NH'],
- ['dd-lebanon','I18','Dunkin\u2019','coffee',0.4,'L','96 Hanover St, Lebanon, NH','Inside the Jiffy Mart'],
- ['phnompenh','I18','Phnom Penh Sandwich Station','other',0.5,'L','1 High St, Lebanon, NH','Banh mi'],
- ['tacostaco','I18','Taco\u2019s Taco','mexican',0.55,'L','6 S Park St, Lebanon, NH'],
+['dd-lebanon','I18','Dunkin\u2019','coffee',0.4,'L','96 Hanover St, Lebanon, NH','Inside the Jiffy Mart'],
+['tacostaco','I18','Taco\u2019s Taco','mexican',0.55,'L','6 S Park St, Lebanon, NH'],
  ['dd-miracle','I19','Dunkin\u2019','coffee',0.4,'R','388 Miracle Mile, Lebanon, NH'],
  ['tb-wleb','I20','Taco Bell','mexican',0.05,'R','197 S Main St, West Lebanon, NH'],
  ['kfc-wleb','I20','KFC','chicken',0.05,'R','197 S Main St, West Lebanon, NH'],
  ['dd-wleb-main','I20','Dunkin\u2019','coffee',0.05,'R','191 S Main St, West Lebanon, NH'],
  ['moes-wleb','I20','Moe\u2019s Southwest Grill','mexican',0.15,'L','250 Plainfield Rd, West Lebanon, NH'],
- ['sub-wleb','I20','Subway','subs',0.15,'R','1 Glenn Rd, West Lebanon, NH'],
  ['mcd-wleb','I20','McDonald\u2019s','burger',0.2,'L','249 Plainfield Rd, West Lebanon, NH'],
  ['wendys-wleb','I20','Wendy\u2019s','burger',0.25,'L','258 Plainfield Rd, West Lebanon, NH'],
  ['fiveguys-wleb','I20','Five Guys','burger',0.3,'L','250 Plainfield Rd, West Lebanon, NH'],
@@ -297,20 +296,42 @@ const SEED=[
  ['jm-wleb','I20','Jersey Mike\u2019s','subs',0.35,'L','254 N Plainfield Rd, West Lebanon, NH'],
  ['tsc-wleb','I20','Tropical Smoothie Cafe','other',0.35,'L','254 N Plainfield Rd, West Lebanon, NH','Smoothies, wraps'],
  ['sbux-wleb','I20','Starbucks','coffee',0.4,'L','257 N Plainfield Rd, West Lebanon, NH'],
- ['sub-quechee','V1','Subway','subs',2.45,'A','6800 Woodstock Rd, Quechee, VT','On US 4 west, on your left'],
  ['dd-quechee','V1','Dunkin\u2019','coffee',2.55,'A','7024 Woodstock Rd, Quechee, VT','On US 4 west, on your left'],
- ['cman-roadside','REST','Common Man Roadside','other',0,'O','Hooksett Welcome Center, I-93 North, Hooksett, NH','Deli, pizza, grab-and-go'],
+['farmerbell-wdst','WDST','Farmer & the Bell','other',0,'A','US 4 & Pleasant St, Woodstock, VT','Bakery café, order at the counter · East End, on US 4'],
+ ['positivepie-wdst','WDST','Positive Pie','pizza',0.1,'R','Elm St, Woodstock, VT','Pizza by the slice, grab-and-go · just off the Green'],
+ ['mcd-rut-woodstock','RUT','McDonald\u2019s','burger',0,'A','195 Woodstock Ave, Rutland, VT','On US 4 (Woodstock Ave)'],
+ ['ph-rut','RUT','Pizza Hut','pizza',0,'A','157 Woodstock Ave, Rutland, VT','On US 4 (Woodstock Ave)'],
+ ['dd-rut-woodstock','RUT','Dunkin\u2019','coffee',0,'A','93 Woodstock Ave, Rutland, VT','On US 4 (Woodstock Ave)'],
+ ['fiveguys-rut','RUT7','Five Guys','burger',0.05,'R','5 N Main St, Rutland, VT','Right on Main St (US 7 north)'],
+ ['wendys-rut','RUT7','Wendy\u2019s','burger',0.1,'R','21 N Main St, Rutland, VT','Right on Main St (US 7 north)'],
+ ['chip-rut','RUT7','Chipotle','mexican',0.15,'R','37 N Main St, Rutland, VT','Right on Main St (US 7 north)'],
+ ['kfc-rut','RUT7','KFC','chicken',0.4,'L','153 S Main St, Rutland, VT','Left on Main St (US 7 south)'],
+ ['mcd-rut-smain','RUT7','McDonald\u2019s','burger',0.5,'L','182 S Main St, Rutland, VT','Left on Main St (US 7 south)'],
+ ['panera-rut','RUT7','Panera Bread','other',0.65,'L','241 S Main St, Rutland, VT','Left on Main St · short weekend hours'],
+ ['tb-rut','RUT7','Taco Bell','mexican',2.2,'L','45 Farrell Rd, Rutland, VT','US 7 south toward Diamond Run · distance approx']
 ];
 
 /* ---- State: filters and edits persist on this phone; position and window start fresh each open ---- */
 const KEY='93-north-eats-v1';
-let S={cat:'all',hidden:[],mine:[],maps:'apple',stop:'dt',collapsed:[]};
+let S={cat:'all',hidden:[],mine:[],maps:'apple',stop:'dt',collapsed:[],dir:'north'};
 try{const s=JSON.parse(localStorage.getItem(KEY)||'null');if(s){delete s.on;S=Object.assign(S,s)}}catch(e){}
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
 let editing=false, view='list', showOut=false, pos='START', sel=null;
 /* ---- GPS: snap the phone's position onto the route to find how far along you are ---- */
 let gps={on:false,ok:false,min:null,off:null,dir:null,hist:[],ll:null,msg:''},gpsWatch=null,gpsTimer=null;
-const ROUTE=[START].concat(EXITS).concat([{ll:US4_END,min:132}]);
+const ROUTE=[START].concat(EXITS,WAYPTS,[RUTLAND]).sort((a,b)=>a.min-b.min);
+const N=()=>S.dir!=='south';
+const prog=m=>N()?m:TOTAL-m;                       // minutes from today's starting point
+const ORDER=()=>N()?EXITS:EXITS.slice().reverse();
+const ENDPOINT=new Set(['RUT','RUT7']);
+const exitName=x=>x.rest?'Rest area':x.us4?x.label:(x.hwy==='89'?'I-89 ':x.vt?'VT ':'')+'Exit '+(x.label||x.id);
+const sideOf=s=>{if(N())return s.side;const x=EXITS.find(e=>e.id===s.exit);if(x&&ENDPOINT.has(x.id))return s.side;return {L:'R',R:'L'}[s.side]||s.side};
+function noteOf(s){
+  if(N()||!s.note)return s.note;
+  if(/ramp/i.test(s.note))return s.addr;
+  if(ENDPOINT.has(s.exit))return s.note;
+  return s.note.replace(/\b(left|right)\b/g,m=>m==='left'?'right':'left').replace(/US 4 west/g,'US 4 east');
+}
 function locate(lat,lon){
   let best={d:1e9};
   for(let i=0;i<ROUTE.length-1;i++){
@@ -331,9 +352,9 @@ function onFix(p){
   gps.ok=true;gps.min=r.min;gps.hist.push(r.min);if(gps.hist.length>6)gps.hist.shift();
   const d=gps.hist[gps.hist.length-1]-gps.hist[Math.max(0,gps.hist.length-3)];
   if(d>0.6)gps.dir='north';else if(d<-0.6)gps.dir='south';
-  const near=EXITS.filter(x=>x.min<=gps.min+0.3).pop();
-  gps.msg=gps.dir==='south'?'Heading south, so passed exits stay visible.'
-    :`GPS: ${near?'past '+(near.rest?'the rest area':(near.hwy==='89'?'I-89 ':near.vt?'VT ':'')+'Exit '+(near.label||near.id)):'south of Woburn'}${accuracy>500?' · weak signal':''}. Passed exits are hidden.`;
+  if(gps.dir&&gps.dir!==S.dir){S.dir=gps.dir;save();vb=null;fillPos();toast(N()?'Heading north. Switched to To Rutland':'Heading south. Switched to To Boston')}
+  const near=ORDER().filter(x=>prog(x.min)<=prog(gps.min)+0.3).pop();
+  gps.msg=`GPS: ${near?'past '+exitName(near):'just starting out'}${accuracy>500?' · weak signal':''}. Passed exits are hidden.`;
   if(moved||!$('gpsline').textContent)render();
 }
 function onFixErr(e){
@@ -355,7 +376,8 @@ function stopGps(keepMsg){
   if(pos==='GPS'){pos='START';if($('pos'))$('pos').value='START'}
   if(!keepMsg)gps.msg='';
 }
-const meLL=()=>pos==='GPS'&&gps.ll?gps.ll:pos==='GPS'||pos==='START'?START.ll:EXITS.find(e=>e.id===pos).ll;
+const startLL=()=>N()?START.ll:RUTLAND.ll;
+const meLL=()=>pos==='GPS'&&gps.ll?gps.ll:pos==='GPS'||pos==='START'?startLL():EXITS.find(e=>e.id===pos).ll;
 const now0=()=>{const d=new Date();return d.getHours()*60+d.getMinutes()};
 let W={a:now0(),b:now0()+60};
 
@@ -376,13 +398,12 @@ function driveMin(s){return (s.side==='O'||s.side==='A')?1:2+s.mi*2*60/22}
 function addedMin(s){return Math.round(driveMin(s)+STOPS[S.stop].min)}
 
 /* ---- Timing ---- */
-const posMin=()=>pos==='GPS'?(gps.ok?gps.min:0):pos==='START'?0:EXITS.find(x=>x.id===pos).min;
+const posMin=()=>pos==='GPS'?(gps.ok?prog(gps.min):0):pos==='START'?0:prog(EXITS.find(x=>x.id===pos).min);
 const clock=m=>{m=((Math.round(m)%1440)+1440)%1440;let h=Math.floor(m/60),mm=m%60;const ap=h<12?'a':'p';return (h%12||12)+':'+String(mm).padStart(2,'0')+ap};
 const hhmm=m=>{m=((Math.round(m)%1440)+1440)%1440;return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0')};
-function etaOf(x){return now0()+(x.min-posMin())}            // minutes since midnight (may exceed 1440)
+function etaOf(x){return now0()+(prog(x.min)-posMin())}            // minutes since midnight (may exceed 1440)
 function state(x){
-  const south=pos==='GPS'&&gps.dir==='south';
-  if(!south&&x.min<posMin()-(pos==='GPS'?0.3:0))return'behind';
+  if(prog(x.min)<posMin()-(pos==='GPS'?0.3:0))return'behind';
   const e=etaOf(x);let a=W.a,b=W.b;if(b<a)b+=1440;
   const inW=(t)=>t>=a&&t<=b;
   return (inW(e)||inW(e+1440)||inW(e-1440))?'in':'out';
@@ -397,9 +418,17 @@ function renderSeg(){
   $('seg').innerHTML=Object.keys(STOPS).map(k=>`<button data-s="${k}" aria-pressed="${S.stop===k}">${STOPS[k].label}${STOPS[k].min?' '+STOPS[k].min+'m':''}</button>`).join('');
   $('seg').querySelectorAll('button').forEach(b=>b.onclick=()=>{S.stop=b.dataset.s;save();render()});
 }
-function initWindow(){
-  $('pos').innerHTML=`<option value="GPS">Use my location</option><option value="START">Leaving Boston now</option>`+EXITS.filter(x=>!x.rest).map(x=>`<option value="${x.id}">Near ${x.hwy==='89'?'89 ':x.vt?'VT ':''}Exit ${x.label||x.id} · ${esc(x.town.split(' · ')[0])}</option>`).join('');
+function fillPos(){
+  $('pos').innerHTML=`<option value="GPS">Use my location</option><option value="START">Leaving ${N()?'Boston':'Rutland'} now</option>`+ORDER().filter(x=>!x.rest&&x.id!=='RUT7').map(x=>`<option value="${x.id}">Near ${exitName(x)}${x.us4?'':' · '+esc(x.town.split(' · ')[0])}</option>`).join('');
   $('pos').value=pos;
+}
+function renderDir(){
+  $('dirSeg').innerHTML=`<button data-d="north" aria-pressed="${N()}">To Rutland ↑</button><button data-d="south" aria-pressed="${!N()}">To Boston ↓</button>`;
+  $('dirSeg').querySelectorAll('button').forEach(b=>b.onclick=()=>{if(S.dir===b.dataset.d)return;S.dir=b.dataset.d;save();
+    if(pos!=='GPS')pos='START';sel=null;showOut=false;vb=null;fillPos();render()});
+}
+function initWindow(){
+  fillPos();
   $('w0').value=hhmm(W.a);$('w1').value=hhmm(W.b);
   $('pos').onchange=()=>{const v=$('pos').value;sel=null;if(v==='GPS'){pos='GPS';startGps()}else{stopGps();pos=v;render()}};
   try{navigator.permissions&&navigator.permissions.query({name:'geolocation'}).then(r=>{if(r.state==='granted'&&pos==='START'){pos='GPS';$('pos').value='GPS';startGps()}}).catch(()=>{})}catch(e){}
@@ -415,7 +444,7 @@ function exitHead(x,list,col,st,btn){
   const eta=st==='behind'?'passed':'~'+clock(etaOf(x));
   const tag=btn?'button':'div';
   return `<${tag} class="exit-h" ${btn?`data-x="${x.id}" aria-expanded="${!col}" aria-controls="sp-${x.id}"`:''}>
-      <div class="tab ${x.rest?'rest':''}">${x.rest?'<b style="font-size:1rem;padding-block:4px">REST</b>':`<small>${x.hwy==='89'?'89 · EXIT':x.vt?'VT · EXIT':'EXIT'}</small><b>${num}</b>`}</div>
+      <div class="tab ${x.rest?'rest':x.us4?'us':''}">${x.rest?'<b style="font-size:1rem;padding-block:4px">REST</b>':x.us4?`<small>US 4</small><b class="tn">${esc(x.label)}</b>`:`<small>${x.hwy==='89'?'89 · EXIT':x.vt?'VT · EXIT':'EXIT'}</small><b>${num}</b>`}</div>
       <div class="where"><div class="road">${esc(x.road)}</div><div class="sub"><span class="eta">${eta}</span> · ${esc(x.town)}${x.old?` <span class="old">· old ${x.old}</span>`:''}</div></div>
       ${btn?`<span class="cnt">${list.length} spot${list.length===1?'':'s'}<span>from +${quick} min</span></span><span class="chev" aria-hidden="true"></span>`:''}</${tag}>`;
 }
@@ -424,8 +453,8 @@ function spotRow(s){
   const hid=S.hidden.includes(s.id);
   const inner=`<span class="dot" style="--c:var(--c-${s.cat})"></span>
     <span class="info"><span class="nm">${esc(s.name)}</span>${sun?'<span class="tag">Closed today</span>':''}${s.mine?'<span class="tag mine">Added</span>':''}
-    <span class="ad" style="display:block">${esc(s.note||s.addr)}</span></span>
-    <span class="dist"><span class="add">+${addedMin(s)} min</span><span class="mi">${s.side==='O'?'':s.mi.toFixed(s.mi<1?2:1).replace(/0$/,'')+' mi · '}${SIDE[s.side]||''}</span></span>`;
+    <span class="ad" style="display:block">${esc(noteOf(s)||s.addr)}</span></span>
+    <span class="dist"><span class="add">+${addedMin(s)} min</span><span class="mi">${s.side==='O'||(s.side==='A'&&!s.mi)?'':s.mi.toFixed(s.mi<1?2:1).replace(/0$/,'')+' mi · '}${SIDE[sideOf(s)]||''}</span></span>`;
   if(editing)return `<div class="spot ${hid?'closed':''}">${inner}<button class="hide" data-h="${s.id}" aria-label="${hid?'Show':'Hide'} ${esc(s.name)}">${hid?'↺':'✕'}</button></div>`;
   return `<a class="spot ${sun?'closed':''}" href="${mapUrl(s.addr,s.name)}" target="_blank" rel="noopener">${inner}</a>`;
 }
@@ -433,28 +462,31 @@ function visibleSpots(){return spots().filter(s=>catOn(s.cat)&&(editing||!S.hidd
 
 /* ---- Render ---- */
 function render(){
-  renderChips();renderSeg();
+  renderChips();renderSeg();renderDir();
   const gl=$('gpsline');gl.hidden=!gps.msg;gl.textContent=gps.msg;gl.style.setProperty('--gc',pos==='GPS'&&gps.ok?'var(--c-mexican)':gps.on?'var(--accent)':'var(--warn)');
   $('vList').setAttribute('aria-pressed',view==='list');$('vMap').setAttribute('aria-pressed',view==='map');
   const vis=visibleSpots();
   const inCount=vis.filter(s=>{const x=EXITS.find(e=>e.id===s.exit);return x&&state(x)==='in'&&!S.hidden.includes(s.id)}).length;
   $('sub').textContent=`${inCount} spot${inCount===1?'':'s'} in your window`;
   if(view==='map'){renderMap(vis);return}
-  let h='',lastHwy='93',outN=0,anyCol=false,ids=[];
-  EXITS.forEach(x=>{
+  let h='',lastHwy=null,outN=0,anyCol=false,ids=[];
+  const HW=N()?HWYN:HWYS;
+  ORDER().forEach(x=>{
     const list=vis.filter(s=>s.exit===x.id).sort((a,b)=>a.mi-b.mi);
     const hw=x.hwy||'93', st=state(x);
     if(!list.length||st==='behind')return;
     if(st==='out'&&!editing){outN++;if(!showOut)return}
-    if(hw!==lastHwy){lastHwy=hw;const H=HWY[hw];
-      h+=`<div class="hwy">${hw==='VT'?'<span class="vt">VT</span>':`<span class="ishield">${hw}</span>`}<div><div class="road">${H.name}</div><div class="sub">${H.sub}</div></div></div>`}
+    if(hw!==lastHwy){lastHwy=hw;const H=HW[hw];
+      h+=`<div class="hwy">${hw==='VT'?'<span class="vt">VT</span>':hw==='US4'?'<span class="usshield">4</span>':`<span class="ishield">${hw}</span>`}<div><div class="road">${H[0]}</div><div class="sub">${H[1]}</div></div></div>`}
     const col=S.collapsed.includes(x.id);ids.push(x.id);if(!col)anyCol=true;
     h+=`<section class="exit ${col?'col':''} ${st==='out'?'out':''}" id="x-${x.id}">${exitHead(x,list,col,st,true)}<div class="spots" id="sp-${x.id}">${list.map(spotRow).join('')}</div></section>`;
   });
   if(!h)h=`<div class="empty">No exits with ${S.cat==='all'?'food':CATS[S.cat].toLowerCase()} in your window. Widen the window${S.cat!=='all'?' or tap '+CATS[S.cat]+' again to see everything':''}.</div>`;
   if(outN&&!editing)h+=`<button class="outbtn" id="outBtn">${showOut?'Hide':'Show'} ${outN} exit${outN===1?'':'s'} outside your window</button>`;
   if(ids.length)h+=`<button class="outbtn" id="allBtn" style="border-style:solid">${anyCol?'Collapse all':'Expand all'}</button>`;
-  h+=`<div class="end"><div class="tab"><small>US</small><b>4</b></div><div><div class="road" style="font-family:var(--sign-font);font-weight:700">US 4 West</div><div class="sub">Woodstock · Rutland. End of list.</div></div></div>`;
+  h+=N()?`<div class="end"><span class="usshield">4</span><div><div class="road" style="font-family:var(--sign-font);font-weight:700">Rutland</div><div class="sub">End of the route.</div></div></div>`
+        :`<div class="end"><span class="ishield">93</span><div><div class="road" style="font-family:var(--sign-font);font-weight:700">Boston</div><div class="sub">End of the route.${pos!=='GPS'?'':''}</div></div></div>`;
+  if(!N())h+=`<div class="note" style="padding-bottom:12px">Heading south, left and right are flipped from the northbound listings. A few southbound ramps differ, so check the turn as you exit.</div>`;
   if(editing)h+=editPanel();
   $('main').innerHTML=h;
   wireRows($('main'));
@@ -474,8 +506,8 @@ function wireRows(root){
 
 /* ---- Map view: drawn from interchange coordinates (no map tiles) ---- */
 const K=Math.cos(43.1*Math.PI/180);
-const P=ll=>[(ll[1]+72.5)*K*1000,(43.75-ll[0])*1000];
-const FULL={x:-40,y:-40,w:(72.5-71.0)*K*1000+80,h:(43.75-42.33)*1000+80};
+const P=ll=>[(ll[1]+73.05)*K*1000,(43.75-ll[0])*1000];
+const FULL={x:-40,y:-40,w:(73.05-71.0)*K*1000+80,h:(43.75-42.33)*1000+80};
 let vb=null;
 function fitTo(pts,pad=60){
   if(!pts.length){vb={...FULL};return}
@@ -504,8 +536,8 @@ function drawMap(vis){
   const u=vb.w/svg.clientWidth; // user units per screen px
   const line=pts=>pts.map(p=>P(p).join(',')).join(' ');
   const i93=[START.ll].concat(EXITS.filter(x=>!x.hwy).map(x=>x.ll)), split=[43.155,-71.515];
-  const i89=[EXITS.find(x=>x.id==='REST').ll,split].concat(EXITS.filter(x=>x.hwy).map(x=>x.ll));
-  const us4=[EXITS.find(x=>x.id==='V1').ll,[43.6440,-72.3800],US4_END];
+  const i89=[EXITS.find(x=>x.id==='REST').ll,split].concat(EXITS.filter(x=>x.hwy==='89'||x.hwy==='VT').map(x=>x.ll));
+  const us4=ROUTE.filter(r=>r.min>=126).map(r=>r.ll);
   const i93n=[split,[43.30,-71.60],[43.45,-71.66]];
   const maNh=[[42.70,-71.62],[42.74,-71.30],[42.75,-71.20],[42.80,-71.05],[42.87,-70.82]];
   const nhVt=[[43.35,-72.40],[43.55,-72.37],[43.64,-72.32],[43.76,-72.22]];
@@ -513,12 +545,12 @@ function drawMap(vis){
   g+=`<polyline points="${line(maNh)}" fill="none" stroke="#3a463f" stroke-width="${1.5*u}" stroke-dasharray="${6*u} ${5*u}"/>`;
   g+=`<polyline points="${line(nhVt)}" fill="none" stroke="#3a463f" stroke-width="${1.5*u}" stroke-dasharray="${6*u} ${5*u}"/>`;
   const st=(ll,t,dx=0,dy=0)=>{const p=P(ll);return `<text x="${p[0]+dx*u}" y="${p[1]+dy*u}" font-size="${13*u}" fill="#4d5a53" font-weight="800" letter-spacing="${2*u}">${t}</text>`};
-  g+=st([42.62,-71.45],'MA')+st([42.86,-71.55],'NH')+st([43.72,-72.47],'VT');
+  g+=st([42.62,-71.45],'MA')+st([42.86,-71.55],'NH')+st([43.74,-72.62],'VT');
   g+=`<polyline points="${line(i93n)}" fill="none" stroke="#2a3a55" stroke-width="${4*u}" stroke-linecap="round"/>`;
   g+=`<polyline points="${line(i93)}" fill="none" stroke="#3d7be0" stroke-width="${4.5*u}" stroke-linejoin="round" stroke-linecap="round"/>`;
   g+=`<polyline points="${line(i89)}" fill="none" stroke="#3d7be0" stroke-width="${4.5*u}" stroke-linejoin="round" stroke-linecap="round"/>`;
   g+=`<polyline points="${line(us4)}" fill="none" stroke="#d8d4ca" stroke-width="${3.5*u}" stroke-linecap="round"/>`;
-  const towns=[[START.ll,'Boston',8,4],[[42.4795,-71.1235],'Woburn',-52,4],[[42.7140,-71.1960],'Methuen',10,4],[[42.9930,-71.4340],'Manchester',12,4],[[43.2070,-71.5370],'Concord',10,-6],[[43.4100,-71.9850],'New London',10,-8],[[43.6420,-72.2520],'Lebanon',-20,-14],[US4_END,'To Woodstock',-12,20]];
+  const towns=[[START.ll,'Boston',8,4],[[42.4795,-71.1235],'Woburn',-52,4],[[42.7140,-71.1960],'Methuen',10,4],[[42.9930,-71.4340],'Manchester',12,4],[[43.2070,-71.5370],'Concord',10,-6],[[43.4100,-71.9850],'New London',10,-8],[[43.6420,-72.2520],'Lebanon',-20,-14],[[43.6240,-72.5185],'Woodstock',-30,20],[[43.6650,-72.8000],'Killington',-30,-12],[RUTLAND.ll,'Rutland',-20,22]];
   towns.forEach(([ll,t,dx,dy])=>{const p=P(ll);g+=`<text x="${p[0]+dx*u}" y="${p[1]+dy*u}" font-size="${11.5*u}" fill="#98a39c" font-weight="600">${t}</text>`});
   const sh=(ll,t,dx,dy)=>{const p=P(ll),x=p[0]+dx*u,y=p[1]+dy*u;return `<g><path d="M${x-9*u} ${y-10*u}h${18*u}v${10*u}c0 ${7*u}-${5*u} ${10*u}-${9*u} ${12*u}c-${4*u}-${2*u}-${9*u}-${5*u}-${9*u}-${12*u}z" fill="#1f4fa8" stroke="#fff" stroke-width="${1*u}"/><text x="${x}" y="${y+2*u}" font-size="${9*u}" fill="#fff" font-weight="800" text-anchor="middle">${t}</text></g>`};
   g+=sh([42.58,-71.12],'93',22,0)+sh([43.33,-71.84],'89',-4,-18);
@@ -531,7 +563,7 @@ function drawMap(vis){
     g+=`<g data-mx="${x.id}" style="cursor:pointer"><circle cx="${p[0]}" cy="${p[1]}" r="${Math.max(r,14*u)}" fill="transparent"/>
       <circle cx="${p[0]}" cy="${p[1]}" r="${r}" fill="${fill}" stroke="${stroke}" stroke-width="${(isSel?2.5:1.2)*u}" opacity="${st==='behind'?.5:1}"/>`;
     if(n)g+=`<text x="${p[0]}" y="${p[1]+4*u}" font-size="${11*u}" text-anchor="middle" font-weight="800" fill="${st==='in'?'#1d1405':'#c9d0cb'}">${n}</text>`;
-    if(n&&(st==='in'||isSel)&&u<0.9)g+=`<text x="${p[0]+15*u}" y="${p[1]+4*u}" font-size="${10.5*u}" fill="#eef0ec" font-weight="700">${x.rest?'Rest':'Exit '+(x.label||x.id)} · ${clock(etaOf(x))}</text>`;
+    if(n&&(st==='in'||isSel)&&u<0.9)g+=`<text x="${p[0]+15*u}" y="${p[1]+4*u}" font-size="${10.5*u}" fill="#eef0ec" font-weight="700">${exitName(x)} · ${clock(etaOf(x))}</text>`;
     g+='</g>';
   });
   const me=P(meLL());
@@ -563,18 +595,18 @@ function wireMap(){
   const ctr=f=>{const r=svg.getBoundingClientRect();zoomAt(f,r.left+r.width/2,r.top+r.height/2)};
   $('zIn').onclick=()=>ctr(0.6);$('zOut').onclick=()=>ctr(1.6);
   $('zWin').onclick=()=>{fitTo(windowPts());drawMap(visibleSpots())};
-  $('zAll').onclick=()=>{fitTo([P(START.ll),P(US4_END),P([43.70,-72.0])],95);drawMap(visibleSpots())};
+  $('zAll').onclick=()=>{fitTo([P(START.ll),P(RUTLAND.ll),P([43.70,-72.0])],95);drawMap(visibleSpots())};
 }
 
 /* ---- Edit panel ---- */
 function editPanel(){
-  const opts=EXITS.map(x=>`<option value="${x.id}">${x.rest?'Rest area':(x.hwy==='89'?'I-89 ':x.vt?'VT ':'I-93 ')+'Exit '+(x.label||x.id)} · ${esc(x.town.split(' · ')[0])}</option>`).join('');
+  const opts=EXITS.map(x=>`<option value="${x.id}">${x.us4||x.rest?exitName(x):(x.hwy?'':'I-93 ')+exitName(x)} · ${esc(x.town.split(' · ')[0])}</option>`).join('');
   const cats=Object.keys(CATS).filter(k=>k!=='all').map(k=>`<option value="${k}">${CATS[k]}</option>`).join('');
   return `<div class="panel" id="addPanel"><h2>Add a spot</h2>
     <label>Name<input id="fName" autocomplete="off" placeholder="Chick-fil-A"></label>
     <div class="frow"><label>Exit<select id="fExit">${opts}</select></label><label>Type<select id="fCat">${cats}</select></label></div>
     <div class="frow"><label>Miles from exit<input id="fMi" type="number" inputmode="decimal" step="0.05" min="0" value="0.3"></label>
-      <label>Side<select id="fSide"><option value="R">Right</option><option value="L">Left</option><option value="A">Along the route</option><option value="O">At a rest area</option></select></label></div>
+      <label>Side (heading north)<select id="fSide"><option value="R">Right</option><option value="L">Left</option><option value="A">Along the route</option><option value="O">At a rest area</option></select></label></div>
     <label>Address (for directions)<input id="fAddr" autocomplete="off" placeholder="123 Main St, Town, NH"></label>
     <label>Note (optional)<input id="fNote" autocomplete="off" placeholder="Drive-thru, closed Sundays…"></label>
     <button class="btn pri" id="fSave">Add spot</button></div>
@@ -593,10 +625,10 @@ function wireEdit(){
     S.mine.push({id:'m'+Date.now(),exit:$('fExit').value,name,cat:$('fCat').value,mi:Math.max(0,parseFloat($('fMi').value)||0),side:$('fSide').value,
       addr:$('fAddr').value.trim()||name+', '+town.split(' · ')[0],note:$('fNote').value.trim()});
     save();render();toast('Added '+name)};
-  $('fText').onclick=()=>{const all=spots().filter(s=>catOn(s.cat)&&!S.hidden.includes(s.id));let t='',lh='93';
-    EXITS.forEach(x=>{const l=all.filter(s=>s.exit===x.id).sort((a,b)=>a.mi-b.mi);if((x.hwy||'93')!==lh){lh=x.hwy;t+='\n== '+HWY[lh].name+' ==\n'}if(!l.length)return;
-      t+=`\n${x.rest?'Rest area':'Exit '+(x.label||x.id)} – ${x.road}, ${x.town}\n`;l.forEach(s=>t+=`  ${s.name} (+${addedMin(s)} min) – ${s.side==='O'?'at rest area':s.mi+' mi '+(SIDE[s.side]||'').replace(/[←→]/g,'').trim()} – ${s.addr}\n`)});
-    t=('I-93 N / I-89 N fast food, Woburn to US 4\n'+t).trim();
+  $('fText').onclick=()=>{const all=spots().filter(s=>catOn(s.cat)&&!S.hidden.includes(s.id));let t='',lh=null;const HW=N()?HWYN:HWYS;
+    ORDER().forEach(x=>{const l=all.filter(s=>s.exit===x.id).sort((a,b)=>a.mi-b.mi);if(!l.length)return;const hw=x.hwy||'93';if(hw!==lh){lh=hw;t+='\n== '+HW[hw][0]+' ==\n'}
+      t+=`\n${exitName(x)} – ${x.road}, ${x.town}\n`;l.forEach(s=>t+=`  ${s.name} (+${addedMin(s)} min) – ${s.side==='O'?'at rest area':s.side==='A'&&!s.mi?'on the route':s.mi+' mi '+(SIDE[sideOf(s)]||'').replace(/[←→]/g,'').trim()} – ${s.addr}\n`)});
+    t=((N()?'Boston to Rutland':'Rutland to Boston')+' fast food\n'+t).trim();
     const fb=()=>{const ta=$('fJson');ta.hidden=false;ta.value=t;ta.select();toast('Selected. Copy it now')};
     try{navigator.clipboard.writeText(t).then(()=>toast('Text list copied'),fb)}catch(e){fb()}};
   $('fExport').onclick=()=>{const t=JSON.stringify({mine:S.mine,hidden:S.hidden});
@@ -613,4 +645,5 @@ window.addEventListener('resize',()=>{if(view==='map'&&vb)drawMap(visibleSpots()
 let tt;function toast(m){const t=$('toast');t.textContent=m;t.hidden=false;clearTimeout(tt);tt=setTimeout(()=>t.hidden=true,1800)}
 initWindow();render();
 </script>
+
 </body></html>
