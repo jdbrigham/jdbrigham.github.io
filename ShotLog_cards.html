@@ -239,6 +239,21 @@
         .complete-screen h2 {
             color: #ff9999;
         }
+
+        .primary-action {
+
+            background: #aa2222;
+
+            border: 2px solid #ff8888;
+
+            color: white;
+
+            font-size: 1.25rem;
+
+            font-weight: bold;
+
+            padding: 24px;
+        }
     </style>
 </head>
 
@@ -330,10 +345,6 @@
 
             </div>
 
-            <button class="button" onclick="exportResults()">
-                📄 Export Log
-            </button>
-
         </div>
 
         <div id="done" class="complete-screen hidden">
@@ -341,6 +352,14 @@
             <h2>
                 ✅ All Tests Complete
             </h2>
+
+            <p style="color:#ff9999;margin-bottom:20px;">
+                Export your test log before restarting.
+            </p>
+
+            <button class="button primary-action" onclick="exportResults()">
+                📄 Export Log
+            </button>
 
             <button class="button" onclick="restartWorkflow()">
                 Restart Workflow
@@ -452,11 +471,11 @@
         const workflow = [
 
             ...equivalentTests.map(
-                x => ({...x, phase: "Equivalent Exposure"})
+                x => ({ ...x, phase: "Equivalent Exposure" })
             ),
 
             ...bracketingTests.map(
-                x => ({...x, phase: "Bracketing"})
+                x => ({ ...x, phase: "Bracketing" })
             )
 
         ];
@@ -646,7 +665,7 @@
             const blob =
                 new Blob(
                     [csv],
-                    {type: "text/csv"}
+                    { type: "text/csv" }
                 );
 
             const url =
