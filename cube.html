@@ -1,0 +1,1016 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Folding Photo Cube</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #101216;
+      --bg-glow: #20242b;
+      --panel: #191c22;
+      --line: #30353e;
+      --ink: #eceef1;
+      --muted: #969da8;
+      --amber: #ffb454;
+      --amber-ink: #241703;
+      --paper: #d9d0b9;
+      --s: 240px; /* cube edge in px; set from the stage size by layout() */
+    }
+
+    * { box-sizing: border-box }
+
+    [hidden] { display: none !important }
+
+    html, body { height: 100% }
+
+    body {
+      margin: 0;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
+      color: var(--ink);
+      background: radial-gradient(ellipse at 50% 42%, var(--bg-glow) 0, var(--bg) 68%);
+      font-family: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+    }
+
+    header {
+      display: flex;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 2px 16px;
+      padding: 16px 22px 0;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: -.01em;
+    }
+
+    .sub {
+      margin: 0;
+      color: var(--muted);
+      font: 400 .76rem "IBM Plex Mono", ui-monospace, monospace;
+    }
+
+    /* ---------- 3D stage ----------
+       Nothing between .stage and .skin may set overflow, opacity, filter or
+       clip-path: any of those flattens preserve-3d, in Safari especially. */
+    .stage {
+      position: relative;
+      min-height: 0;
+      perspective: calc(var(--s) * 4.5);
+      perspective-origin: 50% 50%;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .stage.can-rotate { cursor: grab }
+    .stage.dragging { cursor: grabbing }
+
+    .rig {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 0;
+      height: 0;
+      transform-style: preserve-3d;
+      -webkit-transform-style: preserve-3d;
+      transform-origin: 0 0 0;
+      pointer-events: none;
+    }
+
+    .face {
+      position: absolute;
+      width: var(--s);
+      height: var(--s);
+      transform-style: preserve-3d;
+      -webkit-transform-style: preserve-3d;
+    }
+
+    .root { left: calc(var(--s) / -2); top: calc(var(--s) / -2) }
+    .h-top { left: 0; top: -100%; transform-origin: 50% 100% }
+    .h-bottom { left: 0; top: 100%; transform-origin: 50% 0 }
+    .h-left { left: -100%; top: 0; transform-origin: 100% 50% }
+    .h-right { left: 100%; top: 0; transform-origin: 0 50% }
+
+    .skin, .paper {
+      position: absolute;
+      inset: -.4px; /* hides antialiasing hairlines along the cube's edges */
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+
+    .skin { overflow: hidden; background: #2a2e36 }
+
+    .skin img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      opacity: 0;
+      transition: opacity 1s ease;
+    }
+
+    .skin img.shown { opacity: 1 }
+
+    .missing {
+      position: absolute;
+      inset: 0;
+      display: none;
+      place-content: center;
+      gap: .3em;
+      text-align: center;
+      color: var(--muted);
+      font: 400 clamp(.6rem, calc(var(--s) * .05), .95rem) "IBM Plex Mono", ui-monospace, monospace;
+    }
+
+    .missing b {
+      color: var(--amber);
+      font: 700 calc(var(--s) * .3) / 1 "Space Grotesk", sans-serif;
+    }
+
+    .skin.no-photo img { display: none }
+    .skin.no-photo .missing { display: grid }
+
+    .shade { position: absolute; inset: 0; z-index: 3; background: #05070b; opacity: 0 }
+
+    .score { position: absolute; z-index: 4; pointer-events: none }
+    .h-top > .skin .score { left: 0; right: 0; bottom: 0; border-bottom: 1px dashed rgba(255, 255, 255, .6) }
+    .h-bottom > .skin .score { left: 0; right: 0; top: 0; border-top: 1px dashed rgba(255, 255, 255, .6) }
+    .h-left > .skin .score { top: 0; bottom: 0; right: 0; border-right: 1px dashed rgba(255, 255, 255, .6) }
+    .h-right > .skin .score { top: 0; bottom: 0; left: 0; border-left: 1px dashed rgba(255, 255, 255, .6) }
+
+    .paper {
+      transform: rotateY(180deg);
+      background: var(--paper);
+      box-shadow: inset 0 0 calc(var(--s) * .14) rgba(50, 38, 15, .4);
+    }
+
+    .floor {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: var(--s);
+      height: calc(var(--s) * .3);
+      border-radius: 50%;
+      background: radial-gradient(closest-side, rgba(0, 0, 0, .85), rgba(0, 0, 0, .4) 55%, transparent);
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .notice {
+      position: absolute;
+      left: 50%;
+      bottom: 10px;
+      z-index: 2;
+      width: max-content;
+      max-width: calc(100% - 32px);
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--panel);
+      color: var(--ink);
+      font: 400 .76rem/1.4 "IBM Plex Mono", ui-monospace, monospace;
+      text-align: center;
+      transform: translateX(-50%);
+      pointer-events: none;
+    }
+
+    /* ---------- Joystick ---------- */
+    .joy-panel {
+      position: absolute;
+      right: 22px;
+      bottom: 14px;
+      display: grid;
+      justify-items: center;
+      gap: 6px;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity .25s, visibility .25s;
+    }
+
+    .joy-panel.on { opacity: 1; visibility: visible }
+
+    .joy-label {
+      color: var(--muted);
+      font: 400 .68rem "IBM Plex Mono", ui-monospace, monospace;
+    }
+
+    .joystick {
+      position: relative;
+      width: 92px;
+      height: 92px;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      background: var(--panel);
+      cursor: grab;
+      touch-action: none;
+    }
+
+    .joystick:active { cursor: grabbing }
+
+    .stick {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 36px;
+      height: 36px;
+      margin: -18px 0 0 -18px;
+      border-radius: 50%;
+      background: var(--amber);
+      pointer-events: none;
+    }
+
+    @media (max-width: 760px), (max-height: 560px) {
+      .joy-panel { display: none } /* the cube itself is the drag target here */
+    }
+
+    /* ---------- Control bar ---------- */
+    .bar {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px 18px;
+      padding: 12px 22px 16px;
+      border-top: 1px solid var(--line);
+      background: var(--panel);
+    }
+
+    button {
+      min-height: 38px;
+      padding: 0 16px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      color: var(--ink);
+      background: transparent;
+      font: 500 .9rem "Space Grotesk", sans-serif;
+      cursor: pointer;
+    }
+
+    button:hover:not(:disabled) { border-color: var(--muted) }
+    button:disabled { opacity: .4; cursor: default }
+
+    #toggle {
+      min-width: 150px;
+      border-color: var(--amber);
+      color: var(--amber-ink);
+      background: var(--amber);
+      font-weight: 700;
+    }
+
+    #toggle:hover { filter: brightness(1.08) }
+
+    label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font: 400 .78rem "IBM Plex Mono", ui-monospace, monospace;
+      cursor: pointer;
+    }
+
+    input { accent-color: var(--amber); margin: 0 }
+    input[type=range] { width: clamp(110px, 20vw, 220px); cursor: pointer }
+
+    :focus-visible { outline: 2px solid var(--amber); outline-offset: 2px }
+
+    .hint {
+      color: var(--muted);
+      font: 400 .72rem "IBM Plex Mono", ui-monospace, monospace;
+    }
+
+    @media (max-width: 900px) { .hint { display: none } }
+
+    @media (pointer: coarse) {
+      label { min-height: 40px }
+      input[type=checkbox] { width: 20px; height: 20px }
+    }
+
+    @media (max-height: 480px) {
+      .sub, #foldLabel { display: none }
+      header { padding-top: 8px }
+      .bar { gap: 2px 12px; padding: 4px 12px }
+      button { min-height: 32px }
+      label { min-height: 32px }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>From paper net to cube</h1>
+    <p class="sub">Six photos, flat on the table, folded along their scored seams.</p>
+  </header>
+
+  <section class="stage" id="stage" aria-label="Photo net that folds into a rotatable cube">
+    <div class="floor" id="floor"></div>
+    <div class="rig" id="rig"></div>
+    <div class="notice" id="notice" role="status" hidden></div>
+    <aside class="joy-panel" id="joyPanel">
+      <div class="joystick" id="joystick" role="img" aria-label="Joystick: push to keep the cube turning">
+        <div class="stick" id="stick"></div>
+      </div>
+      <div class="joy-label">push to turn</div>
+    </aside>
+  </section>
+
+  <div class="bar">
+    <button id="toggle" type="button" aria-pressed="false">Fold into cube</button>
+    <label id="foldLabel">Fold <input id="scrub" type="range" min="0" max="1000" value="0" aria-label="Fold amount"></label>
+    <label><input id="spin" type="checkbox"> Spin</label>
+    <label><input id="auto" type="checkbox"> Auto-fold</label>
+    <label><input id="cyclePhotos" type="checkbox"> Cycle photos</label>
+    <label id="tiltLabel"><input id="tilt" type="checkbox"> Phone tilt</label>
+    <button id="resetView" type="button" disabled>Reset view</button>
+    <span class="hint" id="hint"></span>
+  </div>
+
+  <script>
+    /* ---------- Your photos ----------
+       Keep these files in the same folder as this page. Each face shows one set:
+       name01.png, name02.png, name03.png and so on. Add a file and it joins the
+       rotation with no change here. Names are lowercase and numbers have two digits
+       (web servers such as GitHub Pages treat Astro01.png and astro01.png as different).
+
+       Square crops about 1200 px work best; very large files can strain a phone.
+       `focus` is the CSS object-position used when a photo isn't square.
+       `also` lists extra files shown before the numbered ones.
+
+       The net is laid out as:     [A]
+                               [B] [C] [D] [F]
+                                   [E]
+       The B-C-D-F strip wraps around the cube, so every photo stays upright both
+       flat and folded. A becomes the top and E the bottom. */
+    const PHOTOS = {
+      a: { name: 'all',      focus: 'center 24%', also: ['all.png'] },
+      b: { name: 'astro',    focus: 'center 24%' },
+      c: { name: 'benjamin', focus: 'center 24%' },
+      d: { name: 'jenny',    focus: 'center 24%' },
+      e: { name: 'katie',    focus: 'center 24%' },
+      f: { name: 'lily',     focus: 'center 24%' }
+    };
+    const PHOTO_EXT = 'png';
+    const PHOTO_STEP_MS = 1400;   // one face changes each step, so each set moves about every 7-8 s
+    const PHOTO_MISS_LIMIT = 3;   // consecutive missing numbers that mark the end of a set
+    const PHOTO_MAX = 99;
+
+    /* ---------- Tunables ---------- */
+    const FOLD_SECONDS = 3;
+    const HOME_RX = -24, HOME_RY = 38;   // resting view of the finished cube, degrees
+    const PERSPECTIVE = 4.5;             // viewing distance in cube edges; matches .stage in the CSS
+    const CUBE_FRACTION = .42;           // cube edge as a fraction of the stage's short side
+    const SPIN_SPEED = .45;              // rad/s
+    const JOY_SPEED = 2.2;               // rad/s at full stick
+    const FRICTION = 2.6;                // how fast a flicked cube slows down
+    const CYCLE_HOLD_FOLDED = 5000, CYCLE_HOLD_FLAT = 1800; // ms
+    const TILT_GAIN = 1.5;               // cube degrees per degree of phone movement
+    const TILT_FOLLOW = false;           // false: phone orbits a cube fixed in space; true: cube turns with the phone
+    const TILT_SMOOTHING = 14;           // higher reacts faster, lower is calmer
+
+    // When each hinge moves, as a window of overall fold progress.
+    const HINGES = {
+      b: [.02, .38],
+      d: [.10, .46],
+      f: [.24, .60],
+      e: [.46, .80],
+      a: [.56, .94]
+    };
+
+    const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const $ = id => document.getElementById(id);
+    const stage = $('stage'), rig = $('rig'), floor = $('floor'), toggle = $('toggle'), scrub = $('scrub');
+    const spinBox = $('spin'), autoBox = $('auto'), resetBtn = $('resetView'), hint = $('hint');
+    const cycleBox = $('cyclePhotos'), tiltBox = $('tilt'), tiltLabel = $('tiltLabel'), notice = $('notice');
+    const joyPanel = $('joyPanel'), joystick = $('joystick'), stick = $('stick');
+
+    /* ---------- Build the net ---------- */
+    const parts = {};
+    function buildFace(id, parent, hingeClass) {
+      const face = document.createElement('div');
+      face.className = 'face ' + hingeClass;
+      const skin = document.createElement('div');
+      skin.className = 'skin';
+      // Two stacked images, so a new photo can fade in over the current one.
+      const imgs = [0, 1].map(() => {
+        const img = document.createElement('img');
+        img.alt = '';
+        img.draggable = false;
+        img.style.objectPosition = PHOTOS[id].focus;
+        return img;
+      });
+      const missing = document.createElement('div');
+      missing.className = 'missing';
+      const letter = document.createElement('b');
+      letter.textContent = id.toUpperCase();
+      const name = document.createElement('span');
+      name.textContent = `${PHOTOS[id].name}01.${PHOTO_EXT}`;
+      missing.append(letter, name);
+      const shade = document.createElement('div');
+      shade.className = 'shade';
+      const score = document.createElement('div');
+      score.className = 'score';
+      skin.append(...imgs, missing, shade, score);
+      const paper = document.createElement('div');
+      paper.className = 'paper';
+      face.append(skin, paper);
+      parent.append(face);
+      parts[id] = { face, skin, paper, imgs, shade, score, front: 0, facing: null };
+      return face;
+    }
+    const centerFace = buildFace('c', rig, 'root');
+    buildFace('a', centerFace, 'h-top');
+    buildFace('e', centerFace, 'h-bottom');
+    buildFace('b', centerFace, 'h-left');
+    const rightFace = buildFace('d', centerFace, 'h-right');
+    buildFace('f', rightFace, 'h-right');
+
+    /* ---------- Quaternions: free rotation with no gimbal lock ---------- */
+    const qMul = (a, b) => [
+      a[0] * b[0] - a[1] * b[1] - a[2] * b[2] - a[3] * b[3],
+      a[0] * b[1] + a[1] * b[0] + a[2] * b[3] - a[3] * b[2],
+      a[0] * b[2] - a[1] * b[3] + a[2] * b[0] + a[3] * b[1],
+      a[0] * b[3] + a[1] * b[2] - a[2] * b[1] + a[3] * b[0]
+    ];
+    const qAxis = (x, y, z, angle) => {
+      const s = Math.sin(angle / 2);
+      return [Math.cos(angle / 2), x * s, y * s, z * s];
+    };
+    const qConj = q => [q[0], -q[1], -q[2], -q[3]];
+    const qNorm = q => {
+      const l = Math.hypot(...q);
+      return q.map(v => v / l);
+    };
+    function qSlerp(a, b, t) {
+      let dot = a[0] * b[0] + a[1] * b[1] + a[2] * b[2] + a[3] * b[3];
+      const sign = dot < 0 ? -1 : 1;
+      dot *= sign;
+      if (dot > .9995) return qNorm(a.map((v, i) => v + (sign * b[i] - v) * t));
+      const theta = Math.acos(dot), s = Math.sin(theta);
+      const wa = Math.sin((1 - t) * theta) / s, wb = sign * Math.sin(t * theta) / s;
+      return a.map((v, i) => wa * v + wb * b[i]);
+    }
+    function qMatrix(q) { // rows of the 3x3 rotation matrix
+      const [w, x, y, z] = q;
+      return [
+        [1 - 2 * (y * y + z * z), 2 * (x * y - w * z), 2 * (x * z + w * y)],
+        [2 * (x * y + w * z), 1 - 2 * (x * x + z * z), 2 * (y * z - w * x)],
+        [2 * (x * z - w * y), 2 * (y * z + w * x), 1 - 2 * (x * x + y * y)]
+      ];
+    }
+    const RAD = Math.PI / 180;
+    const Q_FLAT = [1, 0, 0, 0];
+    const Q_HOME = qMul(qAxis(1, 0, 0, HOME_RX * RAD), qAxis(0, 1, 0, HOME_RY * RAD));
+
+    /* ---------- State ---------- */
+    let S = 240, flatScale = .6;
+    let p = 0, goal = 0;                 // fold progress and where it is heading
+    let q = Q_HOME;                      // orientation of the finished cube
+    let vx = 0, vy = 0;                  // leftover angular velocity from a flick
+    let joyX = 0, joyY = 0;
+    let scrubbing = false, dragging = false, reset = null;
+    let raf = 0, last = 0, cycleTimer = 0;
+    let tilt = Q_FLAT, tiltTarget = Q_FLAT;  // extra rotation from moving the phone
+    let tiltOn = false, tiltRef = null, tiltSeen = false;
+
+    const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+    const mix = (a, b, t) => a + (b - a) * t;
+    const easeHinge = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    const easePose = t => .5 - .5 * Math.cos(Math.PI * t);
+    const hinge = id => easeHinge(clamp((p - HINGES[id][0]) / (HINGES[id][1] - HINGES[id][0])));
+
+    /* ---------- Layout ---------- */
+    function layout() {
+      const W = stage.clientWidth, H = stage.clientHeight, pad = 18;
+      const flatEdge = Math.min((W - 2 * pad) / 4, (H - 2 * pad) / 3); // net is 4 faces wide, 3 tall
+      S = Math.round(Math.max(Math.min(W, H) * CUBE_FRACTION, flatEdge));
+      flatScale = flatEdge / S;
+      document.documentElement.style.setProperty('--s', S + 'px');
+      render();
+    }
+
+    /* ---------- Draw one frame ---------- */
+    const LIGHT = (() => {
+      const v = [-.25, -.5, .83], l = Math.hypot(...v);
+      return v.map(n => n / l);
+    })();
+
+    function render() {
+      const pose = easePose(p);
+      const m = qMatrix(qSlerp(Q_FLAT, qMul(tilt, q), pose));
+
+      // Pivot glides from the middle of the flat net to the middle of the cube,
+      // so the net starts centered and the cube always turns about its own center.
+      // Scale holds until the top and bottom flaps start closing, or they'd run off the stage.
+      const px = mix(S / 2, 0, pose), pz = mix(0, -S / 2, pose);
+      const k = mix(flatScale, 1, easePose(clamp((p - .5) / .5))) * (1 - .1 * Math.sin(Math.PI * p));
+      rig.style.transform =
+        `scale3d(${k},${k},${k}) matrix3d(${m[0][0]},${m[1][0]},${m[2][0]},0,${m[0][1]},${m[1][1]},${m[2][1]},0,${m[0][2]},${m[1][2]},${m[2][2]},0,0,0,0,1) translate3d(${-px}px,0,${-pz}px)`;
+
+      const fb = hinge('b'), fd = hinge('d'), ff = hinge('f'), fe = hinge('e'), fa = hinge('a');
+      parts.a.face.style.transform = `rotateX(${90 * fa}deg)`;
+      parts.e.face.style.transform = `rotateX(${-90 * fe}deg)`;
+      parts.b.face.style.transform = `rotateY(${-90 * fb}deg)`;
+      parts.d.face.style.transform = `rotateY(${90 * fd}deg)`;
+      parts.f.face.style.transform = `rotateY(${90 * ff}deg)`;
+      parts.a.score.style.opacity = 1 - fa;
+      parts.e.score.style.opacity = 1 - fe;
+      parts.b.score.style.opacity = 1 - fb;
+      parts.d.score.style.opacity = 1 - fd;
+      parts.f.score.style.opacity = 1 - ff;
+
+      // Light each face by the way it points; a flat sheet stays unshaded.
+      const h = Math.PI / 2;
+      const normals = {
+        c: [0, 0, 1],
+        a: [0, -Math.sin(h * fa), Math.cos(h * fa)],
+        e: [0, Math.sin(h * fe), Math.cos(h * fe)],
+        b: [-Math.sin(h * fb), 0, Math.cos(h * fb)],
+        d: [Math.sin(h * fd), 0, Math.cos(h * fd)],
+        f: [Math.sin(h * (fd + ff)), 0, Math.cos(h * (fd + ff))]
+      };
+      // Where each face's center sits in the net, used below to find what the viewer can see.
+      const half = S / 2, sinF = Math.sin(h * fd), cosF = Math.cos(h * fd);
+      const centers = {
+        c: [0, 0, 0],
+        a: [0, -half - half * Math.cos(h * fa), -half * Math.sin(h * fa)],
+        e: [0, half + half * Math.cos(h * fe), -half * Math.sin(h * fe)],
+        b: [-half - half * Math.cos(h * fb), 0, -half * Math.sin(h * fb)],
+        d: [half + half * cosF, 0, -half * sinF],
+        f: [half + S * cosF + half * Math.cos(h * (fd + ff)), 0, -S * sinF - half * Math.sin(h * (fd + ff))]
+      };
+      const camera = S * PERSPECTIVE, closed = p === 1;
+      for (const id in normals) {
+        const n = normals[id], part = parts[id];
+        const nx = m[0][0] * n[0] + m[0][1] * n[1] + m[0][2] * n[2];
+        const ny = m[1][0] * n[0] + m[1][1] * n[1] + m[1][2] * n[2];
+        const nz = m[2][0] * n[0] + m[2][1] * n[1] + m[2][2] * n[2];
+        part.shade.style.opacity = (clamp((LIGHT[2] - (LIGHT[0] * nx + LIGHT[1] * ny + LIGHT[2] * nz)) / 1.3) * .42).toFixed(3);
+
+        // backface-visibility can't be relied on here: in Safari it hides the .skin layer but
+        // not a fading photo inside it, which then paints over the cube from behind. So hide
+        // any photo facing away from the viewer directly. The papers are out of sight once closed.
+        const c = centers[id], x = c[0] - px, y = c[1], z = c[2] - pz;
+        const wx = k * (m[0][0] * x + m[0][1] * y + m[0][2] * z);
+        const wy = k * (m[1][0] * x + m[1][1] * y + m[1][2] * z);
+        const wz = k * (m[2][0] * x + m[2][1] * y + m[2][2] * z);
+        const facing = nx * -wx + ny * -wy + nz * (camera - wz) > 0;
+        const state = (facing ? 1 : 0) + (closed ? 2 : 0);
+        if (part.facing !== state) {
+          part.facing = state;
+          part.skin.style.visibility = facing ? 'visible' : 'hidden';
+          part.paper.style.visibility = closed ? 'hidden' : 'visible';
+        }
+      }
+
+      // Soft shadow on an imaginary floor, as wide as the cube's footprint.
+      const footprint = Math.abs(m[0][0]) + Math.abs(m[0][1]) + Math.abs(m[0][2]);
+      floor.style.opacity = (clamp((pose - .35) / .65) * .75).toFixed(3);
+      floor.style.transform = `translate(-50%,-50%) translateY(${S * 1.1}px) scale(${(footprint * 1.05).toFixed(3)},1)`;
+    }
+
+    /* ---------- Main loop: only runs while something is moving ---------- */
+    const folded = () => p === 1;
+    const spinning = () => !REDUCED && (spinBox.checked || autoBox.checked) && folded() && !dragging;
+    const tiltMoving = () => {
+      if (!tiltOn || p === 0) return false;
+      return Math.abs(tilt[0] * tiltTarget[0] + tilt[1] * tiltTarget[1] + tilt[2] * tiltTarget[2] + tilt[3] * tiltTarget[3]) < .999999;
+    };
+    const moving = () => p !== goal || reset || Math.abs(vx) + Math.abs(vy) > .002 || joyX || joyY || spinning() || tiltMoving();
+
+    function wake() {
+      if (!raf) {
+        last = performance.now();
+        raf = requestAnimationFrame(frame);
+      }
+    }
+
+    function turn(ax, ay) { // rotate about the screen's own X and Y axes
+      // q sits underneath the phone's rotation, so convert the turn into its frame.
+      const inFrame = d => qMul(qMul(qConj(tilt), d), tilt);
+      if (ax) q = qMul(inFrame(qAxis(1, 0, 0, ax)), q);
+      if (ay) q = qMul(inFrame(qAxis(0, 1, 0, ay)), q);
+      q = qNorm(q);
+    }
+
+    function frame(now) {
+      raf = 0;
+      const dt = Math.min(.05, (now - last) / 1000);
+      last = now;
+
+      if (p !== goal && !scrubbing) {
+        const step = dt / (REDUCED ? .01 : FOLD_SECONDS);
+        p = goal > p ? Math.min(goal, p + step) : Math.max(goal, p - step);
+        if (p === goal) arrived();
+      }
+
+      if (folded() && !dragging) {
+        if (reset) {
+          reset.t = Math.min(1, reset.t + dt / (REDUCED ? .01 : .7));
+          q = qSlerp(reset.from, Q_HOME, easePose(reset.t));
+          if (reset.t === 1) reset = null;
+        } else {
+          turn(vx * dt, vy * dt);
+          const decay = Math.exp(-FRICTION * dt);
+          vx *= decay;
+          vy *= decay;
+          if (joyX || joyY) turn(-joyY * JOY_SPEED * dt, joyX * JOY_SPEED * dt);
+          if (spinning()) turn(0, SPIN_SPEED * dt);
+        }
+      }
+
+      if (tiltMoving()) tilt = qNorm(qSlerp(tilt, tiltTarget, 1 - Math.exp(-TILT_SMOOTHING * dt)));
+
+      syncUI();
+      render();
+      if (moving()) raf = requestAnimationFrame(frame);
+    }
+
+    function arrived() {
+      if (p === 0) { // back to flat: the next fold lands on the resting view
+        q = Q_HOME;
+        vx = vy = 0;
+        reset = null;
+        tilt = tiltTarget = Q_FLAT;
+        tiltRef = null;
+      }
+      clearTimeout(cycleTimer);
+      if (autoBox.checked && !scrubbing) {
+        cycleTimer = setTimeout(() => {
+          if (autoBox.checked) setGoal(p === 1 ? 0 : 1);
+        }, p === 1 ? CYCLE_HOLD_FOLDED : CYCLE_HOLD_FLAT);
+      }
+    }
+
+    function setGoal(value) {
+      goal = value;
+      clearTimeout(cycleTimer);
+      syncUI();
+      wake();
+    }
+
+    function syncUI() {
+      const toCube = goal < .5;
+      const label = toCube ? 'Fold into cube' : 'Unfold to flat';
+      if (toggle.textContent !== label) toggle.textContent = label;
+      toggle.setAttribute('aria-pressed', String(!toCube));
+      if (!scrubbing) scrub.value = Math.round(p * 1000);
+      const ready = folded();
+      stage.classList.toggle('can-rotate', ready);
+      joyPanel.classList.toggle('on', ready);
+      resetBtn.disabled = !ready;
+      const text = ready ? 'drag cube · arrows turn · R reset' : 'F or space folds';
+      if (hint.textContent !== text) hint.textContent = text;
+    }
+
+    /* ---------- Controls ---------- */
+    function stopAuto() {
+      autoBox.checked = false;
+      clearTimeout(cycleTimer);
+    }
+
+    function toggleFold() {
+      stopAuto();
+      setGoal(goal >= .5 ? 0 : 1);
+    }
+
+    function resetCube() {
+      if (!folded()) return;
+      spinBox.checked = false;
+      vx = vy = 0;
+      bakeTilt(); // the phone's current position becomes the new center
+      reset = { from: q, t: 0 };
+      wake();
+    }
+
+    toggle.addEventListener('click', toggleFold);
+    resetBtn.addEventListener('click', resetCube);
+    spinBox.addEventListener('change', wake);
+
+    autoBox.addEventListener('change', () => {
+      clearTimeout(cycleTimer);
+      if (autoBox.checked) {
+        if (p === 1 || p === 0) arrived();
+        if (p === 0) setGoal(1); // start straight away rather than holding flat first
+        else if (p !== 1) setGoal(goal >= .5 ? 1 : 0);
+      }
+      wake();
+    });
+
+    scrub.addEventListener('pointerdown', () => { scrubbing = true; stopAuto(); });
+    scrub.addEventListener('input', () => {
+      stopAuto();
+      p = goal = scrub.value / 1000;
+      if (p === 0) arrived();
+      syncUI();
+      render();
+    });
+    // On window, because the pointer may be released well off the slider.
+    const endScrub = () => { scrubbing = false; };
+    window.addEventListener('pointerup', endScrub);
+    window.addEventListener('pointercancel', endScrub);
+
+    /* Drag anywhere on the stage to turn the finished cube, then let go to flick it. */
+    let lastX = 0, lastY = 0, lastMove = 0;
+    stage.addEventListener('pointerdown', e => {
+      if (!folded() || e.target.closest('.joy-panel')) return;
+      dragging = true;
+      reset = null;
+      vx = vy = 0;
+      lastX = e.clientX;
+      lastY = e.clientY;
+      lastMove = e.timeStamp;
+      stage.setPointerCapture(e.pointerId);
+      stage.classList.add('dragging');
+    });
+    stage.addEventListener('pointermove', e => {
+      if (!dragging) return;
+      const perPixel = 2.4 / S;
+      const ax = -(e.clientY - lastY) * perPixel, ay = (e.clientX - lastX) * perPixel;
+      const dt = Math.max(.004, (e.timeStamp - lastMove) / 1000);
+      turn(ax, ay);
+      vx = mix(vx, ax / dt, .35);
+      vy = mix(vy, ay / dt, .35);
+      lastX = e.clientX;
+      lastY = e.clientY;
+      lastMove = e.timeStamp;
+      render();
+    });
+    function endDrag(e) {
+      if (!dragging) return;
+      dragging = false;
+      stage.classList.remove('dragging');
+      if (REDUCED || e.timeStamp - lastMove > 80) vx = vy = 0; // held still before letting go
+      vx = clamp(vx, -9, 9);
+      vy = clamp(vy, -9, 9);
+      wake();
+    }
+    stage.addEventListener('pointerup', endDrag);
+    stage.addEventListener('pointercancel', endDrag);
+
+    /* Joystick: stick position sets rotation speed, and it springs back to center. */
+    let joyActive = false;
+    function joyMove(e) {
+      const r = joystick.getBoundingClientRect(), radius = r.width / 2 - 14;
+      let dx = (e.clientX - r.left - r.width / 2) / radius;
+      let dy = (e.clientY - r.top - r.height / 2) / radius;
+      const len = Math.hypot(dx, dy);
+      if (len > 1) { dx /= len; dy /= len; }
+      joyX = dx;
+      joyY = dy;
+      stick.style.transform = `translate(${dx * radius}px,${dy * radius}px)`;
+      wake();
+    }
+    joystick.addEventListener('pointerdown', e => {
+      if (!folded()) return;
+      joyActive = true;
+      reset = null;
+      joystick.setPointerCapture(e.pointerId);
+      joyMove(e);
+    });
+    joystick.addEventListener('pointermove', e => { if (joyActive) joyMove(e); });
+    function joyEnd() {
+      joyActive = false;
+      joyX = joyY = 0;
+      stick.style.transform = '';
+    }
+    joystick.addEventListener('pointerup', joyEnd);
+    joystick.addEventListener('pointercancel', joyEnd);
+
+    document.addEventListener('keydown', e => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const onControl = e.target.closest('button, input');
+      const key = e.key.toLowerCase();
+      if (key === 'f') { toggleFold(); return; }
+      if (key === 'r') { resetCube(); return; }
+      if (key === ' ' && !onControl) { e.preventDefault(); toggleFold(); return; }
+      if (!folded() || e.target.matches('input[type=range]')) return;
+      const nudge = { arrowleft: [0, -1.4], arrowright: [0, 1.4], arrowup: [-1.4, 0], arrowdown: [1.4, 0] }[key];
+      if (nudge) {
+        e.preventDefault();
+        reset = null;
+        vx += nudge[0];
+        vy += nudge[1];
+        wake();
+      }
+    });
+
+    /* ---------- Notices ---------- */
+    let noticeTimer = 0;
+    function say(text, ms = 6000) {
+      notice.textContent = text;
+      notice.hidden = false;
+      clearTimeout(noticeTimer);
+      noticeTimer = setTimeout(() => { notice.hidden = true; }, ms);
+    }
+
+    /* ---------- Photo sets ----------
+       A web page can't list a folder, so each set is found by trying the next number.
+       Files load one at a time as they are needed, which keeps a phone's memory free. */
+    const FACE_ORDER = ['c', 'd', 'f', 'b', 'a', 'e']; // the order faces take their turn
+    const sets = {};
+    for (const id in PHOTOS) sets[id] = { files: [], cur: -1, tried: 0, misses: 0, done: false, busy: false };
+
+    function candidate(id, n) {
+      const also = PHOTOS[id].also || [];
+      if (n < also.length) return also[n];
+      const num = n - also.length + 1;
+      return num > PHOTO_MAX ? null : `${PHOTOS[id].name}${String(num).padStart(2, '0')}.${PHOTO_EXT}`;
+    }
+
+    function loadInto(img, src) {
+      if (img.getAttribute('src') === src && img.complete && img.naturalWidth) return Promise.resolve(true);
+      return new Promise(resolve => {
+        img.onload = () => {
+          // Decode before the fade so the swap never stutters.
+          const ready = img.decode ? img.decode().catch(() => {}) : Promise.resolve();
+          ready.then(() => resolve(true));
+        };
+        img.onerror = () => resolve(false);
+        img.src = src;
+      });
+    }
+
+    async function fetchNext(id, img) { // loads the set's next photo into img; false if there is no other
+      const set = sets[id];
+      while (!set.done) {
+        const src = candidate(id, set.tried++);
+        if (!src) { set.done = true; break; }
+        if (await loadInto(img, src)) {
+          set.files.push(src);
+          set.cur = set.files.length - 1;
+          set.misses = 0;
+          return true;
+        }
+        if (++set.misses >= PHOTO_MISS_LIMIT) set.done = true;
+      }
+      if (set.files.length < 2) return false;
+      set.cur = (set.cur + 1) % set.files.length;
+      return loadInto(img, set.files[set.cur]);
+    }
+
+    async function nextPhoto(id) {
+      const set = sets[id], part = parts[id];
+      if (set.busy) return;
+      set.busy = true;
+      const back = part.imgs[1 - part.front], front = part.imgs[part.front];
+      if (await fetchNext(id, back)) {
+        back.style.zIndex = 2;
+        front.style.zIndex = 1;
+        back.classList.add('shown');
+        part.skin.classList.remove('no-photo');
+        part.front = 1 - part.front;
+        // Hide the old photo once it's covered, ready to be the next one in.
+        setTimeout(() => { if (part.imgs[part.front] !== front) front.classList.remove('shown'); }, 1100);
+      } else if (!set.files.length) {
+        part.skin.classList.add('no-photo');
+      }
+      set.busy = false;
+    }
+
+    const canChange = id => !sets[id].done || sets[id].files.length > 1;
+    let photoTimer = 0, photoTurn = 0;
+    function photoStep() {
+      if (document.hidden) return;
+      for (let i = 0; i < FACE_ORDER.length; i++) {
+        const id = FACE_ORDER[photoTurn++ % FACE_ORDER.length];
+        if (canChange(id)) { nextPhoto(id); return; }
+      }
+      clearInterval(photoTimer);
+      cycleBox.checked = false;
+      say(`No face has a second photo yet. Add files such as astro02.${PHOTO_EXT} and astro03.${PHOTO_EXT}.`);
+    }
+    cycleBox.addEventListener('change', () => {
+      clearInterval(photoTimer);
+      if (cycleBox.checked) {
+        photoStep();
+        photoTimer = setInterval(photoStep, PHOTO_STEP_MS);
+      }
+    });
+
+    /* ---------- Phone tilt ----------
+       deviceorientation reports the phone's attitude as alpha, beta and gamma. Those become a
+       quaternion, and the change since a reference attitude becomes an extra rotation of the
+       cube, so drag, spin and reset all keep working underneath it. */
+    const screenAngle = () => {
+      if (screen.orientation && typeof screen.orientation.angle === 'number') return screen.orientation.angle;
+      return window.orientation || 0; // older iOS
+    };
+
+    function phoneAttitude(e) {
+      const device = qMul(qMul(
+        qAxis(0, 0, 1, (e.alpha || 0) * RAD),
+        qAxis(1, 0, 0, (e.beta || 0) * RAD)),
+        qAxis(0, 1, 0, (e.gamma || 0) * RAD));
+      return qMul(device, qAxis(0, 0, 1, -screenAngle() * RAD)); // keep it right when the screen rotates
+    }
+
+    function scaleRotation(d, gain) {
+      const w = clamp(d[0], -1, 1), angle = 2 * Math.acos(Math.abs(w));
+      const len = Math.hypot(d[1], d[2], d[3]);
+      if (len < 1e-6) return Q_FLAT;
+      const sign = w < 0 ? -1 : 1;
+      return qAxis(sign * d[1] / len, sign * d[2] / len, sign * d[3] / len, angle * gain);
+    }
+
+    function onOrientation(e) {
+      if (e.beta === null || e.beta === undefined) return;
+      tiltSeen = true;
+      const now = phoneAttitude(e);
+      if (!tiltRef || p === 0) { // while flat, the reference just follows the phone
+        tiltRef = now;
+        if (p === 0) tilt = Q_FLAT;
+        tiltTarget = tilt;
+        return;
+      }
+      let delta = qMul(qConj(now), tiltRef);
+      if (TILT_FOLLOW) delta = qConj(delta);
+      const scaled = scaleRotation(delta, TILT_GAIN);
+      // The sensor's axes have y pointing up, while the page's y points down.
+      tiltTarget = [scaled[0], -scaled[1], scaled[2], -scaled[3]];
+      wake();
+    }
+
+    function bakeTilt() { // absorb the current tilt into q and start again from this attitude
+      q = qNorm(qMul(tilt, q));
+      tilt = tiltTarget = Q_FLAT;
+      tiltRef = null;
+    }
+
+    async function enableTilt() {
+      if (!window.isSecureContext) {
+        say('Phone tilt needs an https:// page. Phones block motion sensors on file:// and plain http://.', 9000);
+        return false;
+      }
+      if (typeof DeviceOrientationEvent.requestPermission === 'function') { // iPhone and iPad
+        let answer = 'denied';
+        try {
+          answer = await DeviceOrientationEvent.requestPermission();
+        } catch (err) {
+          answer = 'error';
+        }
+        if (answer !== 'granted') {
+          say('Motion access was not granted. To ask again, close this Safari tab, reopen the page and try once more.', 9000);
+          return false;
+        }
+      }
+      tiltSeen = false;
+      tiltRef = null;
+      tiltOn = true;
+      window.addEventListener('deviceorientation', onOrientation);
+      setTimeout(() => {
+        if (tiltOn && !tiltSeen) {
+          disableTilt();
+          tiltBox.checked = false;
+          say('No motion data is reaching this page, so phone tilt is off.', 9000);
+        }
+      }, 2000);
+      return true;
+    }
+
+    function disableTilt() {
+      window.removeEventListener('deviceorientation', onOrientation);
+      tiltOn = false;
+      bakeTilt();
+    }
+
+    if (!('DeviceOrientationEvent' in window) || !matchMedia('(pointer: coarse)').matches) tiltLabel.hidden = true;
+
+    // On click, because iOS only shows its permission prompt from a direct tap.
+    tiltBox.addEventListener('click', async () => {
+      if (tiltBox.checked) {
+        tiltBox.checked = await enableTilt();
+      } else {
+        disableTilt();
+        render();
+      }
+    });
+
+    // Turning the phone sideways changes the axes, so start from the new attitude.
+    const onScreenTurn = () => { if (tiltOn) { bakeTilt(); render(); } };
+    if (screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener('change', onScreenTurn);
+    else window.addEventListener('orientationchange', onScreenTurn);
+
+    for (const id in PHOTOS) nextPhoto(id);
+
+    new ResizeObserver(layout).observe(stage);
+    layout();
+    syncUI();
+  </script>
+</body>
+
+</html>
