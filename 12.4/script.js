@@ -31,6 +31,18 @@ const CONFIG = {
     fps: 30,
   },
 
+  // Choices offered in the Run for / Every pickers
+  durationChoicesMin: [10, 15, 20, 30, 45, 60, 90, 120, 150, 180, 240, 300, 360, 480, 600, 720],
+  intervalChoicesSec: [1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30, 45, 60, 90, 120, 180, 300, 600],
+
+  // Start-time dial
+  dial: {
+    pxPerMin: 3,        // tape scale: 3 px per minute = 180 px per hour
+    snapMin: 5,         // settles on 5-minute marks
+    hoursBack: 2,       // how far before now you can scroll
+    hoursAhead: 36,     // and how far ahead
+  },
+
   storageKey: 'tlcalc.v12.4',
 };
 
@@ -47,15 +59,6 @@ function load() {
 
 const pad = (n) => String(n).padStart(2, '0');
 
-function hhmmToMin(v) {
-  if (!v) return null;
-  const [h, m] = v.split(':').map(Number);
-  return h * 60 + m;
-}
-function minToHHMM(min) {
-  min = ((Math.round(min) % 1440) + 1440) % 1440;
-  return pad(Math.floor(min / 60)) + ':' + pad(min % 60);
-}
 function fmtClock(date, withSeconds) {
   const opts = { hour: 'numeric', minute: '2-digit' };
   if (withSeconds && date.getSeconds() !== 0) opts.second = '2-digit';
@@ -99,6 +102,7 @@ const state = {
   sizeJpeg:saved.sizeJpeg?? CONFIG.fileSizeMB.jpeg,
   intervalSec: saved.intervalSec ?? CONFIG.defaults.intervalSec,
   durationMin: saved.durationMin ?? CONFIG.defaults.durationMin,
+  startMin: 0,   // set on load to now (rounded up to 5 min)
 };
 
 /* ---------- segmented controls ---------- */
@@ -121,52 +125,201 @@ function paintSeg(id, val) {
   });
 }
 
-/* ---------- time window ---------- */
-function roundedNowMin() {
+/* ---------- start-time dial ---------- */
+function nowMin() {
   const d = new Date();
-  return Math.ceil((d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60) / 5) * 5;
+  return d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60;
 }
-function setStartNow() {
-  const dur = getDurationMin() || state.durationMin;
-  const s = roundedNowMin();
-  $('startTime').value = minToHHMM(s);
-  $('endTime').value = minToHHMM(s + dur);
-  update();
+function roundedNowMin() {
+  return Math.ceil(nowMin() / 5) * 5;
 }
-function getDurationMin() {
-  const s = hhmmToMin($('startTime').value), e = hhmmToMin($('endTime').value);
-  if (s == null || e == null) return 0;
-  let d = e - s;
-  if (d <= 0) d += 1440; // crosses midnight
-  return d;
+function midnightToday() {
+  const d = new Date(); d.setHours(0, 0, 0, 0); return d;
+}
+function minToDate(min) {
+  return new Date(midnightToday().getTime() + min * 60000);
 }
 
-/* ---------- interval ---------- */
-function getIntervalSec() {
-  const m = Math.max(0, Math.min(60, parseInt($('intMin').value, 10) || 0));
-  const s = Math.max(0, Math.min(59, parseInt($('intSec').value, 10) || 0));
-  return m * 60 + s;
+const Dial = {
+  el: null, strip: null, R0: 0, R1: 0, PX: CONFIG.dial.pxPerMin,
+  value: 0, anim: null, drag: null, wheelTimer: null,
+
+  build() {
+    this.el = $('dial'); this.strip = $('dialStrip');
+    const n = nowMin();
+    this.R0 = Math.floor((n - CONFIG.dial.hoursBack * 60) / 60) * 60;
+    this.R1 = Math.ceil((n + CONFIG.dial.hoursAhead * 60) / 60) * 60;
+    this.strip.style.width = (this.R1 - this.R0) * this.PX + 'px';
+
+    // ticks every 5 min, labels every 30 min
+    const frag = document.createDocumentFragment();
+    for (let m = this.R0; m <= this.R1; m += 5) {
+      const x = (m - this.R0) * this.PX;
+      const t = document.createElement('i');
+      t.className = 'tk' + (m % 60 === 0 ? ' h' : m % 15 === 0 ? ' q' : '');
+      t.style.left = x + 'px';
+      frag.appendChild(t);
+      if (m % 30 === 0) {
+        const d = minToDate(m);
+        const l = document.createElement('span');
+        l.className = 'tl' + (m % 60 === 0 ? ' h' : '');
+        l.style.left = x + 'px';
+        l.textContent = m % 60 === 0 ? fmtHour(d) : ':30';
+        if (((m % 1440) + 1440) % 1440 === 0) {
+          const day = document.createElement('small');
+          day.textContent = d.toLocaleDateString([], { weekday: 'short' });
+          l.appendChild(day);
+        }
+        frag.appendChild(l);
+      }
+    }
+    this.strip.appendChild(frag);
+    this.bind();
+  },
+
+  clamp(v) { return Math.max(this.R0, Math.min(this.R1, v)); },
+
+  // place the strip so `v` sits under the centre needle
+  paint() {
+    const w = this.el.clientWidth;
+    const x = w / 2 - (this.value - this.R0) * this.PX;
+    this.strip.style.transform = `translate3d(${x}px,0,0)`;
+    $('dialPast').style.width = Math.max(0, (nowMin() - this.R0) * this.PX) + 'px';
+    const run = $('dialRun');
+    run.style.left = (this.value - this.R0) * this.PX + 'px';
+    run.style.width = state.durationMin * this.PX + 'px';
+    this.el.setAttribute('aria-valuetext', fmtClock(minToDate(this.value)));
+  },
+
+  set(v) {
+    v = this.clamp(v);
+    this.value = v;
+    const step = CONFIG.dial.snapMin;
+    state.startMin = Math.round(v / step) * step;
+    this.paint();
+    update();
+  },
+
+  stop() { if (this.anim) cancelAnimationFrame(this.anim); this.anim = null; },
+
+  // ease to a target (used for snapping, taps and the Now button)
+  glideTo(target) {
+    this.stop();
+    target = this.clamp(target);
+    const from = this.value, t0 = performance.now(), dur = 260;
+    const step = (t) => {
+      const k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+      this.set(from + (target - from) * e);
+      if (k < 1) this.anim = requestAnimationFrame(step);
+      else { this.value = target; this.anim = null; }
+    };
+    this.anim = requestAnimationFrame(step);
+  },
+
+  snap() {
+    const s = CONFIG.dial.snapMin;
+    this.glideTo(Math.round(this.value / s) * s);
+  },
+
+  // flick momentum, then settle on a 5-min mark
+  coast(velMinPerMs) {
+    this.stop();
+    let last = performance.now();
+    const step = (t) => {
+      const dt = t - last; last = t;
+      velMinPerMs *= Math.pow(0.994, dt);
+      const next = this.clamp(this.value + velMinPerMs * dt);
+      const hitEdge = next === this.R0 || next === this.R1;
+      this.set(next);
+      if (Math.abs(velMinPerMs) > 0.004 && !hitEdge) this.anim = requestAnimationFrame(step);
+      else { this.anim = null; this.snap(); }
+    };
+    this.anim = requestAnimationFrame(step);
+  },
+
+  bind() {
+    const el = this.el;
+    el.addEventListener('pointerdown', (e) => {
+      this.stop();
+      el.setPointerCapture(e.pointerId);
+      this.drag = { x0: e.clientX, v0: this.value, moved: false, samples: [[performance.now(), e.clientX]] };
+    });
+    el.addEventListener('pointermove', (e) => {
+      const d = this.drag; if (!d) return;
+      const dx = e.clientX - d.x0;
+      if (Math.abs(dx) > 4) d.moved = true;
+      d.samples.push([performance.now(), e.clientX]);
+      if (d.samples.length > 6) d.samples.shift();
+      this.set(d.v0 - dx / this.PX);
+    });
+    const end = (e) => {
+      const d = this.drag; if (!d) return;
+      this.drag = null;
+      if (!d.moved) {
+        // tap: jump to the tapped spot on the tape
+        const r = el.getBoundingClientRect();
+        this.glideTo(Math.round((this.value + (e.clientX - r.left - r.width / 2) / this.PX) / CONFIG.dial.snapMin) * CONFIG.dial.snapMin);
+        return;
+      }
+      const [t1, x1] = d.samples[d.samples.length - 1];
+      const [t0, x0] = d.samples[0];
+      const vPx = (t1 - t0) > 0 && performance.now() - t1 < 80 ? (x1 - x0) / (t1 - t0) : 0;
+      if (Math.abs(vPx) > 0.15) this.coast(-vPx / this.PX);
+      else this.snap();
+    };
+    el.addEventListener('pointerup', end);
+    el.addEventListener('pointercancel', end);
+
+    // trackpad / mouse wheel
+    el.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      this.stop();
+      const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+      this.set(this.value + delta / this.PX);
+      clearTimeout(this.wheelTimer);
+      this.wheelTimer = setTimeout(() => this.snap(), 120);
+    }, { passive: false });
+
+    // keyboard: ←/→ 5 min, shift for an hour
+    el.addEventListener('keydown', (e) => {
+      const step = e.shiftKey ? 60 : CONFIG.dial.snapMin;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { e.preventDefault(); this.glideTo(state.startMin + step); }
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') { e.preventDefault(); this.glideTo(state.startMin - step); }
+    });
+
+    window.addEventListener('resize', () => this.paint());
+  },
+};
+
+function fmtHour(d) {
+  return d.toLocaleTimeString([], { hour: 'numeric' }).replace(/\s?([AP])M/i, (m, p) => p.toLowerCase() + 'm');
 }
-function setIntervalSec(total) {
-  total = Math.max(1, Math.min(3600, Math.round(total)));
-  $('intMin').value = Math.floor(total / 60);
-  $('intSec').value = total % 60;
-  update();
+function fmtRel(min) {
+  const diff = Math.round(min - nowMin());
+  if (Math.abs(diff) < 1) return 'starting now';
+  return diff > 0 ? 'in ' + fmtDuration(diff * 60) : fmtDuration(-diff * 60) + ' ago';
 }
+
+/* ---------- pickers ---------- */
+function fillSelect(sel, values, current, label) {
+  const list = values.includes(current) ? values : [...values, current].sort((x, y) => x - y);
+  sel.innerHTML = list.map((v) =>
+    `<option value="${v}"${v === current ? ' selected' : ''}>${label(v)}${values.includes(v) ? '' : ' (custom)'}</option>`
+  ).join('');
+}
+const durLabel = (m) => fmtDuration(m * 60);
+const intLabel = (s) => fmtDuration(s);
+
+function getIntervalSec() { return Math.max(1, parseInt($('intSel').value, 10) || 1); }
+function getDurationMin() { return Math.max(1, parseInt($('durSel').value, 10) || 1); }
 
 /* ---------- main calculation ---------- */
 function compute() {
-  const startMin = hhmmToMin($('startTime').value);
   const durMin = getDurationMin();
   const I = getIntervalSec();
   const b = state.bracket;
-
   const now = new Date();
-  const start = new Date(now);
-  start.setHours(0, 0, 0, 0);
-  start.setMinutes(startMin ?? 0);
-  // If the start time is more than 12h in the past, assume it means tomorrow
-  if (now - start > 12 * 3600e3) start.setDate(start.getDate() + 1);
+  const start = minToDate(state.startMin);
 
   const durSec = durMin * 60;
   const frames = I > 0 && durSec > 0 ? Math.floor(durSec / I) + 1 : 0;
@@ -207,33 +360,15 @@ function update() {
 
   const r = compute();
 
-  // window
-  const startMin = hhmmToMin($('startTime').value);
-  const endMin = hhmmToMin($('endTime').value);
-  $('nextDay').hidden = !(startMin != null && endMin != null && endMin <= startMin);
-  $('tlStart').textContent = fmtClock(r.start);
-  $('tlEnd').textContent = fmtClock(new Date(r.start.getTime() + r.durSec * 1000));
-  $('tlDur').textContent = fmtDuration(r.durSec);
-  // "now" marker on the timeline
-  const pct = (r.now - r.start) / (r.durSec * 1000);
-  const tlNow = $('tlNow');
-  if (r.durSec > 0 && pct >= 0 && pct <= 1) {
-    tlNow.style.left = (pct * 100) + '%';
-    tlNow.hidden = false;
-    $('tlFill').style.width = (pct * 100) + '%';
-  } else {
-    tlNow.hidden = true;
-    $('tlFill').style.width = pct > 1 ? '100%' : '0%';
-  }
-  document.querySelectorAll('#durChips button').forEach((btn) =>
-    btn.classList.toggle('on', Number(btn.dataset.min) === r.durMin));
-
-  // interval
-  document.querySelectorAll('#intChips button').forEach((btn) =>
-    btn.classList.toggle('on', Number(btn.dataset.sec) === r.I));
-  $('intHint').textContent = r.I > 0
-    ? `${fmtDuration(r.I)} between frames · ${Math.round(r.I * state.fps)}× speed-up at ${state.fps} fps`
-    : 'Set an interval of at least 1 second';
+  // timing
+  const endDate = new Date(r.start.getTime() + r.durSec * 1000);
+  $('startVal').textContent = fmtClock(r.start);
+  $('startRel').textContent = fmtRel(state.startMin) + dayTag(r.start, r.now);
+  $('durVal').textContent = durLabel(r.durMin);
+  $('intVal').textContent = intLabel(r.I);
+  $('endVal').innerHTML = fmtClock(endDate) + (dayTag(endDate, r.now) ? `<small>${dayTag(endDate, r.now).trim()}</small>` : '');
+  $('intHint').textContent =
+    `${fmtInt(r.frames)} frames · ${+r.perHour.toFixed(1)}/hr · ${Math.round(r.I * state.fps)}× speed-up at ${state.fps} fps`;
 
   // capture hints
   const fmtName = { raw: 'RAW', jpeg: 'JPEG', both: 'RAW+JPEG' }[state.format];
@@ -307,39 +442,17 @@ function summaryText(r) {
 
 /* ---------- wire up ---------- */
 function init() {
-  // time window
-  const s = roundedNowMin();
-  $('startTime').value = minToHHMM(s);
-  $('endTime').value = minToHHMM(s + state.durationMin);
-  $('nowBtn').addEventListener('click', setStartNow);
-  $('startTime').addEventListener('input', () => {
-    // keep the same duration when start moves
-    const st = hhmmToMin($('startTime').value);
-    if (st != null) $('endTime').value = minToHHMM(st + state.durationMin);
-    update();
-  });
-  $('endTime').addEventListener('input', update);
-  $('durChips').addEventListener('click', (e) => {
-    const b = e.target.closest('button'); if (!b) return;
-    const st = hhmmToMin($('startTime').value) ?? roundedNowMin();
-    $('endTime').value = minToHHMM(st + Number(b.dataset.min));
-    update();
-  });
+  // timing
+  fillSelect($('durSel'), CONFIG.durationChoicesMin, state.durationMin, durLabel);
+  fillSelect($('intSel'), CONFIG.intervalChoicesSec, state.intervalSec, intLabel);
+  state.startMin = roundedNowMin();
+  Dial.build();
+  Dial.value = state.startMin;
+  Dial.paint();
 
-  // interval
-  $('intMin').value = Math.floor(state.intervalSec / 60);
-  $('intSec').value = state.intervalSec % 60;
-  ['intMin', 'intSec'].forEach((id) => $(id).addEventListener('input', update));
-  $('intSec').addEventListener('change', () => setIntervalSec(getIntervalSec() || 1));
-  document.querySelectorAll('.step').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const d = Number(btn.dataset.delta) * (btn.dataset.target === 'min' ? 60 : 1);
-      setIntervalSec(getIntervalSec() + d);
-    });
-  });
-  $('intChips').addEventListener('click', (e) => {
-    const b = e.target.closest('button'); if (b) setIntervalSec(Number(b.dataset.sec));
-  });
+  $('nowBtn').addEventListener('click', () => Dial.glideTo(roundedNowMin()));
+  $('durSel').addEventListener('change', () => { update(); Dial.paint(); });
+  $('intSel').addEventListener('change', update);
 
   // capture
   bindSeg('bracketSeg', 'bracket', Number);
@@ -366,7 +479,7 @@ function init() {
   // live clock (also keeps the "now" marker and day tags fresh)
   const tick = () => { $('nowClock').textContent = 'now ' + fmtClock(new Date()); };
   tick();
-  setInterval(() => { tick(); update(); }, 30000);
+  setInterval(() => { tick(); update(); Dial.paint(); }, 30000);
 
   update();
 }

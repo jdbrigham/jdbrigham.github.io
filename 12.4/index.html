@@ -24,74 +24,50 @@
 
 <main>
 
-  <!-- ============ WINDOW ============ -->
-  <section class="card" aria-labelledby="h-window">
-    <h2 id="h-window"><span class="n">1</span>Window</h2>
+  <!-- ============ TIMING ============ -->
+  <section class="card" aria-labelledby="h-timing">
+    <h2 id="h-timing"><span class="n">1</span>Timing</h2>
 
-    <div class="time-row">
-      <label class="time-field">
-        <span class="lbl">Start <button type="button" class="link" id="nowBtn" title="Set start to now, rounded up to 5 min">↻ now</button></span>
-        <input type="time" id="startTime" step="60">
-      </label>
-      <label class="time-field">
-        <span class="lbl">End <em id="nextDay" hidden>+1 day</em></span>
-        <input type="time" id="endTime" step="60">
-      </label>
-    </div>
-
-    <p class="hint">Run for…</p>
-    <div class="chips" id="durChips">
-      <button type="button" data-min="15">15m</button>
-      <button type="button" data-min="30">30m</button>
-      <button type="button" data-min="60">1h</button>
-      <button type="button" data-min="90">1½h</button>
-      <button type="button" data-min="120">2h</button>
-      <button type="button" data-min="180">3h</button>
-      <button type="button" data-min="240">4h</button>
-      <button type="button" data-min="360">6h</button>
-      <button type="button" data-min="480">8h</button>
-    </div>
-
-    <div class="timeline" aria-hidden="true">
-      <div class="tl-track"><div class="tl-fill" id="tlFill"></div><div class="tl-now" id="tlNow"></div></div>
-      <div class="tl-labels"><span id="tlStart">—</span><span id="tlDur" class="accent">—</span><span id="tlEnd">—</span></div>
-    </div>
-  </section>
-
-  <!-- ============ INTERVAL ============ -->
-  <section class="card" aria-labelledby="h-interval">
-    <h2 id="h-interval"><span class="n">2</span>Interval</h2>
-
-    <div class="interval-display">
-      <div class="stepper">
-        <button type="button" class="step" data-target="min" data-delta="-1" aria-label="Minus one minute">−</button>
-        <div class="step-val"><input type="number" inputmode="numeric" id="intMin" min="0" max="60" value="0"><span>min</span></div>
-        <button type="button" class="step" data-target="min" data-delta="1" aria-label="Plus one minute">+</button>
+    <div class="start-head">
+      <div>
+        <span class="lbl">Start</span>
+        <strong id="startVal">—</strong>
+        <small id="startRel">—</small>
       </div>
-      <div class="stepper">
-        <button type="button" class="step" data-target="sec" data-delta="-1" aria-label="Minus one second">−</button>
-        <div class="step-val"><input type="number" inputmode="numeric" id="intSec" min="0" max="59" value="5"><span>sec</span></div>
-        <button type="button" class="step" data-target="sec" data-delta="1" aria-label="Plus one second">+</button>
-      </div>
+      <button type="button" class="ghost small" id="nowBtn">Now</button>
     </div>
 
-    <div class="chips" id="intChips">
-      <button type="button" data-sec="1">1s</button>
-      <button type="button" data-sec="2">2s</button>
-      <button type="button" data-sec="3">3s</button>
-      <button type="button" data-sec="5">5s</button>
-      <button type="button" data-sec="10">10s</button>
-      <button type="button" data-sec="15">15s</button>
-      <button type="button" data-sec="30">30s</button>
-      <button type="button" data-sec="60">1m</button>
-      <button type="button" data-sec="120">2m</button>
+    <div class="dial" id="dial" tabindex="0" role="slider" aria-label="Start time — drag left or right">
+      <div class="dial-strip" id="dialStrip">
+        <div class="dial-past" id="dialPast"></div>
+        <div class="dial-run" id="dialRun"></div>
+      </div>
+      <div class="dial-needle"></div>
+    </div>
+
+    <div class="tiles">
+      <label class="tile pick">
+        <span class="lbl">Run for</span>
+        <span class="val" id="durVal">—</span>
+        <select id="durSel" aria-label="Run for"></select>
+      </label>
+      <label class="tile pick">
+        <span class="lbl">Every</span>
+        <span class="val" id="intVal">—</span>
+        <select id="intSel" aria-label="Interval"></select>
+      </label>
+    </div>
+
+    <div class="ends">
+      <span class="lbl">Ends</span>
+      <b id="endVal">—</b>
     </div>
     <p class="hint" id="intHint">—</p>
   </section>
 
   <!-- ============ CAPTURE ============ -->
   <section class="card" aria-labelledby="h-capture">
-    <h2 id="h-capture"><span class="n">3</span>Capture</h2>
+    <h2 id="h-capture"><span class="n">2</span>Capture</h2>
 
     <div class="field">
       <span class="lbl">Bracketing</span>
@@ -144,7 +120,7 @@
 
   <!-- ============ RESULTS ============ -->
   <section class="card results" aria-labelledby="h-results">
-    <h2 id="h-results"><span class="n">4</span>Results</h2>
+    <h2 id="h-results"><span class="n">3</span>Results</h2>
 
     <div class="hero">
       <div>
