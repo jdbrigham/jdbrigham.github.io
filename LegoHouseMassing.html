@@ -1,0 +1,332 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Lego House Massing</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: 3D viewport fills the left (or top on phones); a narrow dark control rail holds the dimensions and Lego readout. */
+:root{
+  --bg:#0f1114; --panel:#16191e; --line:#262b33; --fg:#e7e3da; --muted:#8b919b;
+  --accent:#ffb454; --accent-dim:#5a4428;
+  --display:"Space Grotesk",system-ui,-apple-system,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  color-scheme:dark;
+}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--display);margin:0}
+.app{display:grid;grid-template-columns:minmax(0,1fr) 340px;height:100%}
+#view{position:relative;min-width:0;min-height:0;background:var(--bg)}
+#view canvas{display:block;width:100%;height:100%;touch-action:none}
+.hud{position:absolute;left:max(12px,env(safe-area-inset-left,0px));bottom:12px;font:12px/1.4 var(--mono);color:var(--muted);pointer-events:none}
+.hud b{color:var(--accent);font-weight:500}
+aside{background:var(--panel);border-left:1px solid var(--line);overflow-y:auto;
+  padding-block:20px 28px;padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px));
+  display:flex;flex-direction:column;gap:22px}
+h1{font-size:20px;font-weight:700;margin:0;letter-spacing:-.01em;text-wrap:balance}
+.sub{font:12px var(--mono);color:var(--muted);margin-top:4px}
+fieldset{border:0;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+legend{font:500 11px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--accent);padding:0;margin-bottom:10px}
+.row{display:grid;grid-template-columns:1fr 92px;align-items:center;gap:10px}
+.row label{font-size:14px;color:var(--fg)}
+.row label small{display:block;font:11px var(--mono);color:var(--muted)}
+input[type=number],select{width:100%;box-sizing:border-box;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:6px;
+  font:14px var(--mono);padding:7px 8px;text-align:right;font-variant-numeric:tabular-nums}
+select{text-align:left}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.toggle{display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer}
+.toggle input{accent-color:var(--accent);width:16px;height:16px}
+.readout{border-top:1px solid var(--line);padding-top:16px}
+table{width:100%;border-collapse:collapse;font:13px var(--mono);font-variant-numeric:tabular-nums}
+th{font-weight:400;color:var(--muted);text-align:left;padding:4px 0}
+td{text-align:right;padding:4px 0}
+td.hi{color:var(--accent)}
+thead th{font-size:11px;letter-spacing:.08em;text-transform:uppercase;border-bottom:1px solid var(--line)}
+thead th:not(:first-child){text-align:right}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+button{font:500 13px var(--display);border-radius:6px;padding:9px 14px;cursor:pointer;border:1px solid var(--line);background:var(--bg);color:var(--fg)}
+button.primary{background:var(--accent);color:#1a1206;border-color:var(--accent)}
+.note{font-size:12px;color:var(--muted);line-height:1.5;margin:0}
+.ops{display:flex;flex-direction:column;gap:10px}
+.op{border:1px solid var(--line);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:8px;background:var(--bg)}
+.op-head{display:grid;grid-template-columns:1fr 1fr 30px;gap:6px;align-items:center}
+.op-head select{font-size:13px;padding:6px}
+.op-head button{padding:4px 0;font-size:16px;line-height:1;color:var(--muted)}
+.op-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.op-grid label{display:flex;flex-direction:column;gap:3px;font:10px var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.op-grid input{padding:5px 6px;font-size:13px}
+.op-lego{font:11px var(--mono);color:var(--muted)}
+.op-lego b{color:var(--accent);font-weight:500}
+.op.door{border-color:#3a2e24}
+#copyOut{width:100%;box-sizing:border-box;font:11px var(--mono);background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:8px;min-height:60px}
+@media (max-width:760px){
+  .app{grid-template-columns:1fr;grid-template-rows:56svh auto;height:auto}
+  html,body{height:auto}
+  #view{height:56svh}
+  aside{border-left:0;border-top:1px solid var(--line);overflow:visible}
+}
+</style>
+
+<div class="app">
+  <div id="view"><div class="hud">drag to orbit · pinch/scroll to zoom · <b>▲</b> = street front</div></div>
+  <aside>
+    <div>
+      <h1>Lego House Massing</h1>
+      <div class="sub">5 Pleasant Street Ct · bulk model · feet</div>
+    </div>
+
+    <fieldset>
+      <legend>Main house</legend>
+      <div class="row"><label for="w">Width<small>street face</small></label><input id="w" type="number" step="0.5" min="4"></div>
+      <div class="row"><label for="d">Depth<small>front to back</small></label><input id="d" type="number" step="0.5" min="4"></div>
+      <div class="row"><label for="h">Eave height<small>ground to roof edge</small></label><input id="h" type="number" step="0.5" min="4"></div>
+      <div class="row"><label for="pitch">Roof pitch<small>rise per 12 run</small></label><input id="pitch" type="number" step="0.5" min="0" max="24"></div>
+      <div class="row"><label for="ridge">Ridge runs</label>
+        <select id="ridge"><option value="x">Side to side</option><option value="z">Front to back</option></select></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Extension</legend>
+      <label class="toggle"><input id="ext" type="checkbox"> Include rear extension</label>
+      <div class="row"><label for="ew">Width</label><input id="ew" type="number" step="0.5" min="2"></div>
+      <div class="row"><label for="ed">Depth<small>out from rear wall</small></label><input id="ed" type="number" step="0.5" min="2"></div>
+      <div class="row"><label for="eh">Eave height</label><input id="eh" type="number" step="0.5" min="2"></div>
+      <div class="row"><label for="eoff">Side offset<small>+ right, − left of center</small></label><input id="eoff" type="number" step="0.5"></div>
+      <div class="row"><label for="eroof">Roof</label>
+        <select id="eroof"><option value="flat">Flat</option><option value="gable">Gable</option><option value="shed">Shed (slopes out)</option></select></div>
+      <div class="row"><label for="epitch">Roof pitch</label><input id="epitch" type="number" step="0.5" min="0" max="24"></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Windows &amp; doors</legend>
+      <p class="note">Offset is from the wall's center, + to the right as you face that wall from outside. Sill is the bottom edge above ground. Count repeats across the wall at the spacing given, and Rows repeats up at the row gap (one floor height).</p>
+      <div class="ops" id="ops"></div>
+      <div class="btns"><button id="addWin">+ Window</button><button id="addDoor">+ Door</button></div>
+    </fieldset>
+
+    <fieldset class="readout">
+      <legend>Lego build size</legend>
+      <div class="row"><label for="scale">Scale 1 :<small>minifig ≈ 42</small></label><input id="scale" type="number" step="1" min="10"></div>
+      <table>
+        <thead><tr><th></th><th>Feet</th><th>Studs</th><th>Bricks</th></tr></thead>
+        <tbody id="tbl"></tbody>
+      </table>
+      <p class="note" id="sizeNote"></p>
+    </fieldset>
+
+    <div class="btns">
+      <button class="primary" id="copy">Copy dimensions</button>
+      <button id="reset">Reset to example</button>
+    </div>
+    <textarea id="copyOut" readonly hidden aria-label="Dimensions as text"></textarea>
+    <p class="note">The starting numbers are placeholders, not your house. Your edits stay in this browser.</p>
+  </aside>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+const DEF={w:18,d:34,h:24,pitch:10,ridge:'x',ext:true,ew:14,ed:12,eh:11,eoff:0,eroof:'flat',epitch:3,scale:42,
+  open:[
+    {wall:'front',type:'door',  w:3,  h:7,  sill:0,   x:-5.5,count:1,gap:5,  rows:1,rowGap:8},
+    {wall:'front',type:'window',w:3,  h:5,  sill:2.5, x:3,   count:2,gap:5,  rows:1,rowGap:8},
+    {wall:'front',type:'window',w:3,  h:5.5,sill:10.5,x:0,   count:3,gap:5.5,rows:2,rowGap:8},
+    {wall:'right',type:'window',w:2.5,h:4.5,sill:11,  x:0,   count:3,gap:9,  rows:2,rowGap:8},
+    {wall:'ext-back',type:'door',w:6, h:7,  sill:0,   x:0,   count:1,gap:5,  rows:1,rowGap:8},
+  ]};
+const NEW_OP={window:{wall:'front',type:'window',w:3,h:5,sill:3,x:0,count:1,gap:5,rows:1,rowGap:8},
+              door:{wall:'front',type:'door',w:3,h:7,sill:0,x:0,count:1,gap:5,rows:1,rowGap:8}};
+const WALLS=[['front','Front'],['back','Back'],['left','Left side'],['right','Right side'],['ext-back','Ext. back'],['ext-left','Ext. left'],['ext-right','Ext. right']];
+const OP_FIELDS=[['w','Width'],['h','Height'],['sill','Sill'],['x','Offset'],['count','Count'],['gap','Spacing'],['rows','Rows'],['rowGap','Row gap']];
+const KEY='lego-house-massing-v1';
+const clone=o=>JSON.parse(JSON.stringify(o));
+let S=clone(DEF);
+try{const s=JSON.parse(localStorage.getItem(KEY)||'null'); if(s) S={...clone(DEF),...s};}catch(e){}
+const ids=Object.keys(DEF).filter(k=>k!=='open');
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+const $=id=>document.getElementById(id);
+
+function syncInputs(){ids.forEach(k=>{const el=$(k); if(el.type==='checkbox') el.checked=!!S[k]; else el.value=S[k];});}
+function readInputs(){ids.forEach(k=>{const el=$(k); if(el.type==='checkbox') S[k]=el.checked; else if(el.tagName==='SELECT') S[k]=el.value; else {const v=parseFloat(el.value); if(!isNaN(v)) S[k]=v;}});
+  save();}
+
+// ---- three.js scene ----
+const view=$('view');
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.setClearColor(0x0f1114);
+view.prepend(renderer.domElement);
+const scene=new THREE.Scene();
+const cam=new THREE.PerspectiveCamera(40,1,0.5,2000);
+const controls=new THREE.OrbitControls(cam,renderer.domElement);
+controls.enableDamping=true; controls.maxPolarAngle=Math.PI*0.49;
+
+scene.add(new THREE.HemisphereLight(0xdfe6f0,0x1a1c20,0.75));
+const sun=new THREE.DirectionalLight(0xfff1dc,0.85);
+sun.position.set(40,70,55); sun.castShadow=true; sun.shadow.mapSize.set(2048,2048);
+Object.assign(sun.shadow.camera,{left:-80,right:80,top:80,bottom:-80,far:300});
+scene.add(sun);
+
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(400,400),new THREE.ShadowMaterial({opacity:0.35}));
+ground.rotation.x=-Math.PI/2; ground.receiveShadow=true; scene.add(ground);
+const grid=new THREE.GridHelper(200,40,0x3a3f48,0x23272e); grid.position.y=0.01; scene.add(grid);
+
+const wallMat=new THREE.MeshStandardMaterial({color:0xd8d2c4,roughness:0.9});
+const extMat=new THREE.MeshStandardMaterial({color:0xb9b2a3,roughness:0.9});
+const roofMat=new THREE.MeshStandardMaterial({color:0x56606c,roughness:0.8,side:THREE.DoubleSide});
+const edgeMat=new THREE.LineBasicMaterial({color:0x14171b});
+const frontMat=new THREE.MeshBasicMaterial({color:0xffb454});
+const glassMat=new THREE.MeshStandardMaterial({color:0x2c3b4c,roughness:0.25,metalness:0.3});
+const doorMat=new THREE.MeshStandardMaterial({color:0x5e4130,roughness:0.7});
+const trimMat=new THREE.LineBasicMaterial({color:0xf2eee6});
+
+let house=new THREE.Group(); scene.add(house);
+
+function mesh(geo,mat){const m=new THREE.Mesh(geo,mat); m.castShadow=m.receiveShadow=true;
+  m.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo,20),edgeMat)); return m;}
+
+// triangular prism: span across the gable, len along the ridge; ridge along z unless along==='x'
+function prism(span,len,pitch,along){
+  const rh=span/2*pitch/12, sh=new THREE.Shape();
+  sh.moveTo(-span/2,0); sh.lineTo(span/2,0); sh.lineTo(0,rh); sh.closePath();
+  const g=new THREE.ExtrudeGeometry(sh,{depth:len,bevelEnabled:false}); g.translate(0,0,-len/2);
+  if(along==='x') g.rotateY(Math.PI/2);
+  return {g,rh};
+}
+// shed roof over w (x) by d (z), high edge at z=+d/2 (against house), low edge at z=-d/2
+function shed(w,d,pitch){
+  const rise=d*pitch/12, sh=new THREE.Shape();
+  sh.moveTo(-d/2,0); sh.lineTo(d/2,0); sh.lineTo(d/2,rise); sh.closePath();
+  const g=new THREE.ExtrudeGeometry(sh,{depth:w,bevelEnabled:false}); g.translate(0,0,-w/2);
+  g.rotateY(-Math.PI/2); // shape x -> z
+  return {g,rh:rise};
+}
+
+let stats={};
+function build(){
+  scene.remove(house); house.traverse(o=>{if(o.geometry) o.geometry.dispose();});
+  house=new THREE.Group(); scene.add(house);
+  const {w,d,h,pitch,ridge}=S;
+  const walls=mesh(new THREE.BoxGeometry(w,h,d),wallMat); walls.position.y=h/2; house.add(walls);
+  const r= ridge==='z' ? prism(w,d,pitch,'z') : prism(d,w,pitch,'x');
+  const roof=mesh(r.g,roofMat); roof.position.y=h; house.add(roof);
+  stats={ridgeH:h+r.rh, extTop:0};
+
+  let minZ=-d/2;
+  if(S.ext){
+    const {ew,ed,eh,eoff,eroof,epitch}=S, zc=-d/2-ed/2;
+    const ew_=mesh(new THREE.BoxGeometry(ew,eh,ed),extMat); ew_.position.set(eoff,eh/2,zc); house.add(ew_);
+    let top=eh;
+    if(eroof!=='flat'){
+      const er= eroof==='gable' ? prism(ew,ed,epitch,'z') : shed(ew,ed,epitch);
+      const em=mesh(er.g,roofMat); em.position.set(eoff,eh,zc); house.add(em); top=eh+er.rh;
+    }
+    stats.extTop=top; minZ=-d/2-ed;
+  }
+  // windows & doors: each wall has a center c, a "right" direction r (as seen from outside), an outward normal n, and a rotation
+  const V=(x,z)=>new THREE.Vector3(x,0,z), zc=-d/2-S.ed/2;
+  const frames={
+    front:{c:V(0,d/2),r:V(1,0),n:V(0,1),rot:0},
+    back:{c:V(0,-d/2),r:V(-1,0),n:V(0,-1),rot:Math.PI},
+    left:{c:V(-w/2,0),r:V(0,1),n:V(-1,0),rot:-Math.PI/2},
+    right:{c:V(w/2,0),r:V(0,-1),n:V(1,0),rot:Math.PI/2},
+  };
+  if(S.ext){
+    frames['ext-back']={c:V(S.eoff,-d/2-S.ed),r:V(-1,0),n:V(0,-1),rot:Math.PI};
+    frames['ext-left']={c:V(S.eoff-S.ew/2,zc),r:V(0,1),n:V(-1,0),rot:-Math.PI/2};
+    frames['ext-right']={c:V(S.eoff+S.ew/2,zc),r:V(0,-1),n:V(1,0),rot:Math.PI/2};
+  }
+  const T=0.3;
+  S.open.forEach(o=>{
+    const f=frames[o.wall]; if(!f||o.w<=0||o.h<=0) return;
+    const n=Math.max(1,Math.round(o.count)), rows=Math.max(1,Math.round(o.rows));
+    const geo=new THREE.BoxGeometry(o.w,o.h,T), edges=new THREE.EdgesGeometry(geo);
+    for(let row=0;row<rows;row++) for(let i=0;i<n;i++){
+      const along=o.x+(i-(n-1)/2)*o.gap;
+      const m=new THREE.Mesh(geo,o.type==='door'?doorMat:glassMat); m.castShadow=true;
+      m.add(new THREE.LineSegments(edges,trimMat));
+      m.position.copy(f.c).addScaledVector(f.r,along).addScaledVector(f.n,T/2-0.05);
+      m.position.y=o.sill+o.h/2+row*o.rowGap;
+      m.rotation.y=f.rot; house.add(m);
+    }
+  });
+
+  // street-front marker
+  const tri=new THREE.Shape(); tri.moveTo(-1.5,0); tri.lineTo(1.5,0); tri.lineTo(0,2.4); tri.closePath();
+  const fm=new THREE.Mesh(new THREE.ShapeGeometry(tri),frontMat); fm.rotation.x=-Math.PI/2; fm.rotation.z=Math.PI;
+  fm.position.set(0,0.05,d/2+5); house.add(fm);
+  // center the whole footprint on the origin
+  const cz=(d/2+minZ)/2; house.position.z=-cz;
+  stats.totalD=d/2-minZ;
+  stats.totalW=Math.max(w, S.ext? Math.max(w/2, S.eoff+S.ew/2)+Math.max(w/2, -S.eoff+S.ew/2) : w);
+}
+
+function readout(){
+  const sc=S.scale, studs=f=>f*304.8/sc/8, bricks=f=>f*304.8/sc/9.6, f1=v=>v.toFixed(1);
+  const rows=[
+    ['Width',S.w],['Depth',S.d],['Eave',S.h],['Ridge',stats.ridgeH],
+  ];
+  if(S.ext) rows.push(['Ext. width',S.ew],['Ext. depth',S.ed],['Ext. top',stats.extTop]);
+  rows.push(['Footprint W',stats.totalW],['Footprint D',stats.totalD]);
+  $('tbl').innerHTML=rows.map(([n,v],i)=>{const vert=/Eave|Ridge|top/.test(n);
+    return `<tr><th>${n}</th><td>${f1(v)}</td><td class="${vert?'':'hi'}">${vert?'—':Math.round(studs(v))}</td><td class="${vert?'hi':''}">${vert?Math.round(bricks(v)):'—'}</td></tr>`;}).join('');
+  const cm=v=>(v*30.48/sc).toFixed(1);
+  $('sizeNote').textContent=`Finished model ≈ ${cm(stats.totalW)} × ${cm(stats.totalD)} cm footprint, ${cm(stats.ridgeH)} cm to the ridge. Baseplate needed ≈ ${Math.ceil(studs(stats.totalW))} × ${Math.ceil(studs(stats.totalD))} studs. 1 stud = 8 mm, 1 brick = 9.6 mm tall.`;
+}
+
+let framed=false;
+function frame(){
+  const span=Math.max(stats.totalW,stats.totalD,stats.ridgeH);
+  cam.position.set(span*1.25,span*0.95,span*1.55); controls.target.set(0,stats.ridgeH*0.4,0); controls.update(); framed=true;
+}
+function resize(){const r=view.getBoundingClientRect(); renderer.setSize(r.width,r.height,false); cam.aspect=r.width/Math.max(r.height,1); cam.updateProjectionMatrix();}
+new ResizeObserver(resize).observe(view);
+
+function update(){readInputs(); $('ext').closest('fieldset').querySelectorAll('.row').forEach(r=>r.style.opacity=S.ext?1:.4);
+  $('epitch').disabled=!S.ext||S.eroof==='flat'; build(); readout(); if(!framed) frame();}
+document.querySelectorAll('aside input,aside select').forEach(el=>el.addEventListener('input',update));
+
+// ---- windows & doors list ----
+const opsEl=$('ops');
+function legoOp(o){const sc=S.scale; return `≈ <b>${Math.round(o.w*304.8/sc/8)}</b> studs wide × <b>${Math.round(o.h*304.8/sc/9.6)}</b> bricks tall`;}
+function renderOps(){
+  opsEl.innerHTML=S.open.map((o,i)=>`
+    <div class="op ${o.type}" data-i="${i}">
+      <div class="op-head">
+        <select id="op${i}-type" data-k="type" aria-label="Type"><option value="window"${o.type==='window'?' selected':''}>Window</option><option value="door"${o.type==='door'?' selected':''}>Door</option></select>
+        <select id="op${i}-wall" data-k="wall" aria-label="Wall">${WALLS.map(([v,l])=>`<option value="${v}"${o.wall===v?' selected':''}>${l}</option>`).join('')}</select>
+        <button data-del="${i}" aria-label="Remove">×</button>
+      </div>
+      <div class="op-grid">${OP_FIELDS.map(([k,l])=>`<label>${l}<input id="op${i}-${k}" type="number" step="${k==='count'||k==='rows'?1:0.5}" data-k="${k}" value="${o[k]}"></label>`).join('')}</div>
+      <div class="op-lego">${legoOp(o)}</div>
+    </div>`).join('');
+}
+opsEl.addEventListener('input',e=>{
+  const card=e.target.closest('.op'), k=e.target.dataset.k; if(!card||!k) return;
+  const o=S.open[+card.dataset.i];
+  if(e.target.tagName==='SELECT'){o[k]=e.target.value; if(k==='type') card.className='op '+o.type;}
+  else {const v=parseFloat(e.target.value); if(isNaN(v)) return; o[k]=v;}
+  card.querySelector('.op-lego').innerHTML=legoOp(o);
+  save(); build();
+});
+opsEl.addEventListener('click',e=>{const d=e.target.closest('[data-del]'); if(!d) return; S.open.splice(+d.dataset.del,1); save(); renderOps(); build();});
+$('addWin').onclick=()=>{S.open.push(clone(NEW_OP.window)); save(); renderOps(); build();};
+$('addDoor').onclick=()=>{S.open.push(clone(NEW_OP.door)); save(); renderOps(); build();};
+$('scale').addEventListener('input',()=>renderOps());
+
+$('reset').onclick=()=>{S=clone(DEF); syncInputs(); renderOps(); framed=false; update();};
+$('copy').onclick=()=>{
+  const txt=`House massing (feet): main ${S.w} W × ${S.d} D, eave ${S.h}, pitch ${S.pitch}/12, ridge ${S.ridge==='x'?'side-to-side':'front-to-back'}`+
+    (S.ext?`; extension ${S.ew} W × ${S.ed} D, eave ${S.eh}, offset ${S.eoff}, ${S.eroof} roof${S.eroof!=='flat'?' '+S.epitch+'/12':''}`:'')+`; Lego scale 1:${S.scale}`
+    +(S.open.length?'\nOpenings (w × h, sill, offset, count@spacing, rows@gap):\n'+S.open.map(o=>`- ${o.type} on ${o.wall}: ${o.w} × ${o.h}, sill ${o.sill}, offset ${o.x}, ${o.count}@${o.gap}, ${o.rows}@${o.rowGap}`).join('\n'):'');
+  const out=$('copyOut'); out.value=txt;
+  const done=()=>{$('copy').textContent='Copied'; setTimeout(()=>$('copy').textContent='Copy dimensions',1600);};
+  const fallback=()=>{out.hidden=false; out.select(); $('copy').textContent='Select & copy below';};
+  try{navigator.clipboard.writeText(txt).then(done,fallback);}catch(e){fallback();}
+};
+
+syncInputs(); renderOps(); resize(); update();
+(function loop(){requestAnimationFrame(loop); controls.update(); renderer.render(scene,cam);})();
+</script>
+
+</body></html>
