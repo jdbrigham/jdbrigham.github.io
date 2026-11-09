@@ -1,4 +1,8 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Lego House Massing</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -65,6 +69,9 @@ button.primary{background:var(--accent);color:#1a1206;border-color:var(--accent)
   aside{border-left:0;border-top:1px solid var(--line);overflow:visible}
 }
 </style>
+</head>
+<body>
+
 
 <div class="app">
   <div id="view"><div class="hud">drag to orbit · pinch/scroll to zoom · <b>▲</b> = street front</div></div>
@@ -113,26 +120,28 @@ button.primary{background:var(--accent);color:#1a1206;border-color:var(--accent)
       <p class="note" id="sizeNote"></p>
     </fieldset>
 
+    <fieldset>
+      <legend>View in AR</legend>
+      <div class="btns">
+        <button class="primary" id="arLego">AR · Lego scale</button>
+        <button class="primary" id="arFull">AR · Full size</button>
+      </div>
+      <p class="note">On iPhone or iPad this opens Quick Look in AR. On a Mac it downloads a .usdz you can AirDrop to your phone. This needs your own copy of the page opened in Safari, locally or on GitHub Pages. The hosted Claude page blocks downloads, so the buttons won't do anything there.</p>
+    </fieldset>
+
     <div class="btns">
       <button class="primary" id="copy">Copy dimensions</button>
-      <button id="reset">Reset to example</button>
+      <button id="reset">Reset</button>
     </div>
     <textarea id="copyOut" readonly hidden aria-label="Dimensions as text"></textarea>
-    <p class="note">The starting numbers are placeholders, not your house. Your edits stay in this browser.</p>
+    <p class="note">Reset returns to your measured dimensions with no windows or doors. Your edits stay in this browser.</p>
   </aside>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script>
-const DEF={w:18,d:34,h:24,pitch:10,ridge:'x',ext:true,ew:14,ed:12,eh:11,eoff:0,eroof:'flat',epitch:3,scale:42,
-  open:[
-    {wall:'front',type:'door',  w:3,  h:7,  sill:0,   x:-5.5,count:1,gap:5,  rows:1,rowGap:8},
-    {wall:'front',type:'window',w:3,  h:5,  sill:2.5, x:3,   count:2,gap:5,  rows:1,rowGap:8},
-    {wall:'front',type:'window',w:3,  h:5.5,sill:10.5,x:0,   count:3,gap:5.5,rows:2,rowGap:8},
-    {wall:'right',type:'window',w:2.5,h:4.5,sill:11,  x:0,   count:3,gap:9,  rows:2,rowGap:8},
-    {wall:'ext-back',type:'door',w:6, h:7,  sill:0,   x:0,   count:1,gap:5,  rows:1,rowGap:8},
-  ]};
+const DEF={w:18,d:36,h:15,pitch:10,ridge:'z',ext:true,ew:14,ed:12,eh:11,eoff:0,eroof:'flat',epitch:3,scale:42,open:[]};
 const NEW_OP={window:{wall:'front',type:'window',w:3,h:5,sill:3,x:0,count:1,gap:5,rows:1,rowGap:8},
               door:{wall:'front',type:'door',w:3,h:7,sill:0,x:0,count:1,gap:5,rows:1,rowGap:8}};
 const WALLS=[['front','Front'],['back','Back'],['left','Left side'],['right','Right side'],['ext-back','Ext. back'],['ext-left','Ext. left'],['ext-right','Ext. right']];
@@ -286,6 +295,97 @@ function update(){readInputs(); $('ext').closest('fieldset').querySelectorAll('.
   $('epitch').disabled=!S.ext||S.eroof==='flat'; build(); readout(); if(!framed) frame();}
 document.querySelectorAll('aside input,aside select').forEach(el=>el.addEventListener('input',update));
 
+// ---- USDZ export (ASCII .usda inside an uncompressed, 64-byte-aligned zip, which is what AR Quick Look expects) ----
+const EXPORT_MATS=new Map([[wallMat,['Walls',0.9]],[extMat,['ExtWalls',0.9]],[roofMat,['Roof',0.8]],[glassMat,['Glass',0.25]],[doorMat,['Door',0.7]]]);
+function buildUSDA(metersPerFoot){
+  house.updateMatrixWorld(true);
+  const n=v=>(+v.toFixed(5)), used=new Set(); let meshes='', k=0;
+  house.traverse(o=>{
+    if(!o.isMesh||!EXPORT_MATS.has(o.material)) return;
+    const g=(o.geometry.index?o.geometry.toNonIndexed():o.geometry.clone());
+    g.applyMatrix4(o.matrixWorld); g.computeVertexNormals();
+    const p=g.attributes.position, nm=g.attributes.normal, cnt=p.count;
+    const pts=[],nrm=[];
+    for(let i=0;i<cnt;i++){pts.push(`(${n(p.getX(i)*metersPerFoot)}, ${n(p.getY(i)*metersPerFoot)}, ${n(p.getZ(i)*metersPerFoot)})`);
+      nrm.push(`(${n(nm.getX(i))}, ${n(nm.getY(i))}, ${n(nm.getZ(i))})`);}
+    const [name]=EXPORT_MATS.get(o.material); used.add(o.material);
+    meshes+=`
+    def Mesh "m${k++}" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        int[] faceVertexCounts = [${Array(cnt/3).fill(3).join(', ')}]
+        int[] faceVertexIndices = [${[...Array(cnt).keys()].join(', ')}]
+        point3f[] points = [${pts.join(', ')}]
+        normal3f[] normals = [${nrm.join(', ')}] (
+            interpolation = "vertex"
+        )
+        uniform token subdivisionScheme = "none"
+        rel material:binding = </House/Looks/${name}>
+    }`;
+    g.dispose();
+  });
+  let looks='';
+  used.forEach(m=>{const [name,rough]=EXPORT_MATS.get(m), c=m.color;
+    looks+=`
+        def Material "${name}"
+        {
+            token outputs:surface.connect = </House/Looks/${name}/PBR.outputs:surface>
+            def Shader "PBR"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (${n(c.r)}, ${n(c.g)}, ${n(c.b)})
+                float inputs:roughness = ${rough}
+                float inputs:metallic = 0
+                token outputs:surface
+            }
+        }`;});
+  return `#usda 1.0
+(
+    defaultPrim = "House"
+    metersPerUnit = 1
+    upAxis = "Y"
+)
+
+def Xform "House"
+{${meshes}
+    def Scope "Looks"
+    {${looks}
+    }
+}
+`;
+}
+const CRC=(()=>{const t=new Uint32Array(256);for(let i=0;i<256;i++){let c=i;for(let j=0;j<8;j++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[i]=c>>>0;}return t;})();
+function crc32(b){let c=0xFFFFFFFF;for(let i=0;i<b.length;i++)c=CRC[(c^b[i])&255]^(c>>>8);return (c^0xFFFFFFFF)>>>0;}
+function zipOne(name,data){
+  const nb=new TextEncoder().encode(name), crc=crc32(data);
+  let pad=(64-((30+nb.length+4)%64))%64; const extraLen=4+pad;     // align file data to 64 bytes
+  const local=new Uint8Array(30+nb.length+extraLen), lv=new DataView(local.buffer);
+  lv.setUint32(0,0x04034b50,true); lv.setUint16(4,20,true); lv.setUint32(14,crc,true);
+  lv.setUint32(18,data.length,true); lv.setUint32(22,data.length,true);
+  lv.setUint16(26,nb.length,true); lv.setUint16(28,extraLen,true); local.set(nb,30);
+  lv.setUint16(30+nb.length,0x1986,true); lv.setUint16(32+nb.length,pad,true);
+  const cen=new Uint8Array(46+nb.length), cv=new DataView(cen.buffer);
+  cv.setUint32(0,0x02014b50,true); cv.setUint16(4,20,true); cv.setUint16(6,20,true); cv.setUint32(16,crc,true);
+  cv.setUint32(20,data.length,true); cv.setUint32(24,data.length,true); cv.setUint16(28,nb.length,true); cen.set(nb,46);
+  const end=new Uint8Array(22), ev=new DataView(end.buffer), cdOff=local.length+data.length;
+  ev.setUint32(0,0x06054b50,true); ev.setUint16(8,1,true); ev.setUint16(10,1,true);
+  ev.setUint32(12,cen.length,true); ev.setUint32(16,cdOff,true);
+  return new Blob([local,data,cen,end],{type:'model/vnd.usdz+zip'});
+}
+function openAR(full){
+  const blob=zipOne('house.usda',new TextEncoder().encode(buildUSDA(full?0.3048:0.3048/S.scale)));
+  const url=URL.createObjectURL(blob), a=document.createElement('a');
+  a.href=url;
+  const ios=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  if(ios){a.rel='ar'; a.appendChild(document.createElement('img'));}   // Quick Look wants an <img> inside the link
+  else a.download=full?'House-Full-Size.usdz':`House-Lego-1to${S.scale}.usdz`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),60000);
+}
+$('arLego').onclick=()=>openAR(false);
+$('arFull').onclick=()=>openAR(true);
+
 // ---- windows & doors list ----
 const opsEl=$('ops');
 function legoOp(o){const sc=S.scale; return `≈ <b>${Math.round(o.w*304.8/sc/8)}</b> studs wide × <b>${Math.round(o.h*304.8/sc/9.6)}</b> bricks tall`;}
@@ -329,4 +429,5 @@ syncInputs(); renderOps(); resize(); update();
 (function loop(){requestAnimationFrame(loop); controls.update(); renderer.render(scene,cam);})();
 </script>
 
-</body></html>
+</body>
+</html>
