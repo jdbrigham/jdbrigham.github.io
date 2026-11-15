@@ -146,7 +146,34 @@
 
     .shade { position: absolute; inset: 0; z-index: 3; background: #05070b; opacity: 0 }
 
-    .score { position: absolute; z-index: 4; pointer-events: none }
+    /* Candle light seen through each photo from inside the closed cube. Three layers:
+       a soft-light wash that warms the middle and darkens the corners, a hot spot nearest
+       the flame, and a thin rim where light leaks through the seams. Only their opacity
+       and the hot spot's position change per frame, which keeps the flicker cheap. */
+    .tint, .hot, .rim { position: absolute; pointer-events: none; opacity: 0 }
+
+    .tint {
+      inset: 0;
+      z-index: 5;
+      mix-blend-mode: soft-light;
+      background: radial-gradient(circle at 50% 60%, #ffd9a0 0, #e8944a 42%, #3a1c08 100%);
+    }
+
+    .hot {
+      inset: -25%;
+      z-index: 6;
+      mix-blend-mode: screen;
+      background: radial-gradient(circle at 50% 50%, rgba(255, 196, 120, .8) 0, rgba(255, 140, 50, .32) 22%, rgba(255, 110, 30, 0) 46%);
+    }
+
+    .rim {
+      inset: 0;
+      z-index: 7;
+      mix-blend-mode: screen;
+      box-shadow: inset 0 0 0 1.5px rgba(255, 205, 140, .7), inset 0 0 calc(var(--s) * .06) rgba(255, 150, 60, .5);
+    }
+
+    .score { position: absolute; z-index: 8; pointer-events: none }
     .h-top > .skin .score { left: 0; right: 0; bottom: 0; border-bottom: 1px dashed rgba(255, 255, 255, .6) }
     .h-bottom > .skin .score { left: 0; right: 0; top: 0; border-top: 1px dashed rgba(255, 255, 255, .6) }
     .h-left > .skin .score { top: 0; bottom: 0; right: 0; border-right: 1px dashed rgba(255, 255, 255, .6) }
@@ -168,6 +195,28 @@
       background: radial-gradient(closest-side, rgba(0, 0, 0, .85), rgba(0, 0, 0, .4) 55%, transparent);
       opacity: 0;
       pointer-events: none;
+    }
+
+    .halo, .pool {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      border-radius: 50%;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .halo {
+      width: calc(var(--s) * 3.4);
+      height: calc(var(--s) * 3.4);
+      background: radial-gradient(closest-side, rgba(255, 150, 60, .24), rgba(255, 120, 40, .1) 45%, transparent);
+      transform: translate(-50%, -50%);
+    }
+
+    .pool {
+      width: calc(var(--s) * 2.6);
+      height: calc(var(--s) * .62);
+      background: radial-gradient(closest-side, rgba(255, 165, 80, .34), rgba(255, 130, 50, .12) 55%, transparent);
     }
 
     .notice {
@@ -318,6 +367,8 @@
   </header>
 
   <section class="stage" id="stage" aria-label="Photo net that folds into a rotatable cube">
+    <div class="halo" id="halo"></div>
+    <div class="pool" id="pool"></div>
     <div class="floor" id="floor"></div>
     <div class="rig" id="rig"></div>
     <div class="notice" id="notice" role="status" hidden></div>
@@ -333,6 +384,7 @@
     <button id="toggle" type="button" aria-pressed="false">Fold into cube</button>
     <label id="foldLabel">Fold <input id="scrub" type="range" min="0" max="1000" value="0" aria-label="Fold amount"></label>
     <label><input id="spin" type="checkbox"> Spin</label>
+    <label><input id="candle" type="checkbox" checked> Candle</label>
     <label><input id="auto" type="checkbox"> Auto-fold</label>
     <label><input id="cyclePhotos" type="checkbox"> Cycle photos</label>
     <label id="tiltLabel"><input id="tilt" type="checkbox"> Phone tilt</label>
@@ -381,6 +433,18 @@
     const TILT_GAIN = 1.5;               // cube degrees per degree of phone movement
     const TILT_FOLLOW = false;           // false: phone orbits a cube fixed in space; true: cube turns with the phone
     const TILT_SMOOTHING = 14;           // higher reacts faster, lower is calmer
+    const CANDLE_BRIGHTNESS = .4;         // 0.5 is a dim night-light, 1.3 is a bright lantern
+    const CANDLE_FADE_SECONDS = .9;      // how long the flame takes to catch or go out
+    // How brightly the flame reaches each face, and where its hot spot sits (% across, % down).
+    // The flame burns low in the middle, so the bottom face sits in the candle's own shadow.
+    const CANDLE_FACES = {
+      a: { level: .85, x: 50, y: 50 },
+      b: { level: 1, x: 50, y: 60 },
+      c: { level: 1, x: 50, y: 60 },
+      d: { level: 1, x: 50, y: 60 },
+      f: { level: 1, x: 50, y: 60 },
+      e: { level: .45, x: 50, y: 50 }
+    };
 
     // When each hinge moves, as a window of overall fold progress.
     const HINGES = {
@@ -395,6 +459,7 @@
     const $ = id => document.getElementById(id);
     const stage = $('stage'), rig = $('rig'), floor = $('floor'), toggle = $('toggle'), scrub = $('scrub');
     const spinBox = $('spin'), autoBox = $('auto'), resetBtn = $('resetView'), hint = $('hint');
+    const candleBox = $('candle'), halo = $('halo'), pool = $('pool');
     const cycleBox = $('cyclePhotos'), tiltBox = $('tilt'), tiltLabel = $('tiltLabel'), notice = $('notice');
     const joyPanel = $('joyPanel'), joystick = $('joystick'), stick = $('stick');
 
@@ -422,14 +487,22 @@
       missing.append(letter, name);
       const shade = document.createElement('div');
       shade.className = 'shade';
+      const [tint, hot, rim] = ['tint', 'hot', 'rim'].map(cls => {
+        const layer = document.createElement('div');
+        layer.className = cls;
+        return layer;
+      });
+      const spot = CANDLE_FACES[id];
+      hot.style.background = `radial-gradient(circle at ${(spot.x + 25) / 1.5}% ${(spot.y + 25) / 1.5}%, ` +
+        'rgba(255,196,120,.8) 0, rgba(255,140,50,.32) 22%, rgba(255,110,30,0) 46%)';
       const score = document.createElement('div');
       score.className = 'score';
-      skin.append(...imgs, missing, shade, score);
+      skin.append(...imgs, missing, shade, tint, hot, rim, score);
       const paper = document.createElement('div');
       paper.className = 'paper';
       face.append(skin, paper);
       parent.append(face);
-      parts[id] = { face, skin, paper, imgs, shade, score, front: 0, facing: null };
+      parts[id] = { face, skin, paper, imgs, shade, tint, hot, rim, score, front: 0, facing: null };
       return face;
     }
     const centerFace = buildFace('c', rig, 'root');
@@ -486,6 +559,7 @@
     let raf = 0, last = 0, cycleTimer = 0;
     let tilt = Q_FLAT, tiltTarget = Q_FLAT;  // extra rotation from moving the phone
     let tiltOn = false, tiltRef = null, tiltSeen = false;
+    let lit = 1, glowShown = -1;          // candle level 0-1, and the glow last drawn
 
     const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
     const mix = (a, b, t) => a + (b - a) * t;
@@ -554,12 +628,19 @@
         f: [half + S * cosF + half * Math.cos(h * (fd + ff)), 0, -S * sinF - half * Math.sin(h * (fd + ff))]
       };
       const camera = S * PERSPECTIVE, closed = p === 1;
+
+      // The candle only shows once the last flap is nearly shut, and fades as it opens.
+      const sealed = clamp((p - .88) / .12);
+      const glow = lit * sealed * sealed;
+      drawCandle(glow);
+
       for (const id in normals) {
         const n = normals[id], part = parts[id];
         const nx = m[0][0] * n[0] + m[0][1] * n[1] + m[0][2] * n[2];
         const ny = m[1][0] * n[0] + m[1][1] * n[1] + m[1][2] * n[2];
         const nz = m[2][0] * n[0] + m[2][1] * n[1] + m[2][2] * n[2];
-        part.shade.style.opacity = (clamp((LIGHT[2] - (LIGHT[0] * nx + LIGHT[1] * ny + LIGHT[2] * nz)) / 1.3) * .42).toFixed(3);
+        // Light from inside fills in the shadow side, so outside shading eases off as it glows.
+        part.shade.style.opacity = (clamp((LIGHT[2] - (LIGHT[0] * nx + LIGHT[1] * ny + LIGHT[2] * nz)) / 1.3) * .42 * (1 - .55 * glow)).toFixed(3);
 
         // backface-visibility can't be relied on here: in Safari it hides the .skin layer but
         // not a fading photo inside it, which then paints over the cube from behind. So hide
@@ -581,6 +662,46 @@
       const footprint = Math.abs(m[0][0]) + Math.abs(m[0][1]) + Math.abs(m[0][2]);
       floor.style.opacity = (clamp((pose - .35) / .65) * .75).toFixed(3);
       floor.style.transform = `translate(-50%,-50%) translateY(${S * 1.1}px) scale(${(footprint * 1.05).toFixed(3)},1)`;
+      pool.style.transform = `translate(-50%,-50%) translateY(${S * 1.1}px) scale(${(footprint * .7).toFixed(3)},1)`;
+    }
+
+    /* ---------- Candle ----------
+       Smooth random noise gives the flame a natural, never-repeating flicker: a slow breath,
+       a quicker shimmer, a fast dance, and now and then a draught that makes it dip. */
+    function hash(n) {
+      const x = Math.sin(n * 127.1 + 311.7) * 43758.5453;
+      return x - Math.floor(x);
+    }
+    function noise(t) { // smooth, -1 to 1
+      const i = Math.floor(t), f = t - i, u = f * f * (3 - 2 * f);
+      return mix(hash(i), hash(i + 1), u) * 2 - 1;
+    }
+    function flame(t) {
+      if (REDUCED) return .9;
+      let v = .86 + .06 * noise(t * 1.6) + .05 * noise(t * 5.3 + 20) + .025 * noise(t * 13 + 40);
+      const draught = noise(t * .33 + 90);
+      if (draught > .55) v -= (draught - .55) * .7;
+      return clamp(v, .55, 1);
+    }
+
+    function drawCandle(glow) {
+      if (glow === 0 && glowShown === 0) return; // nothing to change while it stays dark
+      glowShown = glow;
+      const t = performance.now() / 1000, power = glow * CANDLE_BRIGHTNESS;
+      const sway = REDUCED ? 0 : noise(t * .9 + 7), lift = REDUCED ? 0 : noise(t * 1.3 + 61);
+      const f = flame(t);
+      for (const id in CANDLE_FACES) {
+        const part = parts[id], level = power * CANDLE_FACES[id].level;
+        // Each face sees the flame a little differently, so they don't flicker in lockstep.
+        const own = REDUCED ? 1 : 1 + .05 * noise(t * 3.1 + id.charCodeAt(0) * 3);
+        const v = level * f * own;
+        part.tint.style.opacity = clamp(v * .85).toFixed(3);
+        part.hot.style.opacity = clamp(v * .9).toFixed(3);
+        part.rim.style.opacity = clamp(v * .8).toFixed(3);
+        part.hot.style.transform = `translate(${(sway * 3).toFixed(2)}%,${(lift * 2).toFixed(2)}%)`;
+      }
+      halo.style.opacity = clamp(power * f).toFixed(3);
+      pool.style.opacity = clamp(power * (.75 + .25 * f)).toFixed(3);
     }
 
     /* ---------- Main loop: only runs while something is moving ---------- */
@@ -590,7 +711,9 @@
       if (!tiltOn || p === 0) return false;
       return Math.abs(tilt[0] * tiltTarget[0] + tilt[1] * tiltTarget[1] + tilt[2] * tiltTarget[2] + tilt[3] * tiltTarget[3]) < .999999;
     };
-    const moving = () => p !== goal || reset || Math.abs(vx) + Math.abs(vy) > .002 || joyX || joyY || spinning() || tiltMoving();
+    const candleTarget = () => candleBox.checked ? 1 : 0;
+    const flickering = () => lit !== candleTarget() || (lit > 0 && p > .88 && !REDUCED);
+    const moving = () => p !== goal || reset || flickering() || Math.abs(vx) + Math.abs(vy) > .002 || joyX || joyY || spinning() || tiltMoving();
 
     function wake() {
       if (!raf) {
@@ -633,6 +756,11 @@
         }
       }
 
+      if (lit !== candleTarget()) {
+        const step = dt / (REDUCED ? .01 : CANDLE_FADE_SECONDS);
+        lit = candleTarget() ? Math.min(1, lit + step) : Math.max(0, lit - step);
+      }
+
       if (tiltMoving()) tilt = qNorm(qSlerp(tilt, tiltTarget, 1 - Math.exp(-TILT_SMOOTHING * dt)));
 
       syncUI();
@@ -673,7 +801,7 @@
       stage.classList.toggle('can-rotate', ready);
       joyPanel.classList.toggle('on', ready);
       resetBtn.disabled = !ready;
-      const text = ready ? 'drag cube · arrows turn · R reset' : 'F or space folds';
+      const text = ready ? 'drag cube · arrows turn · R reset · L candle' : 'F or space folds';
       if (hint.textContent !== text) hint.textContent = text;
     }
 
@@ -700,6 +828,7 @@
     toggle.addEventListener('click', toggleFold);
     resetBtn.addEventListener('click', resetCube);
     spinBox.addEventListener('change', wake);
+    candleBox.addEventListener('change', wake);
 
     autoBox.addEventListener('change', () => {
       clearTimeout(cycleTimer);
@@ -797,6 +926,7 @@
       const key = e.key.toLowerCase();
       if (key === 'f') { toggleFold(); return; }
       if (key === 'r') { resetCube(); return; }
+      if (key === 'l') { candleBox.checked = !candleBox.checked; wake(); return; }
       if (key === ' ' && !onControl) { e.preventDefault(); toggleFold(); return; }
       if (!folded() || e.target.matches('input[type=range]')) return;
       const nudge = { arrowleft: [0, -1.4], arrowright: [0, 1.4], arrowup: [-1.4, 0], arrowdown: [1.4, 0] }[key];
