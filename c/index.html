@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Collection</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* Pointer page for collection labels: jbrigham.com/c/?id=B001
+     The QR code on each physical label encodes only that address, so what this
+     page shows (and where the scans live) can change without reprinting labels.
+     Data lives in COLLECTIONS below — edit or regenerate it, then re-upload. */
+  :root {
+    --bg: #0e0d0b; --card: #161512; --line: #2a2925; --text: #e8e2d4;
+    --body: #d4cfc4; --muted: #a09c94; --faint: #6b6760;
+    --ok: #8fc79a; --wip: #e0b35c; --no: #5a5750;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace; background: var(--bg); color: var(--body);
+         min-height: 100vh; padding: 28px 18px 48px; font-size: 14px; line-height: 1.5; }
+  .wrap { max-width: 560px; margin: 0 auto; }
+  .kicker { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--faint); }
+  .id { font-family: 'Special Elite', 'Courier New', monospace; font-size: 46px; color: var(--text); letter-spacing: 0.04em; line-height: 1.1; margin-top: 4px; }
+  h1 { font-family: 'Special Elite', 'Courier New', monospace; font-weight: 400; font-size: 22px; color: var(--text); margin-top: 6px; }
+  .facts { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0 18px; }
+  .facts span { border: 1px solid var(--line); border-radius: 3px; padding: 2px 8px; font-size: 12px; color: var(--muted); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; margin-bottom: 14px; }
+  .card h2 { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--faint); font-weight: 500; margin-bottom: 8px; }
+  .summary { color: var(--body); }
+  .status { display: grid; grid-template-columns: 1fr auto; gap: 8px 14px; }
+  .status .v { font-size: 12px; }
+  .s-ok { color: var(--ok); } .s-wip { color: var(--wip); } .s-no { color: var(--no); }
+  .path { font-size: 12.5px; color: var(--text); overflow-wrap: anywhere; background: #0b0a09; border: 1px solid var(--line); border-radius: 3px; padding: 8px 10px; margin-top: 4px; }
+  .note { font-size: 12px; color: var(--muted); margin-top: 8px; }
+  .list a { display: flex; gap: 14px; align-items: baseline; padding: 10px 0; border-bottom: 1px solid var(--line); color: inherit; text-decoration: none; }
+  .list a:last-child { border-bottom: none; }
+  .list .lid { font-family: 'Special Elite', monospace; font-size: 18px; color: var(--text); min-width: 4.2em; }
+  .list .lt { flex: 1; }
+  .list .lm { font-size: 11px; color: var(--faint); }
+  footer { margin-top: 26px; font-size: 11px; color: var(--faint); text-align: center; }
+  footer a { color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+
+<script>
+// ── DATA ────────────────────────────────────
+// One entry per labelled collection (carousel, box, negative sleeve…).
+// status values: 'done' | 'wip' | '' (not yet)
+const UPDATED = '2026-11-22';
+const COLLECTIONS = [
+  {
+    id: 'B001',
+    kind: 'Slide carousel',
+    title: 'England 1994 — Canterbury & London',
+    date: 'Winter 1994',
+    place: 'Canterbury, London, countryside',
+    slides: 80,
+    images: 71,
+    summary: 'Canterbury (Christ Church Gate, cathedral details, old streets); London in snow — parks, Westminster, St Paul’s dome and the views from it; then countryside with off-road vehicles and camping. Slot 1 and slots 73–80 are empty.',
+    stored: '',
+    scans: 'SlideArchive › Archive › slides › 001',
+    gallery: 'SlideArchive › Archive › slides › 001.html',
+    status: { reviewed: 'done', labelled: 'wip', scanned: 'done', gallery: 'done' },
+  },
+  {
+    id: 'B002',
+    kind: 'Slide carousel',
+    title: 'England 1994 — villages, coast & cathedrals',
+    date: '1994',
+    place: 'England',
+    slides: 77,
+    images: 69,
+    summary: 'Timbered village high streets, salt marsh and coast, fields and off-road vehicles in fog, snow scenes; later cathedrals, a castle keep on a mound, an astronomical clock and a stately home. Eight slots are empty.',
+    stored: '',
+    scans: 'SlideArchive › Archive › slides › 002',
+    gallery: 'SlideArchive › Archive › slides › 002.html',
+    status: { reviewed: 'done', labelled: 'wip', scanned: 'done', gallery: 'done' },
+  },
+];
+
+// ── RENDER ──────────────────────────────────
+const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const STEPS = [['reviewed', 'Reviewed'], ['labelled', 'Labelled'], ['scanned', 'Scanned'], ['gallery', 'Gallery page']];
+const STATE = { done: ['s-ok', '✓ done'], wip: ['s-wip', '… in progress'], '': ['s-no', '— not yet'] };
+
+const app = document.getElementById('app');
+const id = (new URLSearchParams(location.search).get('id') || '').trim().toUpperCase();
+const c = COLLECTIONS.find(x => x.id.toUpperCase() === id);
+
+if (c) {
+  document.title = `${c.id} · ${c.title}`;
+  const st = c.status || {};
+  app.innerHTML = `
+    <div class="kicker">${esc(c.kind)}</div>
+    <div class="id">${esc(c.id)}</div>
+    <h1>${esc(c.title)}</h1>
+    <div class="facts">
+      ${c.date ? `<span>${esc(c.date)}</span>` : ''}
+      ${c.slides ? `<span>${esc(c.slides)} slots${c.images ? ` · ${esc(c.images)} images` : ''}</span>` : ''}
+      ${c.place ? `<span>${esc(c.place)}</span>` : ''}
+    </div>
+    ${c.summary ? `<div class="card"><h2>What's in it</h2><div class="summary">${esc(c.summary)}</div></div>` : ''}
+    <div class="card"><h2>Status</h2><div class="status">
+      ${STEPS.map(([k, label]) => { const [cls, txt] = STATE[st[k] || ''] || STATE['']; return `<span>${label}</span><span class="v ${cls}">${txt}</span>`; }).join('')}
+    </div></div>
+    ${(c.scans || c.gallery || c.stored) ? `<div class="card"><h2>Where things are</h2>
+      ${c.stored ? `<div class="note" style="margin-top:0">Physical ${esc(c.kind.toLowerCase())}</div><div class="path">${esc(c.stored)}</div>` : ''}
+      ${c.scans ? `<div class="note">Scans (external drive)</div><div class="path">${esc(c.scans)}</div>` : ''}
+      ${c.gallery ? `<div class="note">Gallery page (open on the Mac)</div><div class="path">${esc(c.gallery)}</div>` : ''}
+    </div>` : ''}
+    <footer>Catalog updated ${esc(UPDATED)} · <a href="./">all collections</a></footer>`;
+} else {
+  document.title = 'Collections';
+  app.innerHTML = `
+    <div class="kicker">${id ? `No collection called ${esc(id)}` : 'Labelled collections'}</div>
+    <div class="id" style="font-size:30px">Collections</div>
+    <div class="card list" style="margin-top:16px">
+      ${COLLECTIONS.map(x => `<a href="?id=${encodeURIComponent(x.id)}"><span class="lid">${esc(x.id)}</span><span class="lt">${esc(x.title)}<br><span class="lm">${esc(x.kind)} · ${esc(x.date || '')}</span></span></a>`).join('')}
+    </div>
+    <footer>Catalog updated ${esc(UPDATED)}</footer>`;
+}
+</script>
+<noscript><div class="wrap"><p>This page needs JavaScript to look up a collection.</p></div></noscript>
+</body>
+</html>
